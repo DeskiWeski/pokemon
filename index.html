@@ -539,6 +539,7 @@ function itemIcon(c,x0,y0,id,s){
     case 'weed':r(7,2,2,3,'#3fa24a');r(5,4,2,3,'#4fc25a');r(9,4,2,3,'#4fc25a');r(6,7,4,3,'#3fa24a');r(7,10,2,4,'#7a5a2a');r(7,3,1,1,'#e8962a');r(10,5,1,1,'#e8962a');r(6,8,1,1,'#e8962a');break;
     case 'shank':r(10,1,2,2,'#e8eef4');r(8,3,2,2,'#c3ceda');r(6,5,2,2,'#c3ceda');r(4,7,2,2,'#9aa5b5');r(3,9,2,2,'#5a3010');r(2,11,2,2,'#e8c42a');r(4,9,1,1,'#e8c42a');break;
     case 'perogi':r(2,6,12,6,'#ecd08a');r(3,5,10,1,'#ecd08a');r(4,4,8,1,'#d9b866');r(2,12,12,1,'#b8923e');for(let i=0;i<6;i++)r(3+i*2,4+(i%2),1,1,'#b8923e');r(5,8,2,1,'#b8923e');r(9,9,2,1,'#b8923e');r(4,6,8,1,'#f8e6b0');break;
+    case 'shark':r(2,3,12,10,'#1b6fd0');r(2,3,12,2,'#7fc4ff');r(5,6,6,3,'#dfe9f2');r(9,5,2,2,'#dfe9f2');r(6,9,5,1,'#0a2f66');r(11,7,1,1,'#000');r(3,11,4,1,'#ffd23a');break;
     default:r(4,4,8,8,'#fff');
   }
 }
@@ -562,12 +563,12 @@ const M={
   straight:{n:'Straight',t:'MUS',p:48,a:100,pp:25,s:['{a} snaps a straight right down the pipe!','{a} sets his feet and fires a hard straight at {d}!']},
   hook:{n:'Left Hook',t:'MUS',p:58,a:92,pp:20,fx:'stun',c:15,s:['{a} loops a left hook around the guard!','{a} swings a hook from the hip into {d}\'s jaw!']},
   wrestle:{n:'Wrestle',t:'MUS',p:45,a:95,pp:20,fx:'defdown',c:30,s:['{a} shoots in low and drives {d} into the concrete!','{a} dives for the legs and takes {d} down!']},
-  scream:{n:'Bandit Scream',t:'CHM',p:42,a:100,pp:20,fx:'atkdown',c:35,s:['{a} lets out a bone-rattling SCREAM!','{a} screams like a lead singer on the last night of a tour!']},
-  bodyshot:{n:'Body Shot',t:'MUS',p:62,a:95,pp:15,fx:'defdown',c:40,s:['{a} digs a vicious shot into {d}\'s ribs!','{a} drives a fist under {d}\'s ribs. The wind leaves him!']},
+  scream:{n:'Scream',t:'CHM',p:42,a:100,pp:20,fx:'atkdown',c:40,fx2:'accdown',c2:20,s:['{a} lets out a bone-rattling SCREAM!','{a} screams like a lead singer on the last night of a tour!']},
+  bodyshot:{n:'Body Shot',t:'MUS',p:62,a:95,pp:15,fx:'defdown',c:40,fx2:'spddown',c2:25,s:['{a} digs a vicious shot into {d}\'s ribs!','{a} drives a fist under {d}\'s ribs. The wind leaves him!']},
   uppercut:{n:'Uppercut',t:'MUS',p:78,a:85,pp:12,fx:'stun',c:25,s:['{a} drops low and launches an uppercut!','{a} rips an uppercut from the floor to {d}\'s chin!']},
-  elbow:{n:'Elbow Smash',t:'MUS',p:70,a:92,pp:14,fx:'bleed',c:35,s:['{a} clinches and cracks an elbow across {d}\'s face!','{a} steps inside and smashes a sharp elbow into {d}\'s brow!']},
-  knee:{n:'Knee to the Face',t:'MUS',p:82,a:88,pp:10,fx:'stun',c:30,s:['{a} grabs {d}\'s head and pulls it into a rising knee!','{a} yanks {d} down by the collar. KNEE!']},
-  eyejab:{n:'Eye Gouge',t:'SNK',p:38,a:95,pp:12,fx:'accdown',s:['{a} goes for the eyes! Dirty!','{a} thumbs {d} in the eye. Nobody saw that. The guards didn\'t, anyway.']},
+  elbow:{n:'Elbow Smash',t:'MUS',p:70,a:92,pp:14,fx:'bleed',c:35,fx2:'accdown',c2:30,s:['{a} clinches and cracks an elbow across {d}\'s face!','{a} steps inside and smashes a sharp elbow into {d}\'s brow!']},
+  knee:{n:'Knee to the Face',t:'MUS',p:82,a:88,pp:10,fx:'stun',c:30,fx2:'defdown',c2:25,s:['{a} grabs {d}\'s head and pulls it into a rising knee!','{a} yanks {d} down by the collar. KNEE!']},
+  eyejab:{n:'Eye Gouge',t:'SNK',p:38,a:95,pp:12,fx:'accdown',c:75,s:['{a} goes for the eyes! Dirty!','{a} thumbs {d} in the eye. Nobody saw that. The guards didn\'t, anyway.']},
   clothesline:{n:'Clothesline',t:'MUS',p:88,a:80,pp:8,fx:'stun',c:35,s:['{a} charges across the yard with a stiff arm out!','{a} runs {d} over with a CLOTHESLINE!']},
   slam:{n:'Body Slam',t:'MUS',p:100,a:82,pp:6,fx:'defdown',c:50,s:['{a} hoists {d} over his head...','{a} locks his arms around {d} and heaves him skyward!']},
   choke:{n:'Rear Choke',t:'SNK',p:85,a:85,pp:6,fx:'stun',c:55,s:['{a} slips behind {d} and locks in a choke hold!','{a} wraps an arm around {d}\'s neck and squeezes!']},
@@ -598,7 +599,7 @@ const M={
   chug:{n:'Chug Beer',t:'NRM',p:0,a:100,pp:5,fx:'drunkup',self:1},
   stashrip:{n:'Stash Rip',t:'NRM',p:0,a:100,pp:5,fx:'high',self:1}
 };
-const FXDESC={recoil:'Hurts you too',bottle:'Can fumble!',stun:'May stun',defdown:'Lowers DEF',atkdown:'Lowers ATK',defup:'Raises DEF',bleed:'May bleed',stunbonus:'2x vs stunned',steal:'May swipe cigs',accdown:'Lowers aim',lukey:'Big & stuns',heal:'Heals 40%',atkup:'Raises ATK',drunkup:'ATK up, stumble',high:'DEF up, slow aim'};
+const FXDESC={recoil:'Hurts you too',bottle:'Can fumble!',stun:'May stun',defdown:'Lowers DEF',atkdown:'Lowers ATK',defup:'Raises DEF',bleed:'May bleed',stunbonus:'2x vs stunned',steal:'May swipe cigs',accdown:'Lowers aim',spddown:'Lowers SPD',lukey:'Big & stuns',heal:'Heals 40%',atkup:'Raises ATK',drunkup:'ATK up, stumble',high:'DEF up, slow aim'};
 const LOOK={
   bandit:{sk:'#e8b48a',hr:'#2a1a10',st:'short',sh:'#e8731c',pn:'#e8731c',ac:['mask','crown'],tat:['BANDIT','POPSTAR']},
   rookie:{sk:'#d9a577',hr:'#4a3020',st:'short'},
@@ -617,6 +618,10 @@ const LOOK={
   bones:{sk:'#e6dcc8',hr:'#222',st:'long',ac:['shades'],sh:'#d8d4cc',pn:'#d8d4cc',stripe:'#e8731c'},
   chuck:{sk:'#e8b48a',hr:'#2a2010',st:'short',ac:['chin'],w:1,sh:'#3d6fb5',pn:'#3d6fb5',stripe:'#fff'},
   smokey:{sk:'#8a5a3a',hr:'#111',st:'fro',ac:['smoke','shades','cig'],sh:'#2b2631',pn:'#2b2631',stripe:'#e8731c'},
+  ironm:{sk:'#6e4a30',hr:'#111',st:'bald',w:1,buff:1,ac:['beard','scar'],sh:'#a8321a',pn:'#222',stripe:'#fff'},
+  kingk:{sk:'#f0c9a0',hr:'#222',st:'cap',hc:'#f2f2f2',ac:['beard'],w:1,sh:'#f2f2f2',pn:'#d8d8d8',stripe:'#c8322a'},
+  doc:{sk:'#d9a577',hr:'#555',st:'short',ac:['shades','chin'],sh:'#3a9a8a',pn:'#3a9a8a',stripe:'#fff'},
+  magoo:{sk:'#c68a5e',hr:'#111',st:'fro',ac:['shades','cig','scar'],sh:'#8a6a1a',pn:'#2a2a2a',stripe:'#ffd23a'},
   cop:{sk:'#e8b48a',hr:'#3a2414',st:'cap',hc:'#10204a',sh:'#2250b0',pn:'#0f1c3c',sleeve:'#2250b0',ac:['shades','badge']},
   guard:{sk:'#d9a577',hr:'#222',st:'cap',hc:'#23262e',sh:'#6c7a8c',pn:'#252a36',sleeve:'#6c7a8c',ac:['shades','badge']},
   nurse:{sk:'#f0c9a0',hr:'#b8451a',st:'long',sh:'#f4f7fa',pn:'#9fd0e8'},
@@ -638,8 +643,12 @@ const SP={
   corey:{n:'COREY BAPES',t:'CHM',b:[54,46,52,50],ls:[[1,'sing'],[1,'haggle'],[1,'smokebreak'],[8,'smooth'],[14,'pophit'],[20,'stashrip']]},
   goon:{n:'GOON',t:'MUS',b:[56,54,50,44],ls:[[1,'jab'],[1,'gut'],[6,'mug'],[8,'elbow'],[10,'headbutt'],[13,'knee'],[16,'chair']]},
   blake:{n:'BIG BLAKE',t:'MUS',b:[80,70,64,36],ls:[[1,'jab'],[1,'gut'],[1,'mug'],[8,'headbutt'],[10,'clothesline'],[12,'chair'],[14,'slam'],[16,'firm'],[19,'stomp'],[22,'haymaker'],[26,'gpound']]},
-  bones:{n:'TOMMY BONES',t:'SNK',b:[58,68,48,80],ls:[[1,'cheap'],[1,'trip'],[8,'shank'],[10,'eyejab'],[12,'choke'],[14,'backstab'],[17,'pipe'],[20,'smokescreen']]},
+  bones:{n:'TOMMY BONES',t:'SNK',b:[58,68,48,80],ls:[[1,'cheap'],[1,'trip'],[8,'shank'],[10,'eyejab'],[12,'choke'],[14,'backstab'],[17,'knee'],[20,'smokescreen']]},
   chuck:{n:'CHIN CHUCK',t:'CHM',b:[68,64,62,54],ls:[[1,'sing'],[1,'smooth'],[10,'headbutt'],[14,'pophit'],[18,'hype'],[22,'fanmail']]},
+  ironm:{n:'IRON MIKE',t:'MUS',b:[72,62,66,46],ls:[[1,'jab'],[1,'gut'],[6,'mug'],[10,'clothesline'],[14,'slam'],[18,'haymaker'],[22,'stomp']]},
+  kingk:{n:'KITCHEN KING',t:'MUS',b:[66,64,60,56],ls:[[1,'jab'],[1,'chair'],[8,'headbutt'],[12,'mug'],[16,'knee'],[20,'firm'],[24,'slam']]},
+  doc:{n:'DOC MORPHINE',t:'SNK',b:[64,70,56,70],ls:[[1,'cheap'],[1,'eyejab'],[8,'trip'],[12,'choke'],[17,'smokescreen'],[22,'backstab'],[26,'smokebreak']]},
+  magoo:{n:'COMMISSAR MAGOO',t:'CHM',b:[70,66,64,64],ls:[[1,'sing'],[1,'haggle'],[8,'smooth'],[14,'pophit'],[20,'stashrip'],[24,'hype'],[28,'fanmail']]},
   smokey:{n:'SMOKEYBOOTY',t:'SNK',b:[74,74,68,72],ls:[[1,'cheap'],[1,'smokescreen'],[10,'backstab'],[16,'stashrip'],[20,'shank'],[26,'smokebreak']]}
 };
 const WILDNAMES=['Tino','Deshawn','Moose','Pete','Skeeter','Vinny','Mikey','Rico','Lenny','Frankie','Gus','Duke','Tank','Ziggy','Shorty','Ollie','Cheeks','Nacho','Dre','Sal','Hank','Joey Pods','Big Mike','Lil Pete'];
@@ -648,17 +657,19 @@ const IT={
   beer:{n:'Prison Beer',d:'Warm. ATK up, but you stumble.',h:15},
   weed:{n:'Weed',d:'Heal 30. Def up, aim down.',h:30},
   shank:{n:'Shank',d:'Next hits cut deep. Bleeds.'},
-  perogi:{n:'Perogi',d:'Full heal and cures all. Baba made it.'}
+  perogi:{n:'Perogi',d:'Full heal and cures all. Baba made it.'},
+  shark:{n:'Shark Card',d:'Bonus! Cash it in: +40 L&M and +15 crew XP.'}
 };
-const BUY={cigs:0,beer:6,weed:9,shank:12,perogi:16};
-const RANKS=['FRESH FISH','SOLDIER','CAPO','UNDERBOSS','PODBOSS'];
-const PATCHES=['pBlake','pBones','pChuck','pSmokey'];
-const PATCHNAME={pBlake:"BLAKE'S",pBones:"BONES'",pChuck:"CHUCK'S",pSmokey:"SMOKEY'S"};
+const BUY={shark:99,cigs:0,beer:6,weed:9,shank:12,perogi:16};
+const RANKS=['FRESH FISH','SOLDIER','ENFORCER','CAPO','LIEUTENANT','UNDERBOSS','KINGPIN','WARLORD','PODBOSS'];
+const PATCHES=['pBlake','pIron','pKing','pBones','pChuck','pDoc','pMagoo','pSmokey'];
+const PATCHNAME={pIron:"IRON MIKE'S",pKing:"KITCHEN KING'S",pDoc:"DOC'S",pMagoo:"MAGOO'S",pBlake:"BLAKE'S",pBones:"BONES'",pChuck:"CHUCK'S",pSmokey:"SMOKEY'S"};
 
 function mstat(m){
   const b=SP[m.s].b,L=m.l;
   m.mhp=Math.floor(b[0]*L/16)+L+10;m.atk=Math.floor(b[1]*L/20)+5;
   m.def=Math.floor(b[2]*L/20)+5;m.spd=Math.floor(b[3]*L/20)+5;
+  if(typeof statHook==='function')statHook(m);
 }
 function mkMon(s,l,nm){
   const m={s,l,nm:nm||SP[s].n,xp:0,st:null,moves:[]};
@@ -672,7 +683,7 @@ const xpNeed=l=>l*l*3;
 const maxLevel=()=>G.gang.reduce((a,m)=>Math.max(a,m.l),1);
 function rank(){const n=PATCHES.filter(p=>G.flags[p]).length;return RANKS[n];}
 /* ===== MAPS: builders, layouts, NPCs ===== */
-const G={mode:'title',flags:{},items:{cigs:6,beer:0,weed:0,shank:0,perogi:0},gang:[],map:'intake',x:9,y:11,dir:1,steps:0,play:0,trays:{},seen:{}};
+const G={mode:'title',flags:{},items:{cigs:6,beer:0,weed:0,shank:0,perogi:0,shark:0},gang:[],map:'intake',x:9,y:11,dir:1,steps:0,play:0,trays:{},seen:{}};
 const MAPS={};
 const DIRS={d:0,u:1,l:2,r:3};
 function newMap(id,name,w,h,fillT,o){
@@ -710,7 +721,7 @@ function WP(m,x,y,to,tx,ty,dir,o){m.warps.push(Object.assign({x,y,to,tx,ty,dir},
   set(m,4,0,TL.POSTER);set(m,15,0,TL.POSTER);
   fill(m,1,1,4,1,TL.LOCKER);fill(m,6,4,8,1,TL.COUNTER);fill(m,15,1,3,1,TL.CRATE);
   set(m,2,9,TL.BENCH);set(m,3,9,TL.BENCH);set(m,16,10,TL.TV);set(m,16,3,TL.SINK);
-  set(m,19,7,TL.DOOR);
+  set(m,19,7,TL.DOOR);m.labels.push({x:18,y:6,t:'EXIT >>'},{x:9,y:2,t:'INTAKE DESK'});
   WP(m,19,7,'yard',24,21,0,{req:'gotSuit',deny:'Officer: Hey! Come here first. You are not walking out in street clothes.'});
   N(m,'officer',9,3,'d','cop',{reach:2,say:['intake']});
   N(m,'guardI',17,6,'l','guard',{say:['Guard: Walk straight, keep your mouth shut, and do not look at the cameras.']});
@@ -740,7 +751,7 @@ function WP(m,x,y,to,tx,ty,dir,o){m.warps.push(Object.assign({x,y,to,tx,ty,dir},
   WP(m,24,31,'blockD',19,26,1,{req:'pChuck',deny:'SEGREGATION. Guard: "Pod D? Only the pod bosses go up there. Beat Chin Chuck first."'});
   WP(m,8,28,'cafe',14,16,1);WP(m,40,28,'comm',8,10,1);WP(m,7,15,'med',8,9,1);WP(m,42,15,'gym',10,12,1);
   IM(m,'y_cigs',46,22,'cigs',3);IM(m,'y_beer',11,19,'beer');IM(m,'y_weed',33,19,'weed');IM(m,'y_shank',3,22,'shank');
-  IM(m,'y_perogi1',46,30,'perogi');IM(m,'y_perogi2',13,36,'perogi');
+  IM(m,'y_perogi1',46,30,'perogi');IM(m,'y_shark',45,22,'shark');IM(m,'y_perogi2',13,36,'perogi');
   N(m,'dougie',24,26,'u','dougie',{tr:TR('Bottle Boy Dougie',[['dougie',5,'DOUGIE']],{sight:6,win:3,join:'dougie',gag:1,
     pre:'Dougie: Yo, new guy! Nobody walks this yard without paying the Bottle Boy!',post:'Dougie: Okay okay, you got heart. Put me on your crew, boss.',lose:'Dougie: Pay up. Come back when you are not a fish.'})});
   N(m,'corey_y',27,19,'l','corey',{say:['Corey Bapes: Yo, you the new guy? Corey Bapes. I run the commissary, southeast corner.','Corey Bapes: Dirt and wet floors are where inmates jump you. Win fights, then DEAL cigs or weed to recruit them.']});
@@ -848,17 +859,21 @@ function block(id,name,o){
   N(m,'k1',7,13,'r','kitchen',{tr:TR('Dishwasher Dan',[['kitchen',9],['rookie',8]],{sight:5,win:7,pre:'Dan: You touched my tray? Fight me.',post:'Dan: Fine. Tray ladies are scarier anyway.'})});
   N(m,'k2',21,14,'l','lifer',{tr:TR('Mashed Potato Mike',[['lifer',10],['kitchen',10]],{sight:6,win:8,pre:'Mike: These potatoes are MINE.',post:'Mike: Take a perogi, you earned it.'})});
   IM(m,'cf_cigs',25,14,'cigs',3);
+  N(m,'kingk',22,14,'l','kingk',{boss:'pKing',tr:TR('KITCHEN KING',[['kitchen',17],['lifer',17],['kingk',19]],{sight:0,win:40,pre:'Kitchen King: Nobody eats in MY kitchen without paying the toll. Hands up, fish.',post:'Kitchen King: ...Take the patch. Tell the tray ladies I said be nice.',lose:'Kitchen King: Soup is getting cold. Come back.'})});
   m=newMap('comm','COMMISSARY',16,12,TL.WALL,{song:'calm'});
   fill(m,1,1,14,10,TL.FLOOR);fill(m,2,1,12,1,TL.SHELF);fill(m,4,4,8,1,TL.COUNTER);set(m,2,8,TL.CRATE);set(m,13,8,TL.CRATE);set(m,3,8,TL.CRATE);set(m,13,3,TL.POSTER);
   set(m,8,11,TL.DOOR);WP(m,8,11,'yard',40,27,1);
   N(m,'corey',7,3,'d','corey',{reach:2,say:['corey']});
+  N(m,'magoo',11,7,'l','magoo',{boss:'pMagoo',tr:TR('COMMISSAR MAGOO',[['goon',27],['bones',27],['magoo',30]],{sight:0,win:70,pre:'Commissar Magoo: Every pack of L&Ms in this jail passes through me. You want my patch? Pay up.',post:'Commissar Magoo: Fine. The books are yours. Do not tell Corey.',lose:'Commissar Magoo: No credit. Come back with muscle.'})});
   m=newMap('med','MEDICAL',16,11,TL.WALL,{song:'calm'});
   fill(m,1,1,14,9,TL.FLOOR);[2,4,11,13].forEach(x=>set(m,x,1,TL.BED));fill(m,6,4,4,1,TL.COUNTER);set(m,8,10,TL.DOOR);set(m,14,3,TL.SINK);
   WP(m,8,10,'yard',8,15,3);
   N(m,'nurse',8,3,'d','nurse',{reach:2,say:['nurse']});
+  N(m,'doc',11,7,'l','doc',{boss:'pDoc',tr:TR('DOC MORPHINE',[['lifer',23],['bones',24],['doc',25]],{sight:0,win:55,pre:'Doc Morphine: Oh good, a patient. Lie down. This will only hurt a LOT.',post:'Doc Morphine: Hm. Healthy as a horse. Take this patch. Do not sue.',lose:'Doc Morphine: Rest up. Doctor\'s orders.'})});
   m=newMap('gym','GYM',22,14,TL.WALL,{song:'yard'});
   fill(m,1,1,20,12,TL.FLOOR);fill(m,2,8,18,4,TL.MAT);fill(m,3,2,16,1,TL.WEIGHT);[4,6,16,18].forEach(x=>set(m,x,5,TL.WEIGHT));set(m,10,13,TL.DOOR);
   WP(m,10,13,'yard',41,15,2);
+  N(m,'ironm',16,6,'d','ironm',{boss:'pIron',tr:TR('IRON MIKE',[['goon',13],['lifer',13],['ironm',15]],{sight:0,win:30,pre:'Iron Mike: Nobody benches more than me. Nobody. Get under the bar, fish.',post:'Iron Mike: ...Respect. Take my patch. Lift more.',lose:'Iron Mike: Weak. Go train.'})});
   IM(m,'g_shank',2,2,'shank');IM(m,'g_perogi',20,2,'perogi');
   N(m,'gym1',6,10,'r','lifer',{tr:TR('Spotter Steve',[['lifer',7],['rookie',7]],{sight:5,win:6,pre:'Steve: I will spot you. Into the floor.',post:'Steve: Dang. Strong.'})});
   N(m,'gym2',15,10,'l','goon',{tr:TR('Coach Iron',[['goon',9],['lifer',9],['goon',9]],{sight:5,win:12,pre:'Coach: Four sets. No rest. No mercy.',post:'Coach: That is how you train.'})});
@@ -886,15 +901,30 @@ const tmpG=tmpC.getContext('2d');
 const stageMul=s=>s>=0?(2+s)/2:2/(2-s);
 const accMul=s=>s>=0?(3+s)/3:3/(3-s);
 const alive=m=>m.hp>0;
-function resetTemp(m){m.sg={atk:0,def:0,acc:0};m.stn=0;m.shk=0;m.dh=m.hp;}
+function resetTemp(m){m.sg={atk:0,def:0,acc:0,spd:0};m.stn=0;m.shk=0;m.dh=m.hp;}
 function cleanMon(m){delete m.sg;delete m.stn;delete m.shk;delete m.dh;m.stn=0;}
 
+const BENV={
+  yard:{n:'THE YARD',line:'The whole yard circles up. The crowd is LOUD, and they want blood.',acc:1,crit:.06,dmg:1,slip:0,fumble:0,big:1,tag:'CROWD: +CRITS'},
+  cafe:{n:'CAFETERIA',line:'Gravy all over the floor. Everybody is sliding around!',acc:.94,crit:0,dmg:1,slip:.07,fumble:.12,big:1,tag:'GREASY FLOOR',slipLines:['{a} slips on the gravy and eats the floor!','{a} slides on a stray perogi and whiffs completely!']},
+  gym:{n:'THE GYM',line:'Mats and iron. A fall here is cushioned, but the weights are right there.',acc:1,crit:.02,dmg:1,slip:0,fumble:0,big:.88,tag:'MATS: SLAMS -12%'},
+  med:{n:'MEDICAL',line:'Sterile and quiet. Nurse Rhonda is watching. Nobody wants a mess.',acc:1.05,crit:0,dmg:.92,slip:0,fumble:0,big:1,tag:'QUIET: -DMG'},
+  comm:{n:'COMMISSARY',line:'Narrow aisles, shelves everywhere. Swinging room is tight.',acc:.96,crit:.03,dmg:1,slip:0,fumble:.2,big:1,tag:'CRAMPED: FUMBLES'},
+  intake:{n:'INTAKE',line:'Cold concrete and buzzing lights. A camera is watching.',acc:1,crit:.03,dmg:1,slip:0,fumble:0,big:1,tag:'CAMERAS'},
+  pod:{n:'THE POD',line:'Tight quarters. Nowhere to run. Every swing counts.',acc:1.03,crit:.04,dmg:1.03,slip:0,fumble:.05,big:1,tag:'TIGHT QUARTERS'}
+};
+function battleEnv(){
+  const e=Object.assign({},BENV[G.map]||BENV.pod);
+  const h=typeof gameHour==='function'?gameHour():12;
+  if(h>=21||h<6){e.acc*=.93;e.crit+=.02;e.tag+=' + NIGHT';e.line+=' Lights are low. Aim is rough.';}
+  return e;
+}
 function startBattle(o){
   const foes=o.foes.map(f=>{resetTemp(f);return f;});
   G.gang.forEach(resetTemp);
   const first=G.gang.findIndex(alive);
   B={o,foes,fi:0,em:foes[0],pm:G.gang[first],part:new Set(),trainer:!!o.tr,boss:!!o.boss,
-     off:{p:{x:0,y:0,a:1,fl:0,vx:-90},e:{x:0,y:0,a:1,fl:0,vx:90}},proj:null,hint:null,choice:null,t:0,dizzy:{p:0,e:0},res:null,intro:true};
+     off:{p:{x:0,y:0,a:1,fl:0,vx:-90},e:{x:0,y:0,a:1,fl:0,vx:90}},proj:null,hint:null,choice:null,t:0,dizzy:{p:0,e:0},res:null,intro:true,env:battleEnv()};
   B.part.add(B.pm);
   G.mode='battle';Fx.fade=1;Fx.st=2;playSong(B.boss?'boss':'battle');
   Say.clear();Menus.length=0;
@@ -916,6 +946,7 @@ function* intro(){
   if(B.trainer)yield* talk(`${o.name} wants to fight!`);
   else yield* talk(`A wild ${B.em.nm} the ${SP[B.em.s].n} appeared!`);
   if(B.trainer&&B.foes.length>1)yield* talk(`${o.name} sends out ${B.em.nm}!`);
+  yield* talk(`${B.env.line}  [${B.env.tag}]`,40);
   yield* talk(`Go! ${B.pm.nm}!`);
   B.intro=false;
 }
@@ -1011,7 +1042,8 @@ function* resolveTurn(pc){
   const pi=pc.i,ei=enemyMove();
   const pmv=pc.t==='arm'?G.L.arms[pi]:(pi>=0?B.pm.moves[pi]:{id:'struggle',pp:1}),emv=ei>=0?B.em.moves[ei]:{id:'struggle',pp:1};
   const pp=(M[pmv.id].pri||0),ep=(M[emv.id].pri||0);
-  let pFirst=pp!==ep?pp>ep:(B.pm.spd!==B.em.spd?B.pm.spd>B.em.spd:Math.random()<.5);
+  const ps_=B.pm.spd*stageMul(B.pm.sg.spd||0),es_=B.em.spd*stageMul(B.em.sg.spd||0);
+  let pFirst=pp!==ep?pp>ep:(ps_!==es_?ps_>es_:Math.random()<.5);
   const order=pFirst?[['p',pmv],['e',emv]]:[['e',emv],['p',pmv]];
   for(const [s,mv] of order){
     const att=s==='p'?B.pm:B.em;
@@ -1058,23 +1090,26 @@ function* execMove(s,mvslot){
   if(d.fx==='lukey')yield* talk(`${att.nm} yells "I'LL GIVE YOU LUKEY!!"`,40);
   else yield* talk(d.s?storyLine(d,att,def,s):`${att.nm} used ${d.n}!`,d.s?44:28);
   // accuracy
-  let acc=d.a*accMul(att.sg.acc);
-  if(!d.self&&Math.random()*100>acc){if(d.p&&hasCombo(mvslot.id)&&R3.ok){yield* comboFight(s,mvslot.id,Math.max(1,d.p),true);}sfx.miss();yield* talk('But it missed!',26);return;}
+  const E=B.env||BENV.pod;
+  if(E.slip&&Math.random()<E.slip&&!d.self){sfx.miss();Fx.shake=8;yield* talk(pick(E.slipLines||['slips!']).replace('{a}',att.nm),30);yield* hurt(s,Math.max(1,Math.floor(att.mhp*.04)));return;}
+  let acc=d.a*accMul(att.sg.acc)*E.acc;
+  if(!d.self&&Math.random()*100>acc){if(d.p&&hasCombo(mvslot.id)&&R3.ok){yield* comboFight(s,mvslot.id,Math.max(1,d.p),true);}sfx.miss();if(typeof plCount==='function'&&s==='e'&&def.s==='bandit')plCount('dodge',1);yield* talk('But it missed!',26);return;}
   // bottle fumble
-  if(d.fx==='bottle'&&Math.random()<.22){yield* bottleFumble(s,att);return;}
+  if(d.fx==='bottle'&&Math.random()<.22+E.fumble){yield* bottleFumble(s,att);return;}
   if(d.fx==='bottle')yield* bottleThrow(s);
   if(d.p){
     if(!hasCombo(mvslot.id))yield* lunge(s,mvslot.id);
-    const crit=Math.random()<((d.crit||att.shk>0)?.25:.0625);
+    const crit=Math.random()<(((d.crit||att.shk>0)?.25:.0625)+E.crit+(att.s==='bandit'?(typeof plCrit==='function'?plCrit():0):0));
     let bonus=att.shk>0?1.3:1;
     if(d.fx==='stunbonus'&&def.stn>0)bonus*=2;
     if(d.fx==='lukey')bonus*=1;
     const A=att.atk*stageMul(att.sg.atk),D=def.def*stageMul(def.sg.def);
     const tm=typeMult(d.t,SP[def.s].t),stab=SP[att.s].t===d.t?1.25:1;
     let dmg=Math.floor(((2*att.l/5+2)*d.p*A/D)/50)+2;
-    dmg=Math.max(1,Math.floor(dmg*tm*stab*(crit?1.6:1)*(.85+Math.random()*.15)*bonus));
+    dmg=Math.max(1,Math.floor(dmg*tm*stab*(crit?1.6:1)*(.85+Math.random()*.15)*bonus*E.dmg*(E.big&&d.p>=95?E.big:1)));
     dmg=Math.min(dmg,def.hp);
     crit?sfx.crit():sfx.hit();
+    if(typeof plCount==='function'){if(s==='p'&&att.s==='bandit'){plCount('hit',1);if(crit)plCount('crit',1);}if(s==='e'&&def.s==='bandit')plCount('taken',dmg);}
     if(d.fx==='lukey'){Fx.shake=16;Fx.flashCol='#4aa0ff';Fx.flash=8;}
     if(hasCombo(mvslot.id))yield* comboFight(s,mvslot.id,dmg,false);else yield* hurt(ds,dmg);
     if(crit)yield* talk('A critical hit!',22);
@@ -1085,11 +1120,9 @@ function* execMove(s,mvslot){
     if(tm>1)yield* talk("It's super effective!",24);else if(tm<1)yield* talk("It's not very effective...",24);
     if(d.fx==='recoil'){const rc=Math.max(1,Math.floor(dmg/4));yield* hurt(s,rc);yield* talk(`${att.nm} hurt itself in the process!`,24);}
     if(alive(def)){
-      if(d.fx==='stun'&&Math.random()*100<(d.c||20)){def.stn=1;B.dizzy[ds]=90;yield* talk(`${def.nm} is stunned!`,24);}
       if(d.fx==='lukey'){def.stn=1;B.dizzy[ds]=90;yield* talk(`The cops swarm in! ${def.nm} is stunned!`,34);}
-      if(d.fx==='defdown'&&Math.random()*100<(d.c||40)){def.sg.def=Math.max(-3,def.sg.def-1);yield* talk(`${def.nm}'s defense fell!`,24);}
-      if(d.fx==='bleed'&&Math.random()*100<(d.c||30)&&!def.st){def.st='bleed';yield* talk(`${def.nm} is bleeding!`,26);}
-      else if(att.shk>0&&Math.random()<.4&&!def.st){def.st='bleed';yield* talk(`${def.nm} is cut deep and bleeding!`,26);}
+      else{yield* applyFx(d.fx,d.c,att,def,ds,s);yield* applyFx(d.fx2,d.c2,att,def,ds,s);}
+      if(att.shk>0&&Math.random()<.4&&!def.st){def.st='bleed';yield* talk(`${def.nm} is cut deep and bleeding!`,26);}
     }
     if(d.fx==='steal'&&Math.random()*100<(d.c||40)){
       const n=ri(1,3);
@@ -1103,11 +1136,24 @@ function* execMove(s,mvslot){
   switch(d.fx){
     case 'atkdown':def.sg.atk=Math.max(-3,def.sg.atk-1);sfx.blip();yield* talk(`${def.nm}'s attack fell!`,26);break;
     case 'accdown':def.sg.acc=Math.max(-3,def.sg.acc-1);sfx.blip();yield* talk(`${def.nm}'s aim got worse!`,26);break;
+    case 'spddown':def.sg.spd=Math.max(-3,(def.sg.spd||0)-1);sfx.blip();yield* talk(`${def.nm} slows down!`,26);break;
     case 'defup':att.sg.def=Math.min(3,att.sg.def+1);sfx.heal();yield* talk(`${att.nm}'s defense rose!`,26);break;
     case 'atkup':att.sg.atk=Math.min(3,att.sg.atk+1);sfx.heal();yield* talk(`${att.nm}'s attack rose!`,26);break;
     case 'heal':{const h=Math.max(1,Math.floor(att.mhp*.4));att.hp=Math.min(att.mhp,att.hp+h);sfx.heal();yield* talk(`${att.nm} recovered health!`,26);break;}
     case 'drunkup':att.sg.atk=Math.min(3,att.sg.atk+2);if(!att.st)att.st='drunk';sfx.bottle();yield* talk(`${att.nm} chugs a beer. Attack way up, but wobbly!`,30);break;
     case 'high':att.sg.def=Math.min(3,att.sg.def+1);att.sg.acc=Math.max(-3,att.sg.acc-1);if(!att.st)att.st='high';sfx.heal();yield* talk(`${att.nm} takes a rip. Chill. Tougher, but the aim is off.`,32);break;
+  }
+}
+function* applyFx(fx,c,att,def,ds,s){
+  if(!fx||!alive(def))return;
+  const hit=Math.random()*100<(c||35);
+  switch(fx){
+    case 'stun':if(hit){def.stn=1;B.dizzy[ds]=90;yield* talk(`${def.nm} is stunned!`,24);}break;
+    case 'defdown':if(hit){def.sg.def=Math.max(-3,def.sg.def-1);sfx.blip();yield* talk(`${def.nm}'s guard is broken! Defense fell!`,26);}break;
+    case 'atkdown':if(hit){def.sg.atk=Math.max(-3,def.sg.atk-1);sfx.blip();yield* talk(`${def.nm} is rattled! Attack fell!`,26);}break;
+    case 'accdown':if(hit){def.sg.acc=Math.max(-3,def.sg.acc-1);sfx.blip();yield* talk(`${def.nm} can't see straight! Accuracy fell!`,26);}break;
+    case 'spddown':if(hit){def.sg.spd=Math.max(-3,(def.sg.spd||0)-1);sfx.blip();yield* talk(`${def.nm}'s legs are heavy! Speed fell!`,26);}break;
+    case 'bleed':if(hit&&!def.st){def.st='bleed';yield* talk(`${def.nm} is bleeding!`,26);}break;
   }
 }
 function* bottleThrow(s){
@@ -1147,6 +1193,15 @@ function* applyItem(id,m,inBattle){
   sfx.heal();yield* talk(id==='weed'?`${m.nm} gets mellow. +${amt} HP, tougher but the aim is off.`:`${m.nm} smokes an L&M and calms down. +${amt} HP.`,32);
 }
 function* tryDeal(pc){
+  const f=B.em;G.items[pc.id]--;
+  yield* talk(`You offer ${f.nm} some ${IT[pc.id].n}...`,34);
+  const ch=clamp(.35+(1-f.hp/f.mhp)*.4,.2,.9);
+  for(let i=0;i<3;i++){sfx.blip();B.off.e.y=-3;yield 8;B.off.e.y=0;yield 8;}
+  if(Math.random()<ch){sfx.caught();f.stn=1;f.sg.atk=Math.max(-3,f.sg.atk-1);B.dizzy.e=90;yield* talk(`${f.nm} grabs it and starts counting. "Hold on, hold on..." Distracted! Attack fell.`,40);}
+  else{sfx.miss();yield* talk(`${f.nm} laughs. "Not enough."`,34);}
+  return 'fail';
+}
+function* tryDealOld(pc){
   const f=B.em;
   if(G.gang.length>=6){yield* talk('Your crew is full (6)! Release someone first.');return 'fail';}
   G.items[pc.id]--;
@@ -1170,6 +1225,7 @@ function* checkFaints(){
   if(!alive(B.em)){
     sfx.hit();for(let i=0;i<14;i++){B.off.e.y+=3;B.off.e.a=1-i/14;yield 1;}B.off.e.a=0;
     yield* talk(`${B.em.nm} is down!`,30);
+    if(typeof plCount==='function')plCount('ko',1);
     yield* award();
     if(B.fi+1<B.foes.length){
       B.fi++;B.em=B.foes[B.fi];B.off.e={x:0,y:0,a:1,fl:0,vx:90};
@@ -1190,6 +1246,7 @@ function* checkFaints(){
   return null;
 }
 function* award(){
+  if(Math.random()<(B.boss?.2:.05)){G.items.shark=(G.items.shark||0)+1;yield* talk('Dropped a SHARK CARD! Bonus!',24);}
   const base=Math.floor(B.em.l*(B.trainer?18:12)*(B.boss?1.5:1));
   const ups=[];
   for(const m of G.gang){
@@ -1197,9 +1254,10 @@ function* award(){
     const g2=B.part.has(m)?base:Math.floor(base/2);
     m.xp+=g2;
     if(B.part.has(m))yield* talk(`${m.nm} gains ${g2} XP.`,24);
-    while(m.xp>=xpNeed(m.l)&&m.l<40){
+    while(m.xp>=xpNeed(m.l)&&m.l<100){
       m.xp-=xpNeed(m.l);const oh=m.mhp;m.l++;mstat(m);m.hp+=m.mhp-oh;
       sfx.level();yield* talk(`${m.nm} grew to level ${m.l}!`,34);
+      if(m.s==='bandit'&&typeof plLevelUp==='function'){plLevelUp(m);yield* talk('+3 STAT POINTS! Spend them in STATS (pause menu).',34);}
       for(const e of SP[m.s].ls)if(e[0]===m.l)yield* learnMove(m,e[1]);
     }
   }
@@ -1415,11 +1473,9 @@ function* fight(n){
   Wd.noEnc=G.steps+4;
   if(res==='win'){
     G.flags['d_'+n.id]=1;
-    if(n.tr.join&&G.gang.length<6){
-      const mon=mkMon(n.tr.join,n.tr.team[0][1]);mon.hp=mon.mhp;
-      G.gang.push(mon);sfx.caught();G.flags['gone_'+n.id]=1;
-      yield* talk(`${mon.nm} joins your crew!`,60);
-    }else if(n.tr.join){yield* talk('Your crew is full! Release someone and talk to him again.',0);G.flags['d_'+n.id]=0;}
+    if(typeof plCount==='function')plCount('win',1);
+    if(G.crew){G.crew.wins=(G.crew.wins||0)+1;crewGain(n.boss?60:(n.tr.team.length>1?30:14));}
+    if(n.tr.join)yield* talk(`${n.tr.name} respects you now. Maybe ask him to join your crew once you have one.`,0);
     if(n.boss==='pSmokey'){yield* ending();return;}
     if(n.boss)yield* talk(`The ${PATCHES.filter(p=>G.flags[p]).length} patch${PATCHES.filter(p=>G.flags[p]).length>1?'es':''} on your jumpsuit show everyone who runs this place.`,0);
   }else if(res==='lose'){yield* whiteout();}
@@ -1468,13 +1524,16 @@ function tray(x,y){
   const r=Math.random();
   if(r<.45){G.items.perogi++;sfx.pick();say('You sneak a hot perogi off the tray! Potato and cheese.');}
   else if(r<.7){G.items.perogi+=2;sfx.pick();say('Jackpot! Two fresh perogis, still steaming!');}
+  else if(r<.84){G.items.shark=(G.items.shark||0)+1;sfx.pick();say('A SHARK CARD taped under the tray! Bonus!');}
   else if(r<.9){G.items.cigs+=2;sfx.pick();say('No perogis, but somebody left 2 L&M packs under the tray.');}
   else say('Cold mashed potatoes. The ladies laugh at you.');
 }
 function talkNpc(n){
   if(n.br)return brawlInteract(n);
   if(n.tr){
-    if(defeated(n)){say(n.tr.post||'...');return;}
+    if(defeated(n)){
+      if(n.tr.join&&!G.flags['gone_'+n.id]){openMenu({x:100,y:60,w:136,title:n.tr.name.toUpperCase().slice(0,18),items:[{l:'TALK',f:()=>say(n.tr.post||'...')},{l:'ASK TO JOIN',f:()=>askStory(n)},{l:'LEAVE',f:()=>{}}]});return;}
+      say(n.tr.post||'...');return;}
     Cs.run((function*(){yield* challenge(n);})());return;
   }
   const s=n.say||['...'];
@@ -1536,13 +1595,16 @@ function corey(){
     const items=[{l:'BUY STUFF',f:buyMenu},{l:'TALK',f:()=>{
       say(pick(['Corey Bapes: Shanks are on sale. I did not say that. Never said it.','Corey Bapes: Pro tip: DEAL with weed. Yard guys love weed.','Corey Bapes: Sneak beats Charm. Charm beats Muscle. Muscle beats Sneak. Like rock paper scissors, but with shanks.','Corey Bapes: Big Blake is slow. Hit him with Sneak moves.']));
     }}];
+    if(G.flags.coreyJoin&&!G.flags.coreyIn)items.push({l:'ASK TO JOIN',f:()=>{
+      if(!G.crew){say('Corey Bapes: A crew? You do not even have a name yet, boss. Make some noise first.');return;}
+      if(G.gang.length>=crewCap()){say(`Corey Bapes: ${G.crew.name} is full. Level the crew up.`);return;}
+      ask(`Ask Corey Bapes to join ${G.crew.name}?`,()=>{const c=mkMon('corey',Math.max(10,maxLevel()-2));c.hp=c.mhp;G.gang.push(c);G.flags.coreyIn=1;sfx.caught();say(`Corey Bapes joins ${G.crew.name}! He still runs the shop though. Priorities.`);crewGain(25);});
+    }});
     if(!G.flags.coreyJoin)items.push({l:'GIVE 3 PEROGI',d:!can,f:()=>{
       Cs.run((function*(){
         G.items.perogi-=3;G.flags.coreyJoin=1;
         yield* talk('Corey Bapes: THREE PEROGIS? Bro. You just made a friend for life.',0);
-        if(G.gang.length<6){const c=mkMon('corey',Math.max(10,maxLevel()-2));c.hp=c.mhp;G.gang.push(c);sfx.caught();
-          yield* talk('Corey Bapes joins your crew! He still runs the shop though. Priorities.',0);}
-        else{yield* talk('Corey Bapes: Your crew is full. Free up a slot and come back.',0);G.flags.coreyJoin=0;G.items.perogi+=3;}
+        yield* talk('Corey Bapes: If you ever put a crew together, ask me. I will join. I still run the shop though. Priorities.',0);
       })());
     }});
     items.push({l:'LEAVE',f:()=>{}});
@@ -1557,12 +1619,12 @@ function corey(){
 
 /* ---- pause / menus ---- */
 function openPause(){
-  const items=[{l:'GANG',f:gangMenu},{l:'BAG',f:bagMenu},{l:'RANK',f:rankInfo},{l:'SAVE',f:()=>{saveGame();}},{l:muted?'SOUND: OFF':'SOUND: ON',f:()=>{muted=!muted;}}];
+  const items=[{l:'GANG',f:gangMenu},{l:'STATS',f:statsMenu},{l:'CREW',f:crewMenu},{l:'BAG',f:bagMenu},{l:'RANK',f:rankInfo},{l:'SAVE',f:()=>{saveGame();}},{l:muted?'SOUND: OFF':'SOUND: ON',f:()=>{muted=!muted;}}];
   openMenu({x:144,y:6,w:90,items});
 }
 function gangMenu(){
   const items=G.gang.map((m,i)=>({l:m.nm.slice(0,10),r:`L${m.l} ${m.hp}/${m.mhp}`,f:()=>gangSub(i)}));
-  openMenu({x:4,y:20,w:232,items,title:'GANG ('+G.gang.length+'/6)',vis:6});
+  openMenu({x:4,y:20,w:232,items,title:(G.crew?G.crew.name.toUpperCase().slice(0,12):'YOU')+' ('+G.gang.length+'/'+crewCap()+')',vis:6});
 }
 function gangSub(i){
   const m=G.gang[i];
@@ -1574,8 +1636,9 @@ function gangSub(i){
   openMenu({x:130,y:30,w:106,items});
 }
 function bagMenu(){
-  const ids=['cigs','beer','weed','shank','perogi'];
+  const ids=['cigs','beer','weed','shank','perogi','shark'];
   const items=ids.map(id=>({l:IT[id].n,r:'x'+(G.items[id]||0),d:!(G.items[id]>0),f:()=>{
+    if(id==='shark'){G.items.shark--;G.items.cigs+=40;if(G.crew)G.crew.xp+=15;sfx.pick();say('SHARK CARD cashed in! +40 L&M'+(G.crew?' and +15 crew XP':'')+'. Ballin.');return;}
     if(!['cigs','weed','perogi'].includes(id)){say(IT[id].d+' (Battle use only.)');return;}
     const t=G.gang.map((m,i)=>({l:m.nm.slice(0,10),r:`${m.hp}/${m.mhp}`,f:()=>useOutside(id,m)}));
     openMenu({x:4,y:20,w:232,items:t,title:'USE '+IT[id].n.toUpperCase()+' ON',vis:6});
@@ -1598,7 +1661,7 @@ function rankInfo(){
 const SAVEKEY='regal_bandit_lockup_v1';
 function saveGame(){
   try{
-    localStorage.setItem(SAVEKEY,JSON.stringify({map:G.map,x:G.x,y:G.y,dir:G.dir,flags:G.flags,items:G.items,gang:G.gang,steps:G.steps,trays:G.trays,babaT:G.babaT||0,v:G.v,met:G.met}));
+    localStorage.setItem(SAVEKEY,JSON.stringify({pl:G.pl,crew:G.crew,L:G.L,map:G.map,x:G.x,y:G.y,dir:G.dir,flags:G.flags,items:G.items,gang:G.gang,steps:G.steps,trays:G.trays,babaT:G.babaT||0,v:G.v,met:G.met}));
     sfx.ok();say('Game saved.');
   }catch(e){say('Could not save here. (Storage is blocked.)');}
 }
@@ -1606,7 +1669,7 @@ function hasSave(){try{return !!localStorage.getItem(SAVEKEY);}catch(e){return f
 function loadGame(){
   try{
     const d=JSON.parse(localStorage.getItem(SAVEKEY));if(!d)return false;
-    Object.assign(G,{flags:d.flags,items:d.items,gang:d.gang,steps:d.steps,trays:d.trays||{},babaT:d.babaT||0,v:d.v||V0(),met:d.met||{}});
+    Object.assign(G,{pl:d.pl||PL0(),crew:d.crew||null,L:d.L||L0(),flags:d.flags,items:d.items,gang:d.gang,steps:d.steps,trays:d.trays||{},babaT:d.babaT||0,v:d.v||V0(),met:d.met||{}});
     G.gang.forEach(cleanMon);
     enterMap(d.map,d.x,d.y,d.dir);G.mode='world';return true;
   }catch(e){return false;}
@@ -1614,7 +1677,7 @@ function loadGame(){
 
 /* ---- world update / draw ---- */
 function worldUpdate(){
-  brawlUpdate();
+  brawlUpdate();plFlush();crewCheck();
   if(Wd.bumped>0)Wd.bumped--;
   if(Say.on){Say.update();return;}
   if(Menus.length){menuUpdate();return;}
@@ -1661,8 +1724,30 @@ function worldDraw2D(){
   }
 }
 
+
+/* ---- objective marker: a bouncing arrow over the next step + a banner line ---- */
+function objective(){
+  if(G.map==='intake'){
+    if(!G.flags.gotSuit)return {x:9,y:3,t:'TALK TO THE OFFICER'};
+    return {x:19,y:7,t:'EXIT DOOR >>  GO OUTSIDE'};
+  }
+  return null;
+}
+function drawObjective(){
+  const o=objective();if(!o||Say.on||Menus.length)return;
+  const ph=Date.now()/260,bob=Math.sin(ph)*3;
+  let p=R3.ok?r3Proj(o.x+.5,2.7,o.y+.5):null;
+  if(p){
+    const ax=clamp(p[0],10,W-10),ay=clamp(p[1],14,H-30),off=(p[0]<10||p[0]>W-10||p[1]<14||p[1]>H-30);
+    g.fillStyle='#000';g.beginPath();g.moveTo(ax-8,ay+bob-1);g.lineTo(ax+8,ay+bob-1);g.lineTo(ax,ay+bob+13);g.fill();
+    g.fillStyle=(Date.now()>>8)&1?'#ffd23a':'#ff9a3a';g.beginPath();g.moveTo(ax-6,ay+bob+1);g.lineTo(ax+6,ay+bob+1);g.lineTo(ax,ay+bob+10);g.fill();
+  }
+  const w=o.t.length*6+12,y=H-OFF()-24>0?H-26:H-26;
+  g.fillStyle='rgba(0,0,0,.72)';g.fillRect(120-w/2,y,w,12);g.strokeStyle='#ffd23a';g.lineWidth=1;g.strokeRect(120-w/2+.5,y+.5,w-1,11);
+  tx(o.t,120,y+2,'#ffd23a','center');
+}
 function worldDraw(){
-  if(!R3.ok){worldDraw2D();return;}
+  if(!R3.ok){worldDraw2D();drawObjective();return;}
   const m=cur();
   render3DWorld();
   
@@ -1673,7 +1758,7 @@ function worldDraw(){
     panel(60,6+y,120,16);tx(Wd.banner.t,120,10+y,'#ffd23a','center');
     const zz=ZONE[G.map];if(zz){const col=zz.d>.8?'#ff5a4a':zz.d>.5?'#ff9a3a':zz.d>.25?'#ffd23a':'#7fe08a';tx('THREAT: '+zz.tag,120,26+y,col,'center');}
   }
-  brawlDraw2D();
+  brawlDraw2D();drawObjective();
 }
 /* ===== MINI 3D ENGINE (raw WebGL1) ===== */
 const glc=document.getElementById('gl');
@@ -2489,12 +2574,14 @@ function choice(c,n){
   });
   if(!items.some(i=>i.l==='SELL WEED')&&G.items.weed>0)add('SELL WEED',()=>act(c,'weed'));
   if(c.temp==='hot'||c.temp==='scrap'||c.temp==='grump')add('FIGHT HIM',()=>duel(n,c,`${name}: Oh, it's ON.`));
+  add('ASK TO JOIN',()=>askJoin(c,n));
   add('LEAVE',()=>{say(pk([`${name}: Later.`,`${name}: Don't be a stranger. Be a normal person.`,`${name}: Peace out. Or in. Whatever.`]));});
   openMenu({x:56,y:Math.max(24,H-68-(items.length*13+20)),w:180,items,title:name.toUpperCase().slice(0,22),cancel:()=>{}});
 }
 function act(c,k){
   const v=vv(),mt=metOf(c.id),T_=TRAIT[c.tr],nm=c.nm;
-  const cool=()=>{mt.cd=G.steps+90;};
+  const r0=v.resp+v.cheer+v.fav;
+  const cool=()=>{mt.bond=(mt.bond||0)+Math.max(0,(v.resp+v.cheer+v.fav)-r0);mt.cd=G.steps+90;};
   const heat=(h)=>{v.heat=Math.max(0,v.heat+h);if(v.heat>=5)say('⚠ Heat is climbing. Guards are staring.');};
   switch(k){
    case 'joke':{
@@ -2597,7 +2684,7 @@ function duel(n,c,pre,post){
     yield* challenge(n);
     const won=!!G.flags['d_'+n.id];
     n.tr=null;delete G.flags['d_'+n.id];
-    if(won){const v=vv();v.resp+=2+Math.floor(z.d*3);}
+    if(won){const v=vv();v.resp+=2+Math.floor(z.d*3);metOf(c.id).beat=1;metOf(c.id).bond=(metOf(c.id).bond||0)+2;}
   })());
 }
 
@@ -3565,60 +3652,90 @@ function cineSeated(L,x,y,z,yaw,pose,sc){
   const p=Object.assign({legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5},pose);
   person3(L,x,z,yaw,p,sc||1,y===undefined?-.2:y);
 }
+function phone3(p,on,tilt){
+  B3(p[0],p[1],p[2],.1,.05,.2,[.05,.05,.07,1],null,tilt||0,0,0);
+  B3(p[0],p[1]+.028,p[2],.085,.01,.17,on?[.55,.85,1,1]:[.08,.1,.14,1],{emit:on?1:.1},tilt||0,0,0);
+  if(on)glow3(p[0],p[1]+.1,p[2],.9,[.6,.85,1],.55);
+}
 function sceneCouch(){
-  nightEnv([.25,.0,.1]);R3.env.fnear=18;R3.env.ffar=40;
-  camSet(34,[-3.2,2.1,7.2],[.2,1.0,0],.42);
-  B3(0,-.05,0,14,.1,12,[.35,.22,.2,1]);BT(null,0,0,0,0,0,0);                    // floor
-  B3(0,2.5,-3.3,14,5.2,.2,[.2,.14,.3,1]);B3(-6.5,2.5,0,.2,5.2,12,[.22,.15,.3,1]);
-  B3(3.2,2.7,-3.15,3.2,2.2,.08,[.04,.06,.14,1]);B3(3.2,2.7,-3.1,2.9,1.9,.04,[.2,.35,.7,1],{emit:.85});      // window
+  nightEnv([.25,.0,.1]);R3.env.fnear=18;R3.env.ffar=40;R3.env.amb=[.85,.7,.85];
+  camSet(34,[-3.0,1.9,6.6],[.1,.85,-1.3],.42);
+  B3(0,-.05,-1,14,.1,12,[.38,.24,.22,1]);
+  B3(0,2.5,-3.3,14,5.2,.2,[.22,.16,.32,1]);B3(-6.5,2.5,-1,.2,5.2,12,[.24,.17,.32,1]);
+  B3(3.2,2.7,-3.15,3.2,2.2,.08,[.04,.06,.14,1]);B3(3.2,2.7,-3.1,2.9,1.9,.04,[.2,.35,.7,1],{emit:.85});
   for(let i=0;i<6;i++)B3(2.1+i*.45,2.2+((i*5)%4)*.2,-3.05,.12,.3+((i*7)%3)*.3,.03,[.95,.8,.4,1],{emit:1});
-  // couch
-  B3(0,.28,-1.4,3.6,.56,1.5,[.6,.18,.28,1]);B3(0,.78,-2.0,3.6,.9,.45,[.5,.14,.24,1]);B3(-1.9,.5,-1.4,.35,.95,1.5,[.46,.12,.22,1]);B3(1.9,.5,-1.4,.35,.95,1.5,[.46,.12,.22,1]);
-  B3(0,.58,-1.15,1.5,.12,.9,[.68,.24,.34,1]);B3(-.9,.58,-1.15,1.5,.12,.9,[.68,.24,.34,1]);
-  // coffee table + cans
-  B3(0,.28,.7,1.8,.12,.9,[.3,.2,.14,1]);B3(-.7,.58,.7,.12,.16,.12,[.1,.4,.9,1]);B3(-.4,.58,.9,.12,.16,.12,[.1,.4,.9,1]);B3(.5,.5,.7,.5,.04,.35,[.9,.9,.8,1]);
-  // lamp
+  // low couch: seat top is at y=.3 so a seated Larry's feet reach the floor
+  B3(0,.15,-1.5,3.6,.3,1.5,[.55,.16,.26,1]);B3(0,.55,-2.17,3.6,.85,.3,[.48,.13,.22,1]);
+  B3(-1.85,.35,-1.5,.3,.7,1.5,[.44,.11,.2,1]);B3(1.85,.35,-1.5,.3,.7,1.5,[.44,.11,.2,1]);
+  B3(-.85,.34,-1.35,1.5,.1,1.1,[.66,.22,.32,1]);B3(.85,.34,-1.35,1.5,.1,1.1,[.66,.22,.32,1]);
+  // coffee table + cans, just in front of his shins
+  B3(0,.17,.05,1.8,.34,.7,[.3,.2,.14,1]);B3(-.55,.42,.0,.12,.16,.12,[.1,.4,.9,1]);B3(-.25,.42,.15,.12,.16,.12,[.1,.4,.9,1]);B3(.5,.37,.05,.5,.04,.35,[.9,.9,.8,1]);
   C3(-2.8,1.1,-2.6,.12,2.2,.12,[.3,.3,.3,1]);S3(-2.8,2.4,-2.6,.7,.5,.7,[1,.85,.5,1],{emit:1});pool3(-2.8,-2.6,6,[1,.8,.4],.3);
-  // Bandit: seated, phone to ear
-  const ring=IS.ring;const ear=armIK(.1,.3,1);
-  const pose={armR:[ear[0],-.05],elbR:ear[1],armL:[-.55,.15],elbL:1.5,bob:Math.sin(IS.t/22)*.01,headX:.05,headY:-.25,lean:.0};
-  cineSeated(BSTREET,0,-.2,-1.35,-.15,pose,1.1);
-  // phone
-  const ph=[.52,1.5,-1.18];B3(ph[0],ph[1],ph[2],.1,.28,.04,[.06,.06,.08,1],{});B3(ph[0]-.0,ph[1],ph[2]+.025,.08,.24,.01,[.5,.8,1,1],{emit:1});
-  if(ring){glow3(ph[0],ph[1],ph[2]+.1,.9,[.6,.85,1],.7);}
+  // Larry: sits back into the cushion, thighs on the seat, feet flat, phone at the ear
+  const sc=1.1,y0=.3-.5*sc+.0;
+  const ear=armIK(.1*sc,.34*sc,sc);
+  const pose={armR:[ear[0],-.03],elbR:ear[1],armL:[-.35,.25],elbL:1.2,legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5,bob:Math.sin(IS.t/22)*.008,headX:.04,headY:-.3,lean:-.08,roll:.0};
+  person3(BSTREET,0,-1.55,0,pose,sc,y0);
+  const ph=rigPoint(0,y0,-1.55,0,[.42,1.27,.06],sc);
+  phone3([ph[0],ph[1],ph[2]],!!IS.ring,Math.PI/2);
   r3Flush();
 }
 function sceneGym(){
   nightEnv([.2,.12,.05]);R3.env.amb=[.9,.82,.85];R3.env.sun=[.95,.9,.85];R3.env.fnear=20;R3.env.ffar=46;
-  const e=(1-Math.cos(IS.pu||0))/2;
-  camSet(33,[2.6,1.55,5.4],[0,1.45,0],.43);
+  camSet(33,[2.4,1.7,6.0],[.9,1.3,0],.43);
   B3(0,-.05,0,13,.1,13,[.22,.22,.26,1]);B3(0,2.8,-3.6,13,6,.2,[.14,.13,.2,1]);B3(-6.5,2.8,0,.2,6,13,[.16,.14,.22,1]);
-  B3(0,3.6,-3.45,5,.8,.06,[1,.4,.2,1],{emit:.7});                                   // neon strip
-  B3(4,2.2,-3.45,3,3,.06,[.3,.55,.9,1],{emit:.35});                                   // mirror
-  // rack + plates + bench
+  B3(0,3.6,-3.45,5,.8,.06,[1,.4,.2,1],{emit:.7});
+  B3(4,2.2,-3.45,3,3,.06,[.3,.55,.9,1],{emit:.35});
   B3(-4,1.0,-2.6,.2,2,.2,[.2,.2,.24,1]);B3(-2.8,1.0,-2.6,.2,2,.2,[.2,.2,.24,1]);B3(-3.4,1.9,-2.6,1.6,.1,.1,[.3,.3,.35,1]);
   for(let i=0;i<4;i++){C3(-4.0+i*.4,.4,-2.2,.7,.12,.7,[.1,.1,.12,1],null,Math.PI/2,0,0);}
-  B3(-1.6,.4,-1.6,1.7,.3,.7,[.1,.1,.14,1]);C3(-1.6,.9,-1.6,.1,2.2,.1,[.7,.72,.78,1],null,0,0,Math.PI/2);C3(-2.55,.9,-1.6,.8,.1,.8,[.08,.08,.1,1],null,0,0,Math.PI/2);
-  // the pull-up bar (door frame rig)
+  B3(-1.9,.4,-1.6,1.7,.3,.7,[.1,.1,.14,1]);
   const Bh=2.35,Bz=.18;
   B3(-1.1,Bh/2,Bz,.14,Bh+.1,.14,[.22,.22,.26,1]);B3(1.1,Bh/2,Bz,.14,Bh+.1,.14,[.22,.22,.26,1]);
   C3(0,Bh,Bz,.1,2.2,.1,[.82,.84,.9,1],{emit:.2},0,0,Math.PI/2);
-  // Boggs hangs from the bar: shoulders & hands pinned to it
+  // side table with the phone on it
+  const TB=[2.0,.5];
+  B3(TB[0],.36,TB[1],.9,.72,.7,[.3,.22,.16,1]);
   const sc=1.1,hang=.54*sc,top=.02*sc;
-  const sy=lerp3(Bh-hang,Bh+.04-top,e);       // shoulder height
-  const y0=sy-.95*sc;
-  const dz=lerp3(.0,.2,e)*sc,dy=Bh-sy;
-  const ik=armIK(Bz-0+ -.0-(-0),dy,sc);        // hand is forward of the shoulder by Bz
-  const ik2=armIK(Bz/1,dy,sc);
-  const kneeB=1.25+.1*Math.sin(IS.t/17);
-  const pose={armL:[ik2[0],.12],armR:[ik2[0],-.12],elbL:ik2[1],elbR:ik2[1],legL:.2,legR:.35,kneeL:kneeB,kneeR:kneeB+.15,headX:-.12-.25*e,lean:.0,bob:0};
-  person3(BOGGS_ST,0,0,.0,pose,sc,y0);
-  // sweat drops
-  if(e>.7)r3Bill(R3.glow,.35,y0+1.7,.2,.08,.12,{col:[.8,.9,1,.8],emit:1});
+  const gy=IS.gy||0,gk=IS.gk||0,gw=IS.gw||0,gt=IS.gt||0;
+  const e=gy?0:(1-Math.cos(IS.pu||0))/2;
+  let phonePos=[TB[0],.76,TB[1]],phoneOn=!!IS.ring,tilt=0;
+  if(!gy){
+    const sy=lerp3(Bh-hang,Bh+.04-top,e),y0=sy-.95*sc,ik=armIK(Bz,Bh-sy,sc);
+    const kneeB=1.25+.1*Math.sin(IS.t/17);
+    const pose={armL:[ik[0],.12],armR:[ik[0],-.12],elbL:ik[1],elbR:ik[1],legL:.2,legR:.35,kneeL:kneeB,kneeR:kneeB+.15,headX:-.12-.25*e,lean:0,bob:0};
+    person3(BOGGS_ST,0,0,0,pose,sc,y0);
+    if(e>.7)r3Bill(R3.glow,.35,y0+1.7,.2,.08,.12,{col:[.8,.9,1,.8],emit:1});
+  }else{
+    // 1) lets go and drops to the floor  2) walks to the table and grabs the phone  3) winds up and slams it down
+    const hangY=(Bh-hang)-.95*sc;const k=sm01(gk);
+    let x=0,z=0,y=lerp3(hangY,0,k*k),yaw=0,pose;
+    if(gw<=0){
+      const rel=sm01((gk-.25)/.5);
+      pose={armL:[lerp3(-3.0,-.2,rel),.12],armR:[lerp3(-3.0,-.2,rel),-.12],elbL:lerp3(.3,.2,rel),elbR:lerp3(.3,.2,rel),legL:lerp3(.2,0,k),legR:lerp3(.35,0,k),kneeL:lerp3(1.25,.35,k),kneeR:lerp3(1.4,.35,k),headX:lerp3(-.2,.1,k)};
+      if(gk>=.97)pose.bob=0;
+    }else{
+      const w=sm01(gw);x=lerp3(0,TB[0]-.95,w);z=lerp3(0,TB[1]+.1,w);yaw=lerp3(0,1.35,Math.min(1,gw*2));y=0;
+      pose=gw<1?poseWalk(IS.t*.35,1.2):{armL:[-.2,.2],armR:[-.2,-.2]};
+      pose.headX=.1;
+    }
+    let inHand=false;
+    if(gw>=1){
+      // phone is in his right hand; he whips it down onto the table
+      inHand=gt<.58;
+      if(gt<.4){const w=sm01(gt/.4);const ik=armIK(.1*sc,.28*sc,sc);pose={armL:[-.5,.3],elbL:1.0,armR:[lerp3(ik[0],.9,w),-.1],elbR:lerp3(ik[1],.5,w),headX:.15+.1*w,lean:-.2*w,legL:-.25,legR:.25,kneeL:.4,kneeR:.4};}
+      else{const w=sm01((gt-.4)/.25);pose={armL:[-.5,.3],elbL:1.0,armR:[lerp3(.9,-1.45,w),-.1],elbR:lerp3(.5,.2,w),headX:.2,lean:.25*w,legL:-.35,legR:.3,kneeL:.5,kneeR:.4};}
+    }
+    person3(BOGGS_ST,x,z,yaw,pose,sc,y);
+    if(gw>=1){
+      if(inHand){const hp=rigPoint(x,y,z,yaw,[.4,gt<.4?1.2:1.0,.18],sc);phonePos=[hp[0],hp[1],hp[2]];phoneOn=false;}
+      else{const u=Math.min(1,(gt-.58)/.22),from=rigPoint(x,y,z,yaw,[.4,.95,.5],sc);
+        phonePos=[lerp3(from[0],TB[0],u),lerp3(from[1],.78,u)+Math.sin(u*Math.PI)*.35*(1-u)+(gt>.8?Math.abs(Math.sin((gt-.8)*20))*.12*(1-gt):0),lerp3(from[2],TB[1],u)];phoneOn=false;tilt=gt>.8?.4:u*2;}
+    }
+  }
+  phone3(phonePos,phoneOn,tilt);
   glow3(0,3.2,1,7,[1,.9,.75],.1);
   r3Flush();
 }
-
 /* ---- side-on street (house / wagon scenes): runs along +x ---- */
 function streetSide(scroll){
   B3(0,-.06,14,260,.1,32,[.3,.3,.36,1],{emit:.35});B3(0,0,-1.9,260,.16,3.2,[.45,.43,.5,1]);B3(0,.02,-.3,260,.2,.22,[.55,.53,.58,1]);
@@ -3651,6 +3768,82 @@ function sceneHouse(){
   }
   r3Flush();
 }
+
+/* ---- random road events during the reckless drive (a different mix every run) ---- */
+CN.fl=[];
+function cineFloat(x,y,z,txt,col){CN.fl.push({x,y,z,txt,col:col||'#fff',t:0});}
+function cineFloatsDraw(){
+  CN.fl=CN.fl.filter(f=>{f.t++;if(f.t>80)return false;const p=r3Proj(f.x,f.y+f.t*.012,f.z);if(!p)return true;
+    const a=f.t<60?1:1-(f.t-60)/20;g.globalAlpha=Math.max(0,a);tx(f.txt,p[0],p[1],f.col,'center','#000');g.globalAlpha=1;return true;});
+}
+const DOGC=[[.55,.38,.2],[.9,.85,.7],[.2,.2,.22],[.75,.55,.3],[.85,.85,.85]];
+function carXat(df){return 1.8-Math.min(1,df/25)*2.1*(1-Math.cos(df/12));}
+function startDriveEvent(id){
+  const cands=(typeof ROSTER!=='undefined'&&ROSTER.length)?ROSTER:[{look:LOOK.guard}];
+  const look=cands[Math.floor(Math.random()*cands.length)].look;
+  IS.ev={id,t:0,look,dir:Math.random()<.5?-1:1,seed:Math.random(),dog:DOGC[Math.floor(Math.random()*DOGC.length)],hit:0,cones:null,birds:null,H:0};
+}
+function driveEvent(carx){
+  const ev=IS.ev;if(!ev)return;ev.t++;const t=ev.t,GV=.55,gz=z0=>z0+GV*t;
+  if(t>260){IS.ev=null;return;}
+  const pedPose=(hurt,wk)=>hurt?{armL:[-2.9,.3],armR:[-2.9,-.3],elbL:.4,elbR:.4,legL:-.3,legR:.3,bob:0}:wk;
+  switch(ev.id){
+    case 'can':{
+      const pz0=-33,px=tt=>-6.9+.03*tt,pz=tt=>pz0+GV*tt;
+      const tt0=35,F=20,gr=.012;
+      if(t===tt0){ev.S=[carx-.95,1.3,.3];ev.T=[px(tt0+F)+.9,.12,pz(tt0+F)+.1];ev.vy=(ev.T[1]-ev.S[1]+.5*gr*F*F)/F;sfx.bottle&&sfx.bottle();}
+      const hurt=t>=tt0+F-2&&t<tt0+F+40,wk=poseWalk(t*.3,.9);
+      let pose=wk;if(hurt){const k=Math.min(1,(t-(tt0+F-2))/6);pose=pedPose(true,wk);pose.lean=-.3*k;}
+      const hop=hurt&&t<tt0+F+14?Math.abs(Math.sin((t-(tt0+F-2))*.25))*.5:0;
+      const x=px(t)-(hurt?Math.min(.9,(t-(tt0+F-2))*.04):0);
+      person3(ev.look,x,pz(t),Math.PI/2*(hurt?1.3:1),pose,1.05,hop);
+      if(t===tt0+F-1)cineFloat(x,2.6,pz(t),['HEY!!','WATCH IT!!','WHAT THE--!','MY GUY!?'][Math.floor(ev.seed*4)],'#ffd23a');
+      if(t>=tt0&&t<tt0+F){const tau=t-tt0,u=tau/F;const cx=ev.S[0]+(ev.T[0]-ev.S[0])*u,cz=ev.S[2]+(ev.T[2]-ev.S[2])*u,cy=ev.S[1]+ev.vy*tau-.5*gr*tau*tau;
+        C3(cx,cy,cz,.13,.22,.13,[.15,.7,.3,1],{emit:.4},tau*.4,0,tau*.3);glow3(cx,cy,cz,.5,[.5,1,.6],.4);}
+      else if(t>=tt0+F&&t<tt0+F+60){const tau=t-tt0-F,cz=ev.T[2]+GV*tau,cy=.12+Math.abs(Math.sin(tau*.3))*.2*Math.max(0,1-tau/30);
+        C3(ev.T[0]+tau*.01,cy,cz,.13,.22,.13,[.15,.7,.3,1],{emit:.4},0,0,Math.PI/2*Math.min(1,tau/10));}
+      break;}
+    case 'walker':{
+      const d=ev.dir,xs=-d*6.8,z0=-38,px=xs+d*.05*t,pz=gz(z0);
+      const near=Math.abs(pz)<2.6&&Math.abs(px-carx)<2.8;
+      if(near&&!ev.hit){ev.hit=t;sfx.crit&&sfx.crit();cineFloat(px,2.7,pz,['HEY!!','LOOK OUT!','ARE YOU CRAZY?!','I HAVE A FAMILY!'][Math.floor(ev.seed*4)],'#ffd23a');}
+      const hurt=ev.hit&&t<ev.hit+46,k=ev.hit?t-ev.hit:0;
+      const xx=px+(hurt?d*Math.min(1.2,k*.06):0),hop=hurt&&k<16?Math.abs(Math.sin(k*.2))*.55:0;
+      person3(ev.look,xx,pz,d>0?Math.PI/2:-Math.PI/2,hurt?pedPose(true,null):poseWalk(t*.3,1),1.05,hop);
+      break;}
+    case 'dog':{
+      const d=ev.dir,x=-d*7+d*.11*t,z=gz(-34)+Math.sin(t*.25)*.5,col=[...ev.dog,1];
+      const yaw=d>0?Math.PI/2:-Math.PI/2,leg=Math.sin(t*.9)*.25;
+      const P=(a,b,c,sx,sy,sz,cl)=>S3(x+Math.sin(yaw)*c+Math.cos(yaw)*a*0,b,z+Math.cos(yaw)*c,sx,sy,sz,cl);
+      S3(x,.42,z,.38,.3,.62,col);S3(x+d*.4,.62,z,.32,.3,.3,col);B3(x+d*.62,.58,z,.14,.1,.12,[.1,.1,.1,1]);
+      B3(x+d*.44,.82,z+.1,.06,.16,.1,shd(col,.7));B3(x+d*.44,.82,z-.1,.06,.16,.1,shd(col,.7));
+      B3(x-d*.4,.58,z,.3,.06,.06,col,null,0,0,Math.sin(t*.8)*.5*d);
+      for(const[ox,oz] of [[.25,.12],[.25,-.12],[-.25,.12],[-.25,-.12]])B3(x+d*ox,.14,z+oz,.07,.28+leg*(ox>0?1:-1)*(oz>0?1:-1),.07,shd(col,.75));
+      if(Math.abs(z)<2&&!ev.hit){ev.hit=t;cineFloat(x,1.3,z,'BARK!!','#ffd23a');}
+      break;}
+    case 'cones':{
+      if(!ev.cones){const arr=Math.round(38/GV)+4,cx0=carXat((IS.df||0)+arr);ev.cones=[0,1,2,3,4].map(i=>({x:cx0+(i-2)*.12*(i%2?1:-1),z0:-38-i*2.0,v:null,y:0,s:0,r:0}));}
+      for(const c of ev.cones){
+        let z=c.z0+GV*t,x=c.x,y=0;
+        if(!c.v&&z>-1.2&&z<1.4&&Math.abs(x-carx)<1.7){c.v=[(Math.random()-.5)*.14,.14+Math.random()*.1,-.1-Math.random()*.15];c.y=0;c.p=[x,0,z];sfx.bump&&sfx.bump();Fx.shake=6;}
+        if(c.v){c.v[1]-=.012;c.p[0]+=c.v[0];c.p[1]+=c.v[1];c.p[2]+=c.v[2]+GV;if(c.p[1]<0){c.p[1]=0;c.v[1]*=-.35;c.v[0]*=.7;}c.r+=.3;x=c.p[0];y=c.p[1];z=c.p[2];
+          r3Mesh([].concat(R3.cone),m4.trs(x,y+.35,z,c.r,c.r*.5,c.r*.7,.5,.7,.5),null,{col:[1,.45,.1,1],emit:.3});}
+        else{r3Mesh([].concat(R3.cone),m4.trs(x,.35,z,0,0,0,.5,.7,.5),null,{col:[1,.45,.1,1],emit:.3});B3(x,.04,z,.6,.08,.6,[.15,.15,.18,1]);B3(x,.35,z,.34,.07,.34,[.95,.95,.95,1],{emit:.3});}
+      }
+      break;}
+    case 'pigeons':{
+      if(!ev.birds)ev.birds=[...Array(11)].map(()=>({x:-2+Math.random()*5,z0:-36-Math.random()*3,dx:(Math.random()-.5)*.14,dy:.07+Math.random()*.06,ph:Math.random()*6,go:0,y:.12,px:0,pz:0}));
+      for(const b of ev.birds){
+        let z=b.z0+GV*t,x=b.x,y=.12;
+        if(!b.go&&z>-9){b.go=t;}
+        if(b.go){const k=t-b.go;x=b.x+b.dx*k;y=.12+b.dy*k-.0006*k*k*0;z=z-.15*k;if(y>6)continue;}
+        const fl=b.go?Math.sin(t*1.1+b.ph):0;
+        S3(x,y+.14,z,.2,.16,.3,[.55,.57,.62,1]);S3(x,y+.26,z-.12,.12,.12,.12,[.45,.47,.55,1]);
+        B3(x-.16,y+.22,z,.2,.03,.22,[.4,.42,.5,1],null,0,0,.5*fl+.2);B3(x+.16,y+.22,z,.2,.03,.22,[.4,.42,.5,1],null,0,0,-.5*fl-.2);
+      }
+      break;}
+  }
+}
 const TRAF=[[.9,.1,.1],[.2,.4,.8],[.85,.85,.2],[.25,.6,.35],[.55,.2,.7],[.9,.5,.15]];
 function sceneDrive(){
   nightEnv([0,0,0]);
@@ -3682,6 +3875,7 @@ function sceneDrive(){
     const oz=-80+((IS.t*1.3)%230);car3(-1.8,0,oz,0,{col:[.2,.3,.6,1]});
   }
   if(IS.cop.show){const cz=IS.cz===undefined?24:IS.cz;car3(1.8,0,cz,Math.PI,{cop:1,col:[.96,.96,.97,1],lights:1});}
+  driveEvent(x);
   car3(x,0,0,yaw,{roll,brake:IS.cop.show>0,beamsOn:true});
   glow3(x-.55*Math.cos(yaw),.8,-2.0,.7,[1,.1,.1],.8);glow3(x+.55*Math.cos(yaw),.8,-2.0,.7,[1,.1,.1],.8);
   r3Flush();
@@ -3718,9 +3912,14 @@ function sceneOut(){
 }
 function sceneWagon(){
   nightEnv([0,0,.05]);R3.env.fnear=40;R3.env.ffar=120;
-  const cxw=Math.max(-8.6,Math.min(-3.6,lerp3(-12,-4.4,sm01(IS.dk||0))+2.0));
-  camSet(32,[cxw,2.5,17],[cxw,1.2,1.8],.42,.95);
+  const cxw=Math.max(-9.6,Math.min(-4.4,lerp3(-12,-4.4,sm01(IS.dk||0))-.9));
+  const sway=(IS.dk>0&&IS.dk<1)?Math.sin(IS.t*.35)*.05:0,push=1.2*sm01(IS.dk||0);
+  camSet(32-push*1.5,[cxw+sway,2.3-.2*push,17-push*1.6],[cxw+sway*.5,1.15,1.8],.42,.95);
   streetSide(0);
+  {const pu=Math.sin(IS.t*.22)>0;                      // red/blue light wash from the squad cars
+   glow3(-9,2.6,7,5,pu?[1,.12,.1]:[.1,.25,1],.22);glow3(-1,2.4,6,4,pu?[.1,.25,1]:[1,.12,.1],.2);
+   const q=lerp3(-12,-4.4,sm01(IS.dk||0));
+   if(IS.dk>0&&IS.dk<1&&!IS.wclose&&Math.floor(IS.t)%3===0){for(const o of[0,-2.2])glow3(q+o+(Math.random()-.5)*.3,.1+Math.random()*.15,2.95,.5+Math.random()*.3,[.55,.5,.42],.16);}}
   const sh=IS.wclose?1:0;CN.wo=lerp3(CN.wo===undefined?1:CN.wo,sh?0:1,.22);
   wagon3(0,1.8,Math.PI/2,{open:CN.wo});
   const t=IS.t,dk=sm01(IS.dk||0),thr=IS.thr||0,walk=poseWalk(t*.35,1.0);
@@ -3738,17 +3937,20 @@ function sceneWagon(){
     const resist=thr<=0&&dk<1?1:0;
     let x=it.x,y=0,lean=-.25*resist,pose;
     if(it.k>0){const f=fly(it.x,it.k);x=f.x;y=f.y;lean=1.1*f.k;pose={armL:[.6,.12],armR:[.6,-.12],legL:-.8,legR:.7,kneeL:.8,kneeR:.3,lean};}
-    else pose=Object.assign({},dk<1?poseWalk(t*.55,1.4):poseWalk(0,0),cuf,{lean,headX:.2,roll:.08*Math.sin(t*.3),twist:.2*Math.sin(t*.4)});
+    else if(dk<1&&dk>0){const ph=t*.5+it.side*1.7,st=Math.sin(ph);   // heels dragging, body hanging back, head thrashing
+      pose=Object.assign({},cuf,{legL:-.25+st*.35,legR:-.25-st*.35,kneeL:.5+Math.max(0,st)*.5,kneeR:.5+Math.max(0,-st)*.5,lean:-.4+.08*st,headX:-.15+.15*Math.sin(ph*1.7),headY:.5*Math.sin(ph*.9),roll:.12*st,twist:.35*Math.sin(ph*.8),bob:Math.abs(st)*.04});}
+    else pose=Object.assign({},poseWalk(0,0),cuf,{lean,headX:.2,roll:.08*Math.sin(t*.3),twist:.2*Math.sin(t*.4)});
     if(x>-3.15)continue;
     person3(it.L,x,2.9,Math.PI/2,pose,1.1,y);
   }
   // cops: haul on the arms, shove, then close the doors and dust off their hands
   const cp=(who,px)=>{
-    let pose,x=px-.95,z=2.5,yaw=Math.PI/2;
+    let pose,x=px-.35,z=2.42,yaw=Math.PI/2;
     const thrown=thr>=(who?2:1)*1?(who?1.95:.98):0;
     if(IS.pat)pose={armL:[-1.2,.35],armR:[-1.2,-.35],elbL:1.3+.4*Math.sin(t*.9),elbR:1.3-.4*Math.sin(t*.9),bob:Math.abs(Math.sin(t*.5))*.02,headX:.2};
     else if(thr>0&&thr<(who?2:1)&&(who?thr>1:true)){const pu=Math.sin(Math.min(1,(thr-(who?1:0)))*Math.PI);pose={armL:[-1.5,.1],armR:[-1.5,-.1],elbL:.2,elbR:.2,lean:.5+.4*pu};}
-    else if(dk<1)pose=Object.assign(poseWalk(t*.55,1.2),{armR:[-1.1,-.1],elbR:.5,lean:.3});
+    else if(dk<1&&dk>0){const w2=poseWalk(t*.5+who*.8,1.1);pose=Object.assign(w2,{armR:[-1.25,-.45],elbR:.7,armL:[.3,.2],lean:.38+.06*Math.sin(t*.5),headY:-.4,bob:Math.abs(Math.sin(t*.5))*.03});}
+    else if(dk<1)pose=Object.assign(poseWalk(0,0),{armR:[-1.1,-.1],elbR:.5,lean:.3});
     else pose={armR:[-1.1,-.1],elbR:.5,lean:.3};
     if(IS.wclose&&!IS.pat){x=-3.9;z=1.0;pose={armL:[-1.5,.1],armR:[-1.5,-.1],elbL:.2,elbR:.2,lean:.3};}
     if(IS.pat){x=-3.9;z=who?3.2:.7;yaw=Math.PI/2-(who?.5:-.5);}
@@ -3820,6 +4022,176 @@ function cineIntro(){
     case 5:sceneWagonDrive();return true;
   }
   return false;
+}
+/* ===== CHARACTER PROGRESSION (Bandit's own level, stats, boxing traits) + CREW (named later, its own level) ===== */
+const STATD=[
+  {k:'str',n:'STRENGTH',d:'Hits harder. +2 ATK per point'},
+  {k:'agi',n:'AGILITY',d:'Faster, harder to hit. +2 SPD per point'},
+  {k:'end',n:'ENDURANCE',d:'Takes a beating. +5 HP per point'},
+  {k:'chn',n:'CHIN',d:'Soaks punches. +2 DEF per point'},
+  {k:'hnd',n:'HAND SPEED',d:'Sharper aim, more crits. per point'}
+];
+const TRAITD={
+  ironchin:{n:'IRON CHIN',k:'taken',need:250,d:'Absorbed 250 damage. DEF +12%'},
+  heavy:{n:'HEAVY HANDS',k:'hit',need:80,d:'Landed 80 punches. ATK +12%'},
+  foot:{n:'FOOTWORK',k:'dodge',need:20,d:'Made 20 enemies miss. SPD +12%'},
+  cardio:{n:'CARDIO',k:'win',need:8,d:'Won 8 fights. HP +10%'},
+  killer:{n:'KILLER INSTINCT',k:'ko',need:15,d:'15 knockouts. ATK +8%, crits +3%'},
+  sniper:{n:'COUNTERPUNCHER',k:'crit',need:20,d:'20 critical hits. Crits +5%'}
+};
+const PL0=()=>({pts:0,s:{str:0,agi:0,end:0,chn:0,hnd:0},cnt:{hit:0,taken:0,dodge:0,win:0,ko:0,crit:0},tr:{},q:[]});
+const L0=()=>({arms:[],day:1,sold:{}});
+function pl(){return G.pl||(G.pl=PL0());}
+function plCount(k,n){const p=pl();p.cnt[k]=(p.cnt[k]||0)+n;plTraits();}
+function plTraits(){
+  const p=pl();let n=0;
+  for(const id in TRAITD){const t=TRAITD[id];if(!p.tr[id]&&(p.cnt[t.k]||0)>=t.need){p.tr[id]=1;p.q.push(`NEW TRAIT: ${t.n}!\n${t.d}`);n++;}}
+  if(n){const b=G.gang.find(m=>m.s==='bandit');if(b){const oh=b.mhp;mstat(b);b.hp=Math.min(b.mhp,b.hp+Math.max(0,b.mhp-oh));}}
+}
+function plCrit(){const p=pl();return p.s.hnd*.012+(p.tr.killer?.03:0)+(p.tr.sniper?.05:0);}
+function plFlush(){
+  const p=G.pl;if(!p||!p.q||!p.q.length||Say.on||Menus.length||Cs.g)return;
+  sfx.level();say(p.q.shift());
+}
+/* applied at the end of mstat(): Bandit's allocated stats + traits, then the crew's level bonus for everyone */
+function statHook(m){
+  if(m.s==='bandit'&&G.pl){
+    const p=G.pl,s=p.s;
+    m.atk+=s.str*2+Math.floor(s.hnd/2);m.spd+=s.agi*2+Math.floor(s.hnd/2);m.mhp+=s.end*5;m.def+=s.chn*2;
+    if(p.tr.heavy)m.atk=Math.floor(m.atk*1.12);if(p.tr.killer)m.atk=Math.floor(m.atk*1.08);
+    if(p.tr.ironchin)m.def=Math.floor(m.def*1.12);if(p.tr.foot)m.spd=Math.floor(m.spd*1.12);if(p.tr.cardio)m.mhp=Math.floor(m.mhp*1.1);
+  }
+  if(G.crew){const k=1+.01*(G.crew.lv-1);m.atk=Math.floor(m.atk*k);m.def=Math.floor(m.def*k);}
+}
+function plLevelUp(m){
+  const p=pl();p.pts+=3;
+  p.q.push(`${m.nm} reached level ${m.l}!\n+3 STAT POINTS. Open STATS in the menu.`);
+}
+function restat(){G.gang.forEach(m=>{const oh=m.mhp;mstat(m);m.hp=Math.min(m.mhp,m.hp+Math.max(0,m.mhp-oh));});}
+/* ---- STATS menu ---- */
+function statsMenu(){
+  Menus.length=0;
+  const p=pl(),b=G.gang.find(m=>m.s==='bandit')||G.gang[0];
+  const items=STATD.map(t=>({l:t.n,r:String(p.s[t.k]),d:p.pts<1,f:()=>{
+    if(p.pts<1)return;p.pts--;p.s[t.k]++;sfx.ok();restat();statsMenu();
+  }}));
+  items.push({l:'INFO',f:()=>{
+    say(`${b.nm}  LV ${b.l}   XP ${b.xp}/${xpNeed(b.l)}\nHP ${b.mhp}  ATK ${b.atk}  DEF ${b.def}  SPD ${b.spd}`);
+    say(STATD.map(t=>t.n+': '+t.d).join('\n'));
+  }});
+  items.push({l:'TRAITS',f:traitsInfo});
+  items.push({l:'BACK',f:()=>{}});
+  openMenu({x:4,y:20,w:232,items,title:`${b.nm.slice(0,8)} LV${b.l}   POINTS: ${p.pts}`});
+}
+function traitsInfo(){
+  const p=pl(),lines=[];
+  for(const id in TRAITD){const t=TRAITD[id];lines.push(p.tr[id]?`* ${t.n}: ${t.d}`:`- ${t.n}: ${Math.min(t.need,p.cnt[t.k]||0)}/${t.need}`);}
+  say(lines.slice(0,3).join('\n'));say(lines.slice(3).join('\n'));
+}
+/* ---- CREW ---- */
+const crewNeed=l=>l*45+25;
+const crewCap=()=>G.crew?Math.min(6,2+Math.floor(G.crew.lv/2)):1;
+function crewGain(n){
+  const c=G.crew;if(!c||!n)return;
+  c.xp+=n;
+  while(c.xp>=crewNeed(c.lv)&&c.lv<30){
+    c.xp-=crewNeed(c.lv);c.lv++;restat();
+    G.pl&&G.pl.q.push(`${c.name.toUpperCase()} reached CREW LEVEL ${c.lv}!\nAll members +1% ATK/DEF. Crew room: ${crewCap()} fighters.`);
+  }
+}
+function crewMenu(){
+  if(!G.crew){say('You roll solo. No crew yet.\nWhen people start to notice you, you will need a name for one.');return;}
+  const c=G.crew;
+  say(`${c.name.toUpperCase()}\nCREW LEVEL ${c.lv}   XP ${c.xp}/${crewNeed(c.lv)}\nMembers ${G.gang.length}/${crewCap()}   Gang wins ${c.wins||0}`);
+  say(`Crew bonus: +${c.lv-1}% ATK and DEF for everyone.\nCrew levels up by winning gang fights, boss fights and recruiting.`);
+}
+/* name entry screen */
+const NM={buf:'',cx:0,cy:0,cb:null,rows:['ABCDEFGHI','JKLMNOPQR','STUVWXYZ ','0123456789','!?.\'-#$&*'],t:0};
+function nameEntry(prompt,cb,def){NM.buf=def||'';NM.cx=0;NM.cy=0;NM.cb=cb;NM.prompt=prompt;NM.t=0;G.mode='name';Menus.length=0;Say.clear();}
+function nameUpdate(){
+  NM.t++;
+  if(Pr.up){NM.cy=(NM.cy+NM.rows.length-1)%NM.rows.length;sfx.blip();}
+  if(Pr.down){NM.cy=(NM.cy+1)%NM.rows.length;sfx.blip();}
+  if(Pr.left){NM.cx=(NM.cx+8)%9;sfx.blip();}
+  if(Pr.right){NM.cx=(NM.cx+1)%9;sfx.blip();}
+  if(Pr.a){const ch=NM.rows[NM.cy][NM.cx];if(NM.buf.length<14){NM.buf+=ch;sfx.ok();}else sfx.miss();}
+  if(Pr.b){NM.buf=NM.buf.slice(0,-1);sfx.blip();}
+  if(Pr.start){const nm=NM.buf.trim();if(nm.length>=2){const cb=NM.cb;NM.cb=null;G.mode='world';sfx.level();cb&&cb(nm);}else sfx.miss();}
+}
+function nameDraw(){
+  g.fillStyle='#120a22';g.fillRect(0,0,W,H);
+  const OF=OFF();g.save();g.translate(0,OF);
+  tx(NM.prompt||'NAME IT',120,8,'#ffd23a','center');
+  g.fillStyle='#000';g.fillRect(24,26,192,22);g.strokeStyle='#ffd23a';g.lineWidth=1;g.strokeRect(24.5,26.5,191,21);
+  tx((NM.buf+((NM.t>>4)&1?'_':' ')),120,33,'#fff','center');
+  for(let r=0;r<NM.rows.length;r++)for(let c=0;c<9;c++){
+    const x=24+c*21,y=58+r*24,sel=r===NM.cy&&c===NM.cx;
+    g.fillStyle=sel?'#ffd23a':'#2a1d44';g.fillRect(x,y,19,21);
+    tx(NM.rows[r][c]===' '?'_':NM.rows[r][c],x+9.5,y+7,sel?'#000':'#fff','center');
+  }
+  tx('A: ADD   B: DELETE   START: DONE',120,186,'#c9a6ff','center');
+  g.restore();
+}
+function crewFormation(){
+  Cs.run((function*(){
+    G.flags.crewAsked=1;
+    yield* talk('Word is spreading through the pods. People keep staring at you. Somebody whispers "Popstar."',0);
+    yield* talk('Corey Bapes jogs over from the commissary.',0);
+    yield* talk('Corey Bapes: Yo, boss! Everybody is asking who you run with.',0);
+    yield* talk('Corey Bapes: Nobody wants to follow a guy with no banner. You need a crew. A name. Something with SWAG.',0);
+    let nm=null;
+    nameEntry('NAME YOUR CREW',n=>{nm=n;});
+    yield()=>nm!==null;
+    G.crew={name:nm,lv:1,xp:0,wins:0};
+    fadeTo(null);yield()=>Fx.fade>=1;Fx.st=2;
+    restat();
+    yield* talk(`Corey Bapes: "${nm}." ...I love it. I am putting it on a bedsheet.`,0);
+    yield* talk(`${nm.toUpperCase()} is now a real crew!`,0);
+    yield* talk('TIP: People do not just join. Talk to them, earn respect, win their trust, and ASK. Crew level unlocks more room for fighters.',0);
+    sfx.level();
+    if(G.pl)G.pl.q.push(`Crew formed: ${nm}\nOpen CREW in the menu any time.`);
+  })());
+}
+function crewCheck(){
+  if(G.crew||G.flags.crewAsked||G.map==='intake')return;
+  const b=G.gang.find(m=>m.s==='bandit');
+  if(b&&b.l>=6&&!Cs.g&&!Say.on&&!Menus.length)crewFormation();
+}
+/* ---- asking people to join ---- */
+const PAY={greedy:6,hustler:5,lawyer:4,critic:3};
+function joinReq(c){
+  const z=zoneNow(),d=z.d||0,hard=['hot','scrap','grump'].includes(c.temp)||c.tr==='tough';
+  return {bond:2+Math.round(d*5)+(hard?2:0),resp:Math.round(d*9),beat:hard,pay:PAY[c.tr]||0};
+}
+function askJoin(c,n){
+  const nm=c.nm,v=vv(),mt=metOf(c.id);
+  if(!G.crew){say(`${nm}: Roll with YOU? You are one guy. No crew, no name, no banner.`);say(`${nm}: Come back when people know who you run with.`);return;}
+  if(G.gang.length>=crewCap()){say(`${nm}: I like it, but ${G.crew.name} is full right now.`);say(`(Crew level ${G.crew.lv} fits ${crewCap()} fighters. Level the crew up with gang fights and boss wins.)`);return;}
+  const R=joinReq(c),bond=mt.bond||0;
+  if(R.beat&&!mt.beat){say(`${nm}: I only follow someone who can put me down. Prove it. Fight me.`);return;}
+  if(bond<R.bond){say(`${nm}: I do not know you well enough yet. (Bond ${bond}/${R.bond}) Talk. Joke. Share a beer. Earn it.`);return;}
+  if(v.resp<R.resp){say(`${nm}: You are not somebody yet. Get more respect around here. (Respect ${v.resp}/${R.resp})`);return;}
+  if(R.pay&&G.items.cigs<R.pay){say(`${nm}: My loyalty costs ${R.pay} L&M. You are short.`);return;}
+  ask(`${nm} will join ${G.crew.name}${R.pay?' for '+R.pay+' L&M':''}. Deal?`,()=>{
+    if(R.pay)G.items.cigs-=R.pay;
+    const z=zoneNow(),sp=pick(z.sp),lv=Math.max(3,ri(z.lv[0],z.lv[1]));
+    const mon=mkMon(sp,lv,nm.split(' ').pop().slice(0,10));mon.who=c.id;mon.hp=mon.mhp;
+    G.gang.push(mon);G.flags['gone_'+n.id]=1;sfx.caught();
+    say(`${nm}: ${pk(["I'm in.","Finally. Somebody with a plan.","Do I get a jacket? I want a jacket.","Count me in. Do not make it weird."])}`);
+    say(`${mon.nm} joins ${G.crew.name}!`);
+    crewGain(15);
+  });
+}
+function askStory(n){
+  const nm=n.tr.name;
+  if(!G.crew){say(`${nm}: You beat me fair. But a crew? You are one guy. Come back when you have a name and a banner.`);return;}
+  if(G.gang.length>=crewCap()){say(`${nm}: ${G.crew.name} is full. Level the crew up and ask again.`);return;}
+  ask(`Ask ${nm} to join ${G.crew.name}?`,()=>{
+    const mon=mkMon(n.tr.join,n.tr.team[0][1]);mon.hp=mon.mhp;
+    G.gang.push(mon);G.flags['gone_'+n.id]=1;sfx.caught();
+    say(`${nm}: ${n.tr.post||"I'm in."}`);say(`${mon.nm} joins ${G.crew.name}!`);
+    crewGain(25);
+  });
 }
 /* ===== INTRO, TITLE, ENDING, MAIN LOOP ===== */
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
@@ -3904,6 +4276,7 @@ function introDraw(){
   const OF=OFF();
   if(cineIntro()){IS.t++;g.save();g.translate(0,OF);
     if(IS.title){g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,80,W,36);tx(IS.title,120,92,'#ffd23a','center');tx('Lake County Jail',120,104,'#fff','center');}
+    cineFloatsDraw();
     if(IS.big){const bt=IS.big,fs=bt.length>12?13:bt.length>8?18:24;g.font=fs+'px "Press Start 2P", Impact, sans-serif';g.textAlign='center';g.textBaseline='middle';const bx=120+ri(-2,2),by=70+ri(-2,2),sk=Math.sin(IS.t*.5)*.04;g.save();g.translate(bx,by);g.rotate(sk);g.lineWidth=5;g.strokeStyle='#000';g.strokeText(bt,0,0);g.fillStyle='#e8452e';g.fillText(bt,2,2);g.fillStyle='#ffd23a';g.fillText(bt,0,0);g.restore();}
     g.restore();if(IS.flash>0){g.fillStyle=`rgba(255,255,255,${IS.flash/8})`;g.fillRect(0,0,W,H);IS.flash--;}
     tx('START: skip',W-4,4,'#ffffff77','right');return;}
@@ -3975,15 +4348,13 @@ function introDraw(){
   tx('START: skip',W-4,4,'#ffffff77','right');
 }
 function* introGen(){
-  IS.scene=7;for(let i=0;i<46;i++){IS.carX+=1+i*.12;yield 1;}
   IS.scene=0;IS.carX=-70;IS.lights=0;IS.cop.show=0;IS.big=null;IS.sw=0;playSong('calm');
   // --- the phone call ---
   IS.scene=6;IS.ring=1;IS.pu=0;IS.puY=0;IS.cut='g';
   yield* talk('Boggs lives in Surfside. Boggs has not missed a leg day since 2016.',0);
   for(let i=0;i<50;i++){IS.pu+=.12;IS.puY=-Math.round((1-Math.cos(IS.pu))/2*8);yield 1;}
-  sfx.crit();
-  IS.cut='g';
-  yield* talk('*BZZZ BZZZ*  Boggs\'s phone buzzes on the floor.  "BANDIT" 🔥',0);
+  sfx.crit();IS.ring=1;IS.cut='g';
+  for(let i=0;i<40;i++){IS.pu+=.12;if(i%14===0)sfx.blip();yield 1;}
   IS.ring=0;
   yield* talk('Boggs: *grunt* ...fourteen... *grunt*... fifteen... what.',0);
   const pul=function*(n){for(let i=0;i<n;i++){IS.pu+=.14;IS.puY=-Math.round((1-Math.cos(IS.pu))/2*8);yield 1;}};
@@ -3999,12 +4370,16 @@ function* introGen(){
   yield* talk('Bandit: YES, BRO!!! Get ready. I am picking your ass up, and we are going to Cleveland!',0);
   sfx.slam();yield 14;
   IS.cut='g';
-  yield* talk('*click*  Bandit hangs up. Boggs stares at the phone. Boggs drops from the bar.',0);
-  yield* talk('Boggs: ...Did he just say YES?',0);
+  IS.gy=1;IS.gk=0;IS.gw=0;IS.gt=0;
+  for(let i=0;i<22;i++){IS.gk=i/21;yield 1;}                      // lets go of the bar, drops
+  sfx.bump();yield 10;
+  for(let i=0;i<34;i++){IS.gw=i/33;yield 1;}                      // walks to the table, grabs the phone
+  yield* talk('Boggs: GOD DAMMIT!',0);
+  for(let i=0;i<26;i++){IS.gt=i/25;if(i===14){sfx.slam();Fx.shake=10;}yield 1;}   // winds up and throws it onto the table
+  yield 24;IS.gy=0;
   // --- pulling up to the house ---
   IS.scene=7;IS.carX=-80;IS.show={};IS.scroll=0;playSong('calm');
   for(let i=0;i<90;i++){IS.carX+=1.6;yield 1;}
-  yield* talk('Bandit pulls up outside Boggs\'s house in Surfside in his white Regal. Blacked-out windows. Rims worth more than the car.',0);
   yield* talk('Boggs: I said NAH.',0);
   yield* talk('Bandit: Get in the car, Boggy. I got a BLT.',0);
   IS.show={boggs:1};IS.bx=170;IS.bdir=2;IS.hd=0;IS.cd=0;IS.ent=0;
@@ -4015,66 +4390,93 @@ function* introGen(){
   for(let i=0;i<28;i++){IS.ent=i/27;yield 1;}                       // steps up and drops into the seat
   IS.show={};sfx.door();for(let i=0;i<14;i++){IS.cd=1-i/13;yield 1;}  // door shuts
   yield 8;
-  yield* talk('Boggs gets in. The Regal sinks a little on his side. He slams the door.',0);
   IS.scene=7;for(let i=0;i<46;i++){IS.carX+=1+i*.12;yield 1;}
   IS.scene=0;IS.carX=-70;IS.lights=0;IS.cop.show=0;IS.big=null;IS.sw=0;IS.swp=0;IS.sv=0;IS.cz=30;
   yield 10;
   yield* talk('Cleveland, Ohio. 11:47 PM.',0);
-  yield* talk('Bandit is driving. Bandit is driving WAY too fast.',0);
   IS.auto=1;IS.df=0;
   for(let i=0;i<150;i++){if(i===30){IS.big='NO FLEX';sfx.crit();Fx.shake=12;}if(i===58){IS.big='ZONE!';sfx.crit();Fx.shake=18;IS.flash=4;}if(i===105)IS.big=null;IS.carX+=1.0;if(i%38===30){Fx.shake=6;sfx.bump();}yield 1;}
-  yield* talk('*SCREEEEECH* The Regal slips between a minivan and a box truck, kisses the yellow line, and cuts back in. A guy in a Civic starts praying out loud.',0);
-  yield* talk('Boggs: BRO. WATCH THE ROAD. WATCH THE ROAD.',0);
-  yield* talk('Bandit: Relax, Boggy. I drive like I fight. Did I ever tell you about Afghanistan?',0);
-  yield* talk('Boggs: You have never been to Afghanistan.',0);
-  yield* talk('Bandit: I was there in my HEART. We are pinned down. Crazy gunfight. Bullets everywhere. Dudes screaming.',0);
-  yield* talk('Boggs: Bandit. Pickup truck. PICKUP TRUCK.',0);
-  yield* talk('Bandit: So I grab the big gun, and I just START BLASTING. Like Rambo! Bap bap bap bap! Like a MANIAC!',0);
-  yield* talk('Boggs: Two hands on the wheel!! TWO HANDS!!',0);
-  yield* talk('Bandit: Sixteen guys. One magazine. I did not even blink.',0);
-  yield* talk('Boggs: YOU ARE NOT BLINKING NOW. THAT IS THE PROBLEM.',0);
-  yield* talk('Bandit: ...And that is why they call me the Popstar.',0);
-  yield* talk('Boggs: Nobody calls you that.',0);
+  sfx.bump();yield 24;
+  const EVP={
+    can:{b:['Bandit: That one is empty. Goodbye, little guy.','Bandit: Recycling is a lie, Boggy.','Bandit: Whoops. Free can!','Bandit: I was finished with that.'],g:['Boggs: BANDIT!! THERE WAS A PERSON!!','Boggs: You almost hit a guy with a beer can!','Boggs: THAT WAS A HUMAN BEING, LARRY!']},
+    walker:{b:['Bandit: Pedestrians. Where do they even GO?','Bandit: He saw me coming. He had time.','Bandit: Cardio is good for him.','Bandit: Nobody walks at night unless they WANT to be in a story.'],g:['Boggs: SLOW DOWN!! HE WAS RIGHT THERE!!','Boggs: You almost turned that guy into a hood ornament!','Boggs: LARRY. A MAN. A MAN, LARRY.']},
+    dog:{b:['Bandit: Dog was fine. Dogs got reflexes.','Bandit: Aw, he said hi.','Bandit: That dog has places to be.'],g:['Boggs: A DOG!! WE ALMOST HIT A DOG!!','Boggs: If you hit a dog I am walking to Cleveland.','Boggs: Bro, no. Not a dog. Anything but a dog.']},
+    cones:{b:['Bandit: Those cones were in MY lane.','Bandit: Orange is a suggestion.','Bandit: Free cones. Tell your friends.'],g:['Boggs: THAT WAS A WORK ZONE!','Boggs: Cones are there for a REASON, Larry!','Boggs: We are going to pay for those cones!']},
+    pigeons:{b:['Bandit: Free birds! Get it? Like the song.','Bandit: They had time to move.','Bandit: Fly, my little feathered friends!'],g:['Boggs: You are going to hit a pigeon and I am going to cry.','Boggs: Birds too?! BIRDS TOO?!','Boggs: Eyes on the road, not on the birds!']}
+  };
+  const deck=['can','walker','dog','cones','pigeons'].sort(()=>Math.random()-.5).slice(0,3);
+  const slots=[1,4,7,9,11].sort(()=>Math.random()-.5).slice(0,3).sort((x,y)=>x-y);
+  const BOGWARN=['Boggs: BRO. WATCH THE ROAD. WATCH THE ROAD.','Boggs: LARRY. LANE. STAY IN YOUR LANE.','Boggs: That is the OTHER lane, Larry!!'];
+  const story=[
+    pick(BOGWARN),
+    'Bandit: Boggy. Boggy. Did I ever tell you about when I was in Afghanistan?',
+    pick(['Boggs: Yes! A hundred times! EYES ON THE ROAD!','Boggs: Not now, man! Not NOW!','Boggs: You are driving on the yellow line!!']),
+    'Bandit: So we are pinned down. Crazy gunfight. Bullets everywhere. Dudes screaming.',
+    pick(['Boggs: Bandit. Pickup truck. PICKUP TRUCK.','Boggs: BIG TRUCK. BIG TRUCK. BIG TRUCK.','Boggs: Bandit, that is a MINIVAN.']),
+    'Bandit: And I grab the big gun, and I just START BLASTING. Like Rambo! Bap bap bap bap! Like a MANIAC!',
+    pick(['Boggs: Two hands on the wheel!! TWO HANDS!!','Boggs: Hands! HANDS! Put your hands on the WHEEL!','Boggs: STOP DOING THE GUN SOUNDS AND DRIVE!']),
+    'Bandit: Sixteen guys. One magazine. I did not even blink.',
+    pick(['Boggs: YOU ARE NOT BLINKING NOW. THAT IS THE PROBLEM.','Boggs: BLINK, LARRY. PLEASE. BLINK.','Boggs: I am going to die in a Regal.']),
+    'Bandit: And the captain looks at me, and he goes...',
+    pick(['Boggs: BANDIT, THE TRUCK! THE TRUCK!','Boggs: BRAKE. BRAKE. BRAAAAKE.','Boggs: WE ARE IN THE OTHER LANE AGAIN!']),
+    'Bandit: ...he goes, "Soldier, you are crazy." And I said, "Sir. That is why they call me the Popstar."',
+    pick(['Boggs: Nobody calls you that!','Boggs: Nobody. Calls. You. That.','Boggs: Who is "they"?! Who?!'])
+  ];
+  let ei=0;
+  for(let i=0;i<story.length;i++){
+    yield* talk(story[i],0);
+    if(ei<slots.length&&slots[ei]===i){
+      const id=deck[ei++];startDriveEvent(id);
+      yield 70;
+      yield* talk(pick(EVP[id].b),0);
+      yield* talk(pick(EVP[id].g),0);
+      yield 20;
+    }
+  }
+  IS.ev=null;
   IS.auto=2;
   IS.lights=1;IS.cop.show=1;IS.copX=-150;sfx.siren();playSong(null);
   for(let i=0;i<70;i++){IS.copX+=2.4;IS.cz=30-i*.31;yield 1;}
-  yield* talk('*WOOP WOOP*   Red and blue lights in the mirror.',0);
+  yield 24;
   IS.scene=8;IS.sweat=0;
   yield* talk('Bandit: Not tonight. NOT TONIGHT. I was going SIXTY.',0);yield* talk('Boggs: You were going NINETY.',0);
   yield* talk('Boggs: Dude. DUDE. I brought the weed for the lick. It is in my jacket. Right now. ON ME.',0);
-  yield* talk('Bandit: Okay. Okay okay okay. Everybody stay calm. I am calm.',0);
+  yield* talk('Boggs: Okay. Let\'s stay calm. Let\'s just stay calm.',0);
+  yield* talk('Bandit: I AM calm. I am the calmest person in this car.',0);
   IS.auto=3;for(let i=0;i<40;i++){IS.carX+=Math.max(0,.4-i*.01);IS.copX+=.3;yield 1;}IS.auto=0;
   sfx.slam();
   IS.scene=1;IS.cop.show=2;IS.cop.x=IS.copX+44;IS.cop.walk=1;IS.flashlight=0;IS.cp=0;IS.copIn=0;IS.lean=0;
   for(let i=0;i<48;i++){IS.cop.x+=1.0;IS.cp=i/47;yield 1;}
   IS.cop.walk=0;IS.flashlight=1;
   for(let i=0;i<14;i++){IS.lean=i/13;yield 1;}
-  yield* talk('Officer: License and registration. Sit tight. I am running your plates.',0);
+  yield* talk('Officer: Evening. Do you know how fast you were going?',0);
+  yield* talk('Bandit: Officer! Great to see you. Love the hat. Honestly, a real credit to the department.',0);
+  yield* talk('Officer: Sir. Ninety in a forty-five.',0);
+  yield* talk('Bandit: See, that is the Regal. She does not KNOW she is going fast. Smooth ride. Like butter.',0);
+  yield* talk('Officer: Uh huh. Have you been drinking tonight?',0);
+  yield* talk('Bandit: Me? Never. I am basically a celebrity, Officer. You may have heard of me. The Popstar?',0);
+  yield* talk('Officer: No. License and registration. Sit tight. I am running your plates.',0);
   IS.cop.walk=1;for(let i=0;i<40;i++){IS.cop.x-=1.2;IS.cp=1-i/39;yield 1;}IS.cop.walk=0;IS.copIn=1;yield 20;
   IS.scene=8;IS.sweat=0;
-  IS.lean=0;yield* talk('Bandit: ...How long does it take to run a plate.',0);
-  yield* talk('Boggs: Larry. Chill. No sweat. It is five grams of weed.',0);
+  IS.lean=0;yield 16;
+  yield* talk('Bandit: ...Should we give them Lukey?',0);
+  yield* talk('Boggs: HA. No bro. It is five grams of bud. We good.',0);
   IS.sweat=1;
-  yield* talk('Bandit: ...Haha. Yeah...  *sweating through his shirt*',0);
-  yield* talk('Boggs: Worst case it is a ticket. I have eaten worse tickets in a Wendy\'s drive-thru.',0);
-  yield* talk('Bandit: Yeah. Yeah. Five grams. Totally fine. Totally. ...Hey, Boggy. Should we blame Lukey?',0);
-  yield* talk('Boggs: For FIVE GRAMS? No. We do not snitch on Lukey.',0);
-  yield* talk('Bandit: Right. Right. We NEVER snitch on Lukey.',0);
-  yield* talk('Boggs: Never. Not Lukey. We keep our mouths shut. Deal?',0);
-  yield* talk('Bandit: Deal. Never Lukey. Not a word.',0);
+  yield* talk('Bandit: ...Haha. Yeah...',0);
+  yield 30;
   IS.scene=1;IS.copIn=0;IS.cp=0;IS.sweat=0;yield 10;
   IS.cop.walk=1;for(let i=0;i<40;i++){IS.cop.x+=1.2;IS.cp=i/39;yield 1;}IS.cop.walk=0;
   yield* talk('Officer: Plates came back clean. But you did ninety in a forty-five, and you weaved through six cars like a lunatic. I am going to look in the trunk.',0);
   yield* talk('Boggs: The trunk? There is nothing in the trunk. Right, Larry? ...Larry?',0);
   yield* talk('Bandit: ...',0);
-  yield* talk('The officer sweeps his flashlight over the trunk lid...',0);
   IS.scene=2;sfx.crit();yield 20;
   yield* talk('Officer: ...Well, well, well. Is that a PUMPER?',0);
   yield* talk('Boggs: A PUMPER?!  LARRY!! Why is there a PUMPER in your TRUNK?!',0);
   yield* talk('Bandit: I... never told you about that part.',0);
   yield* talk('Bandit: IT WAS LUKEY!!! IT IS LUKEY\'S!!! LUKEY DID IT!!!',0);
-  yield* talk('Boggs: LARRY!! We just SAID. We said NEVER LUKEY!',0);
-  yield* talk('Bandit: ...It slipped out.',0);
+  yield* talk('Boggs: LARRY!! We do NOT snitch on Lukey!',0);
+  IS.big='-5 RESPECT';sfx.lose&&sfx.lose();Fx.shake=8;yield 60;IS.big=null;window.RESPHIT=1;
+  yield* talk('Boggs: -5 respect, Larry. FIVE.',0);
   yield* talk('Officer: Both of you. Out of the car. Hands where I can see them.',0);
   IS.scene=3;IS.carX=70;IS.copX=-8;IS.out=0;IS.cuffk=0;IS.cuffed=0;IS.cd=1;
   for(let i=0;i<34;i++){IS.out=i/33;yield 1;}IS.cd=0;
@@ -4087,17 +4489,17 @@ function* introGen(){
   IS.big="IT WAS LUKEY!!!";sfx.crit();Fx.shake=22;IS.flash=8;
   yield* talk("Bandit: IT WAS LUKEY!!!",0);
   IS.big=null;
-  yield* talk('Boggs: ...Larry. We SHOOK on it.',0);
+  yield* talk('Boggs: ...Larry. I TRUSTED you.',0);
   yield* talk('Officer: Sure it was. Into the wagon. Both of you.',0);
   IS.scene=4;IS.copX=-200;IS.cop.show=0;IS.show={bandit:1,cop2:1,cop3:1};IS.bx=60;IS.wagonX=140;IS.bdir=3;IS.ent=0;IS.wclose=0;IS.go=0;IS.dk=0;IS.thr=0;IS.pat=0;CN.wo=1;
   yield* talk('Boggs: LET GO OF ME! I DID NOTHING! I HAD OREGANO!',0);
-  for(let i=0;i<90;i++){IS.dk=i/89;if(i%22===0)sfx.bump();yield 1;}                 // dragged across the lot
+  for(let i=0;i<150;i++){IS.dk=i/149;if(i%12===0){sfx.bump();if(i%24===0)Fx.shake=3;}yield 1;}                 // dragged across the lot
   yield 12;
   for(let i=0;i<84;i++){IS.thr=i/42;if(i===30||i===72){sfx.slam();Fx.shake=12;}yield 1;}   // thrown in, one then the other
   IS.show={bandit:0,cop2:1};yield 10;
   IS.wclose=1;for(let i=0;i<18;i++){yield 1;}sfx.slam();Fx.shake=14;IS.flash=6;yield 14;
   IS.pat=1;yield 40;
-  yield* talk('*CLANG* The cops slam the doors, pat their hands clean, and walk away like nothing happened.',0);
+  yield 12;
   yield* talk('Boggs: You said Lukey. Twice. In front of a cop. Ninety seconds after we shook on it.',0);
   yield* talk('Bandit: It was a reflex.',0);
   yield* talk('Boggs: It was FIVE GRAMS, Larry. FIVE. And you never even TOLD me about the pumper. YOU got us BOTH booked, you pumper-having genius.',0);
@@ -4109,7 +4511,9 @@ function* introGen(){
   startNewWorld();
 }
 function startNewWorld(){
-  G.flags={};G.items={cigs:6,beer:0,weed:0,shank:0,perogi:0};G.steps=0;G.trays={};G.babaT=0;G.v=V0();G.met={};
+  G.flags={};G.items={cigs:6,beer:0,weed:0,shank:0,perogi:0,shark:0};G.steps=0;G.trays={};G.babaT=0;G.v=V0();G.met={};
+  G.pl=PL0();G.crew=null;G.L=L0();
+  if(window.RESPHIT){G.v.resp-=5;window.RESPHIT=0;}
   G.gang=[mkMon('bandit',5,'BANDIT')];
   enterMap('intake',9,11,1);G.mode='world';Say.clear();
   Cs.run((function*(){
@@ -4222,6 +4626,7 @@ function frame(){
     case 'world':worldUpdate();break;
     case 'battle':if(Say.on)Say.update();else if(Menus.length)menuUpdate();else Co.update();break;
     case 'end':endUpdate();break;
+    case 'name':nameUpdate();break;
   }
   switch(G.mode){
     case 'title':titleDraw();break;
@@ -4229,6 +4634,7 @@ function frame(){
     case 'world':worldDraw();break;
     case 'battle':battle3Draw();break;
     case 'end':endDraw();break;
+    case 'name':nameDraw();break;
   }
   Say.draw();menuDraw();fxDraw();
   for(const k in Pr)Pr[k]=0;
