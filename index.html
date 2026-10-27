@@ -603,7 +603,7 @@ const M={
 };
 const FXDESC={recoil:'Hurts you too',bottle:'Can fumble!',stun:'May stun',defdown:'Lowers DEF',atkdown:'Lowers ATK',defup:'Raises DEF',bleed:'May bleed',stunbonus:'2x vs stunned',steal:'May swipe cigs',accdown:'Lowers aim',spddown:'Lowers SPD',lukey:'Big & stuns',heal:'Heals 40%',atkup:'Raises ATK',drunkup:'ATK up, stumble',high:'DEF up, slow aim'};
 const LOOK={
-  bandit:{sk:'#e8b48a',hr:'#1c120b',st:'rows',sh:'#e8731c',pn:'#e8731c',ac:['mask'],tat:['BANDIT','POPSTAR']},
+  bandit:{sk:'#f6dcc6',hr:'#1c120b',st:'rows',sh:'#f27a12',pn:'#16161a',nike:1,short:1,ac:['mask','hband'],tat:['BANDIT','POPSTAR']},
   rookie:{sk:'#d9a577',hr:'#4a3020',st:'short'},
   cellie:{sk:'#c68a5e',hr:'#111',st:'buzz'},
   yardrat:{sk:'#e8b48a',hr:'#a85a1a',st:'bandana',hc:'#2a6ad8'},
@@ -2122,25 +2122,26 @@ function getRig(L){
   const SK=hx(L.sk||'#e8b48a'),HR=hx(L.hr||'#3a2414'),SH=hx(L.sh||'#e8731c'),PN=hx(L.pn||(L.sh?'#3a3a4a':'#e8731c'));
   const HC=hx(L.hc||'#333');const parts=[];
   const P=(role,piv,off,size,col,o)=>parts.push(Object.assign({role,piv,off,size,col,shape:'sph'},o||{}));
-  const dark=shade(PN,.9),SHOE=L.sh&&!L.sleeve?[.62,.62,.66]:[.12,.1,.14],JS=!L.sleeve&&(!L.sh||L.sh==='#e8731c');
+  const dark=shade(PN,.9),SHOE=L.nike?[.07,.07,.09]:(L.sh&&!L.sleeve?[.62,.62,.66]:[.12,.1,.14]),JS=!L.sleeve&&(!L.sh||L.sh==='#e8731c');
   // legs: thigh + knee joint + shin + shoe
   [['legL',-1,PN],['legR',1,dark]].forEach(([r,sd,col])=>{
     const pv=[sd*.14*w,.5,0],kn=[0,-.27,0];
-    P(r,pv,[0,-.13,0],[.25,.33,.27],col);
-    P(r+'s',pv,[0,-.125,0],[.215,.3,.235],col,{sub:kn,sr:r});
-    P(r+'s',pv,[0,-.02,.0],[.2,.2,.2],shade(col,1.12),{sub:kn,sr:r});
-    P(r+'s',pv,[0,-.215,.07],[.275,.15,.4],SHOE,{sub:kn,sr:r});
+    P(r,pv,[0,-.15,0],[.2,.38,.22],col);
+    P(r+'s',pv,[0,-.125,0],[.165,.32,.185],col,{sub:kn,sr:r});
+    P(r+'s',pv,[0,-.02,.0],[.17,.17,.17],shade(col,1.12),{sub:kn,sr:r});
+    P(r+'s',pv,[0,-.225,.07],[.2,.11,.36],SHOE,{sub:kn,sr:r});
+    if(L.nike){const OR=hx('#ff7a14');P(r+'s',pv,[0,-.2,.2],[.19,.09,.15],OR,{sub:kn,sr:r});P(r+'s',pv,[sd*.1,-.2,.06],[.02,.045,.17],OR,{sub:kn,sr:r,shape:'cube'});P(r+'s',pv,[0,-.2,-.07],[.18,.09,.08],OR,{sub:kn,sr:r});P(r+'s',pv,[0,-.285,.07],[.21,.035,.37],[.94,.94,.94],{sub:kn,sr:r});}
   });
   // torso
-  P('body',[0,.5,0],[0,.38,0],[.7*w,.44,.42],SH);                 // chest / shoulders
-  P('body',[0,.5,0],[0,.12,0],[.5*w,.34,.36],SH);                 // waist taper
-  P('body',[0,.5,0],[0,-.03,0],[.52*w,.14,.37],PN);               // hips
-  if(L.buff||L.w){[-1,1].forEach(sd=>P('body',[0,.5,0],[sd*.17*w,.43,.12],[.3*w,.26,.22],SH));}   // pecs
+  P('body',[0,.5,0],[0,.38,0],[.6*w,.46,.34],SH);                 // chest / shoulders
+  P('body',[0,.5,0],[0,.12,0],[.45*w,.36,.29],SH);                 // waist taper
+  P('body',[0,.5,0],[0,-.03,0],[.46*w,.16,.3],PN);               // hips
+  if(L.buff||L.w){[-1,1].forEach(sd=>P('body',[0,.5,0],[sd*.14*w,.45,.1],[.24*w,.22,.16],SH));}   // pecs
   if(JS){const OR=shade(SH,1.08);
-    P('body',[0,.5,0],[0,.6,.03],[.4,.07,.34],shade(SH,.88),{shape:'cyl'});                          // collar
-    P('body',[0,.5,0],[0,.3,.2],[.03,.4,.02],shade(SH,.7),{shape:'cube'});                        // button placket
-    P('body',[0,.5,0],[.17,.4,.205],[.17,.15,.03],shade(SH,.9),{shape:'cube'});                      // chest pocket
-    P('body',[0,.5,0],[.17,.46,.222],[.15,.06,.012],[1,1,1],{shape:'cube',tex:numTex('#'+SH.map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''),L.num||String(10000+((L.sk||'').charCodeAt(2)||5)*137%89999))});
+    P('body',[0,.5,0],[0,.62,.02],[.3,.06,.26],shade(SH,.88),{shape:'cyl'});                          // collar
+    P('body',[0,.5,0],[0,.3,.16],[.03,.4,.02],shade(SH,.7),{shape:'cube'});                        // button placket
+    P('body',[0,.5,0],[.14,.4,.15],[.14,.13,.03],shade(SH,.9),{shape:'cube'});                      // chest pocket
+    P('body',[0,.5,0],[.14,.45,.168],[.12,.05,.012],[1,1,1],{shape:'cube',tex:numTex('#'+SH.map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''),L.num||String(10000+((L.sk||'').charCodeAt(2)||5)*137%89999))});
   }                       // drawstring
   if(L.stripe)P('body',[0,.5,0],[0,.3,0],[.62*w,.1,.43],hx(L.stripe),{shape:'cyl'});
   if(L.vest)P('body',[0,.5,0],[0,.34,.02],[.6*w,.4,.42],hx(L.vest));
@@ -2150,17 +2151,17 @@ function getRig(L){
   [['armL',-1],['armR',1]].forEach(([r,sd])=>{
     const pv=[sd*.37*w,.95,0],el=[0,-.27,0];
     const bf=L.buff?1.5:1;
-    if(JS){P(r,pv,[0,-.13,0],[.2*bf,.31,.22*bf],SK);P(r,pv,[0,-.05,0],[.25*bf,.2,.27*bf],sl);P(r+'f',pv,[0,-.005,0],[.18*bf,.18,.19*bf],SK,{sub:el,sr:r});}   // short sleeve, bare arm
+    if(JS||L.short){P(r,pv,[0,-.13,0],[.15*bf,.32,.16*bf],SK);P(r,pv,[0,-.05,0],[.2*bf,.2,.21*bf],sl);P(r+'f',pv,[0,-.005,0],[.14*bf,.16,.15*bf],SK,{sub:el,sr:r});}   // short sleeve, bare arm
     else{P(r,pv,[0,-.13,0],[.205*bf,.31,.225*bf],sl);
     P(r+'f',pv,[0,-.005,0],[.18*bf,.18,.19*bf],shade(sl,1.1),{sub:el,sr:r});}                 // elbow
-    P(r+'f',pv,[0,-.13,0],[.165*bf,.285,.185*bf],SK,L.tat?{sub:el,sr:r,tex:tatTex(L.sk||'#e8b48a',r==='armL'?L.tat[0]:L.tat[1])}:{sub:el,sr:r});                           // forearm
-    P(r+'f',pv,[0,-.2,.0],[.178,.07,.2],WRAP,{sub:el,sr:r,shape:'cyl'});               // hand wrap
-    P(r+'f',pv,[0,-.31,.025],[.2,.18,.22],SK,{sub:el,sr:r,hand:1});                     // fist
-    [-.055,-.0,.055].forEach(kx=>P(r+'f',pv,[kx*(sd>0?1:1),-.285,.115],[.07,.075,.075],shade(SK,.93),{sub:el,sr:r}));  // knuckles
+    P(r+'f',pv,[0,-.13,0],[.125*bf,.29,.14*bf],SK,L.tat?{sub:el,sr:r,tex:tatTex(L.sk||'#e8b48a',r==='armL'?L.tat[0]:L.tat[1])}:{sub:el,sr:r});                           // forearm
+    P(r+'f',pv,[0,-.2,.0],[.14,.06,.15],WRAP,{sub:el,sr:r,shape:'cyl'});               // hand wrap
+    P(r+'f',pv,[0,-.31,.025],[.15,.16,.17],SK,{sub:el,sr:r,hand:1});                     // fist
+    [-.055,-.0,.055].forEach(kx=>P(r+'f',pv,[kx*(sd>0?1:1),-.285,.1],[.05,.055,.055],shade(SK,.93),{sub:el,sr:r}));  // knuckles
     P(r+'f',pv,[-sd*.1,-.3,.07],[.07,.1,.09],shade(SK,.96),{sub:el,sr:r});               // thumb
   });
   // head
-  const HP=[0,.92,0],HS=[.55,.6,.55],HO=[0,.3,0];
+  const HP=[0,.92,0],HS=[.5,.58,.5],HO=[0,.3,0];
   P('head',HP,HO,HS,[1,1,1],{tex:faceTex(L),head:1});
   const H=(off,size,col,o)=>P('head',HP,off,size,col,o);
   const cap=(f1,b1,f2,b2,sc,col,dy,dz)=>H([0,HO[1]+(dy||0),(dz||0)],[HS[0]*sc,HS[1]*sc,HS[2]*sc],col,{mesh:shellOf(f1,b1,f2,b2),nooutline:0});
@@ -2184,6 +2185,7 @@ function getRig(L){
     case 'bald':break;
   }
   if(ac.includes('crown')){const g=hx('#ffd23a');H([0,.69,0],[.46,.1,.44],g,{shape:'cyl'});[0,1,2,3,4].forEach(i=>{const a=i*1.2566;H([Math.sin(a)*.18,.8,Math.cos(a)*.17],[.11,.2,.11],g,{shape:'cone'});});ball(0,.86,0,.07,hx('#ff4a4a'));}
+  if(ac.includes('hband')){cap(58,92,76,106,1.1,hx('#f27a12'),.0);H([-.3,.43,-.12],[.09,.07,.2],hx('#f27a12'));H([-.36,.35,-.2],[.06,.2,.06],hx('#f27a12'));}
   if(ac.includes('shades')){H([0,.37,.29],[.66,.15,.14],hx('#0a0a10'));H([0,.37,.2],[.7,.04,.3],hx('#0a0a10'));}
   if(ac.includes('badge')){const G=hx('#ffd23a');P('body',[0,.5,0],[.17,.42,.2],[.11,.13,.04],G);P('body',[0,.5,0],[-.16,.3,.2],[.14,.05,.03],hx('#e8e8f0'));P('body',[0,.5,0],[0,.09,.0],[.6,.07,.42],hx('#0c0c10'),{shape:'cyl'});P('body',[0,.5,0],[.0,.09,.22],[.1,.08,.03],G);}
   if(ac.includes('chin'))H([0,.07,.22],[.5,.28,.36],SK);
@@ -2250,7 +2252,14 @@ function getRigSP(L){
 }
 const _pe=new Float32Array(16),_pf=new Float32Array(16),_pm=new Float32Array(16),_pa=new Float32Array(16),_pb=new Float32Array(16),_pc=new Float32Array(16),_base=new Float32Array(16);
 const POSE0={};
-function poseWalk(t,amt){const s=Math.sin(t)*amt;if(SPK)return {armL:[s*.55,0],armR:[-s*.55,0],legL:-s*.6,legR:s*.6,bob:Math.abs(Math.cos(t))*.07*amt,roll:Math.sin(t)*.09*amt,twist:Math.sin(t)*.1*amt,headY:-Math.sin(t)*.06*amt};return {armL:[s*.9,0],armR:[-s*.9,0],legL:-s*.85,legR:s*.85,bob:Math.abs(Math.cos(t))*.04*amt};}
+function poseWalk(t,amt){
+  // natural gait: knees flex through the swing, opposite arm/leg, elbows soften, hips counter-rotate and sway
+  amt=amt||0;const s=Math.sin(t),c=Math.cos(t);
+  const fL=Math.max(0,c),fR=Math.max(0,-c);                  // forward-swing phase of each leg
+  return {armL:[s*.62*amt,0],armR:[-s*.62*amt,0],elbL:amt*(.22+.3*Math.max(0,-s)),elbR:amt*(.22+.3*Math.max(0,s)),
+    legL:-s*.78*amt,legR:s*.78*amt,kneeL:amt*(.08+.85*fL*fL),kneeR:amt*(.08+.85*fR*fR),
+    bob:Math.abs(c)*.05*amt,twist:s*.16*amt,roll:Math.sin(t+1.57)*.028*amt,lean:.07*amt,headY:-s*.07*amt};
+}
 function drawRig(L,x,y,z,yaw,pose,opt){
   const rig=getRig(L),gl=R3.gl;opt=opt||{};pose=pose||POSE0;
   const sc=opt.scale||1,sq=pose.sq||1;
@@ -3780,11 +3789,11 @@ function sceneCouch(){
   B3(0,.17,.05,1.8,.34,.7,[.3,.2,.14,1]);B3(-.55,.42,.0,.12,.16,.12,[.1,.4,.9,1]);B3(-.25,.42,.15,.12,.16,.12,[.1,.4,.9,1]);B3(.5,.37,.05,.5,.04,.35,[.9,.9,.8,1]);
   C3(-2.8,1.1,-2.6,.12,2.2,.12,[.3,.3,.3,1]);S3(-2.8,2.4,-2.6,.7,.5,.7,[1,.85,.5,1],{emit:1});pool3(-2.8,-2.6,6,[1,.8,.4],.3);
   // Larry: sits back into the cushion, thighs on the seat, feet flat, phone at the ear
-  const sc=1.1,y0=.3-.5*sc*RIGV;
+  const sc=1.1,y0=.54-.5*sc*RIGV;
   const ear=armIK(.1*sc,.34*sc,sc);
   const pose={armR:[ear[0],-.03],elbR:ear[1],armL:[-.35,.25],elbL:1.2,legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5,bob:Math.sin(IS.t/22)*.008,headX:.04,headY:-.3,lean:-.08,roll:.0};
-  person3(BSTREET,0,-1.55,0,pose,sc,y0);
-  const ph=rigPoint(0,y0,-1.55,0,[.42,1.27,.06],sc);
+  person3(BSTREET,0,-1.42,0,pose,sc,y0);
+  const ph=rigPoint(0,y0,-1.42,0,[.42,1.27,.06],sc);
   phone3([ph[0],ph[1],ph[2]],true,Math.PI/2);
   r3Flush();
 }
@@ -3958,12 +3967,83 @@ function driveEvent(carx){
       break;}
   }
 }
+
+/* ---- road vehicles for the reckless drive (semi, pickup, minivan, bus) + the maneuver director ---- */
+function vehDraw(v){
+  const x=v.x,z=v.z,fz=v.dir>0?-1:1,c=v.col;   // fz: which end faces +z (toward camera) ; oncoming vehicles face us
+  const wheel=(wx,wz,r)=>C3(x+wx,r,z+wz,r*2,.34,r*2,[.05,.05,.06,1],null,0,0,Math.PI/2);
+  const head=(wx,wy,wz)=>{if(v.dir<0){glow3(x+wx,wy,z+wz,1.2,[1,1,.85],.8);}else glow3(x+wx,wy,z+wz,.9,[1,.1,.1],.8);};
+  switch(v.kind){
+    case 'semi':{
+      B3(x,2.0,z-fz*1.6,2.5,3.3,8.4,[.93,.94,.96,1]);B3(x,.95,z-fz*1.6,2.2,.4,8.2,[.2,.2,.24,1]);
+      B3(x,1.5,z+fz*3.9,2.4,2.3,2.0,c);B3(x,2.9,z+fz*4.2,2.2,.9,1.3,c);B3(x,1.9,z+fz*3.95+fz*1.02,2.05,.8,.06,[.08,.1,.14,1]);
+      B3(x,.5,z+fz*3.9,2.5,.5,2.2,[.12,.12,.14,1]);
+      for(const wz of [3.9,-.9,-2.3,-3.7])for(const sx of [-1.15,1.15])wheel(sx,fz*wz*(wz===3.9?1:1),.5);
+      head(-.8,1.2,fz*5.0);head(.8,1.2,fz*5.0);
+      if(v.dir<0){B3(x,3.4,z+fz*4.4,.9,.2,.1,[1,.6,.1,1],{emit:1});}
+      break;}
+    case 'pickup':{
+      B3(x,1.5,z+fz*.7,2.0,1.2,1.7,c);B3(x,1.1,z+fz*2.0,2.0,.7,1.4,c);B3(x,1.1,z-fz*1.6,2.0,.5,2.7,shade2(c,.8));
+      B3(x-.95,1.5,z-fz*1.6,.12,.6,2.7,shade2(c,.9));B3(x+.95,1.5,z-fz*1.6,.12,.6,2.7,shade2(c,.9));B3(x,1.5,z-fz*2.95,2.0,.6,.12,shade2(c,.9));
+      B3(x,2.0,z+fz*.55,1.8,.5,1.4,[.05,.07,.12,1]);B3(x,.6,z,2.1,.5,5.6,[.1,.1,.12,1]);
+      for(const sx of [-1.05,1.05]){wheel(sx,fz*1.5,.5);wheel(sx,-fz*1.8,.5);}
+      head(-.7,1.1,fz*2.75);head(.7,1.1,fz*2.75);
+      break;}
+    case 'minivan':{
+      B3(x,1.25,z,2.0,1.4,4.8,c);B3(x,2.0,z-fz*.3,1.85,.9,3.4,c);B3(x,2.05,z-fz*.3,1.9,.55,3.0,[.05,.07,.12,1]);B3(x,.6,z,2.1,.4,4.9,[.1,.1,.12,1]);
+      for(const sx of [-1.02,1.02]){wheel(sx,fz*1.5,.42);wheel(sx,-fz*1.6,.42);}
+      head(-.7,1.0,fz*2.45);head(.7,1.0,fz*2.45);
+      break;}
+    case 'bus':{
+      B3(x,2.1,z,2.6,3.0,10.5,[.95,.78,.1,1]);B3(x,2.5,z,2.64,.7,10.2,[.06,.08,.14,1]);B3(x,.7,z,2.7,.5,10.6,[.1,.1,.12,1]);
+      for(const sx of [-1.3,1.3]){wheel(sx,fz*3.2,.55);wheel(sx,-fz*3.0,.55);}
+      head(-.9,1.2,fz*5.3);head(.9,1.2,fz*5.3);
+      break;}
+  }
+}
+const shade2=(c,k)=>[c[0]*k,c[1]*k,c[2]*k,1];
+function spawnVeh(kind,lane,v,dir,z0,col){IS.vh=IS.vh||[];IS.vh.push({kind,x:lane,z:z0===undefined?-46:z0,v,dir,col:col||[.7,.1,.1,1]});}
+function vehUpdate(){
+  const spd=IS.spd||5.5,gv=.55*(spd/5.5);
+  for(const o of (IS.vh||[])){o.z+=gv-o.v;}
+  IS.vh=(IS.vh||[]).filter(o=>o.z<26&&o.z>-120);
+  for(const o of IS.vh)vehDraw(o);
+}
+/* maneuver director: IS.bt = {kind,t,ph}; sets the lateral target + speed so the driving changes every beat */
+function driveBeatStart(kind){
+  const cols={semi:[.75,.12,.12,1],pickup:[.15,.3,.6,1],minivan:[.55,.7,.6,1],bus:[.95,.78,.1,1]};
+  IS.bt={kind,t:0,ph:0,veh:null};IS.swR=.07;
+  if(kind==='semi'){spawnVeh('semi',-1.8,-.9,-1,-50,cols.semi);IS.bt.veh=IS.vh[IS.vh.length-1];IS.swT=3.6;IS.swR=.05;}
+  else if(kind==='bus'){spawnVeh('bus',-1.8,-.7,-1,-50,cols.bus);IS.bt.veh=IS.vh[IS.vh.length-1];IS.swT=3.4;IS.swR=.05;}
+  else if(kind==='pickup'||kind==='minivan'){spawnVeh(kind,1.8,.25,1,-42,cols[kind]);IS.bt.veh=IS.vh[IS.vh.length-1];IS.swT=0;IS.swR=.12;}
+  else if(kind==='drift'){IS.swT=2;}
+}
+function driveBeatTick(){
+  const b=IS.bt;if(!b)return;b.t++;
+  const v=b.veh;
+  if(b.kind==='semi'||b.kind==='bus'){
+    // drifts into the oncoming lane, head-on, then yanks back at the last second
+    if(b.ph===0&&v&&v.z>-13){b.ph=1;IS.swT=0;IS.swR=.28;Fx.shake=8;sfx.crit&&sfx.crit();IS.horn=22;}
+    if(b.ph===1&&v&&v.z>8){b.ph=2;IS.bt=null;IS.swR=.07;IS.swT=undefined;IS.spd=undefined;}
+  }else if(b.kind==='pickup'||b.kind==='minivan'){
+    // closes in behind him, rides his bumper for a second, then pulls out and blasts around
+    const gap=v?-v.z:99;
+    if(b.ph===0){IS.spd=gap<11?Math.max(3.0,5.5*(gap-5)/6):5.5;IS.swT=Math.sin(b.t/18)*.25;if(gap<6.5){b.ph=1;b.t1=b.t;}}
+    else if(b.ph===1){IS.spd=3.4;IS.swT=Math.sin(b.t/9)*.18;if(b.t-b.t1>70){b.ph=2;IS.swT=3.7;IS.swR=.09;IS.spd=7.2;IS.horn=18;}}
+    else if(b.ph===2){if(v&&v.z>5){b.ph=3;IS.swT=0;IS.swR=.12;}}
+    else if(b.ph===3){IS.spd=5.5;if(b.t>400||(v&&v.z>20)){IS.bt=null;IS.swT=undefined;IS.spd=undefined;IS.swR=.07;}}
+  }else if(b.kind==='drift'){IS.swT=2+Math.sin(b.t/26)*1.7;if(b.t>240){IS.bt=null;IS.swT=undefined;}}
+}
 const TRAF=[[.9,.1,.1],[.2,.4,.8],[.85,.85,.2],[.25,.6,.35],[.55,.2,.7],[.9,.5,.15]];
 function sceneDrive(){
   nightEnv([0,0,0]);
   if(IS.auto){
     IS.df=(IS.df||0)+1;
-    if(IS.auto===1){IS.scroll+=5.5;IS.sw=Math.min(1,IS.df/25)*2.1*(1-Math.cos(IS.df/12));}
+    if(IS.auto===1){
+      IS.scroll+=(IS.spd||5.5);driveBeatTick();
+      if(IS.swT===undefined)IS.sw=Math.min(1,IS.df/25)*2.1*(1-Math.cos(IS.df/(IS.wv||12)));   // default weaving
+      else IS.sw+=(IS.swT-IS.sw)*(IS.swR||.07);
+    }
     else if(IS.auto===2){IS.scroll+=4;IS.sw*=.94;}
     else{IS.scroll+=Math.max(0,3-(IS.df%100)*.0);IS.sw*=.9;}
   }
@@ -3989,7 +4069,8 @@ function sceneDrive(){
     const oz=-80+((IS.t*1.3)%230);car3(-1.8,0,oz,0,{col:[.2,.3,.6,1]});
   }
   if(IS.cop.show){const cz=IS.cz===undefined?24:IS.cz;car3(1.8,0,cz,Math.PI,{cop:1,col:[.96,.96,.97,1],lights:1});}
-  driveEvent(x);
+  vehUpdate();driveEvent(x);
+  if(IS.horn>0){IS.horn--;glow3(x,2.2,-3,2.2,[1,.9,.3],(IS.horn%6<3)?.35:.1);}
   car3(x,0,0,yaw,{roll,brake:IS.cop.show>0,beamsOn:true});
   glow3(x-.55*Math.cos(yaw),.8,-2.0,.7,[1,.1,.1],.8);glow3(x+.55*Math.cos(yaw),.8,-2.0,.7,[1,.1,.1],.8);
   r3Flush();
@@ -4043,7 +4124,7 @@ function sceneWagon(){
   const xG=lerp3(-14.3,-6.6,dk);                // Boggs (dragged a step behind)
   const fly=(x0,k)=>{   // 1) cop hauls him off the ground  2) swings him  3) he sails in face-first
     if(k<.3){const w=sm01(k/.3);return {x:x0-.3*w,y:.5*w,k:0,w,f:0};}
-    const u=sm01((k-.3)/.7);return {x:lerp3(x0-.3,-1.0,u),y:.5+Math.sin(Math.PI*u)*.55-.5*u*u*u,k:u,w:1,f:1};};
+    const u=sm01((k-.3)/.7);return {x:lerp3(x0-.3,-.8,u),y:.5+Math.sin(Math.PI*u)*.55-.42*u*u*u,k:u,w:1,f:1};};
   // prisoners
   const pr=[[BSTREET,xB,Math.min(1,thr)],[BOGGS_ST,thr>1?lerp3(xG,-4.4,1):lerp3(xG,-4.4+ -0,sm01(thr)*.0+Math.min(1,thr)*.0),Math.max(0,thr-1)]];
   // Boggs shuffles up to the bumper while Bandit is thrown
@@ -4059,8 +4140,9 @@ function sceneWagon(){
     else if(dk<1&&dk>0){const ph=t*.5+it.side*1.7,st=Math.sin(ph);   // heels dragging, body hanging back, head thrashing
       pose=Object.assign({},cuf,{legL:-.25+st*.35,legR:-.25-st*.35,kneeL:.5+Math.max(0,st)*.5,kneeR:.5+Math.max(0,-st)*.5,lean:-.4+.08*st,headX:-.15+.15*Math.sin(ph*1.7),headY:.5*Math.sin(ph*.9),roll:.12*st,twist:.35*Math.sin(ph*.8),bob:Math.abs(st)*.04});}
     else pose=Object.assign({},poseWalk(0,0),cuf,{lean,headX:.2,roll:.08*Math.sin(t*.3),twist:.2*Math.sin(t*.4)});
-    if(x>-3.15)continue;
-    person3(it.L,x,2.9,Math.PI/2,pose,1.1,y);
+    if(x>-1.3)continue;                                   // only vanishes once he is deep inside, behind the wall
+    const zin=it.k>0?lerp3(2.9,1.8,sm01((x+5.6)/2.4)):2.9;   // lines up with the open doors so he goes in cleanly
+    person3(it.L,x,zin,Math.PI/2,pose,1.1,y);
   }
   // cops: haul on the arms, shove, then close the doors and dust off their hands
   const cp=(who,px)=>{
@@ -4116,10 +4198,10 @@ function sceneInside(){
     bob:jit,headX:.05+.05*Math.sin(t*.9),headY:Math.sin(t*.16)*.55+Math.sin(t*.55)*.12,lean:.0};
   person3(BSTREET,.42,-.35,0,pbd,sc,sy);
   // Boggs (passenger, screen-left): turned toward Bandit, hands up in a "what is wrong with you" shrug
-  const sh=sm01(.5+.5*Math.sin(t*.07));
-  const hb=armIK(.35,.2*sh,1);
-  const pbg={armL:[hb[0],.35],armR:[hb[0]-.1,-.45],elbL:hb[1]*.8,elbR:hb[1],legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5,
-    bob:Math.sin(t*.2)*.01,headX:-.05,headY:.5+.1*Math.sin(t*.13),lean:0,roll:.06*Math.sin(t*.09)};
+  // Boggs (passenger, screen-left): seat reclined, arms crossed, unbothered, eyes on Bandit
+  const br=Math.sin(t*.05)*.015;
+  const pbg={armL:[-.3,.12],armR:[-.35,-.12],armLy:1.25,armRy:-1.25,elbL:1.75,elbR:1.75,legL:-1.5,legR:-1.5,kneeL:1.35,kneeR:1.35,
+    bob:br,headX:-.1,headY:.45+.06*Math.sin(t*.09),lean:-.3,roll:.03*Math.sin(t*.07)};
   person3(BOGGS_ST,-.42,-.35,.25,pbg,sc,sy);
   // sweat: streams off Larry's head, heavier when IS.sweat
   const n=IS.sweat?9:3;
@@ -4316,7 +4398,7 @@ function askStory(n){
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
 const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
 const BOGGS_ST=Object.assign({},LOOK.boggs,{sh:'#3a6a4a',pn:'#2a2a3a'});
-const BSTREET=Object.assign({},LOOK.bandit,{sh:'#6a3a9a',pn:'#2a3a5a'});
+const BSTREET=Object.assign({},LOOK.bandit);
 
 /* ---- smooth sprites for 2D scenes (intro/title/ending): rig rendered once, cached ---- */
 const SPRC={};let SPRN=0;
@@ -4524,7 +4606,7 @@ function* introGen(){
     pigeons:{b:['Bandit: Free birds! Get it? Like the song.','Bandit: They had time to move.','Bandit: Fly, my little feathered friends!'],g:['Boggs: You are going to hit a pigeon and I am going to cry.','Boggs: Birds too?! BIRDS TOO?!','Boggs: Eyes on the road, not on the birds!']}
   };
   const deck=['can','walker','dog','cones','pigeons'].sort(()=>Math.random()-.5).slice(0,3);
-  const slots=[1,4,7,9,11].sort(()=>Math.random()-.5).slice(0,3).sort((x,y)=>x-y);
+  const slots=[1,5,7,11].sort(()=>Math.random()-.5).slice(0,3).sort((x,y)=>x-y);
   const BOGWARN=['Boggs: BRO. WATCH THE ROAD. WATCH THE ROAD.','Boggs: LARRY. LANE. STAY IN YOUR LANE.','Boggs: That is the OTHER lane, Larry!!'];
   const story=[
     pick(BOGWARN),
@@ -4541,8 +4623,16 @@ function* introGen(){
     'Bandit: ...he goes, "Soldier, you are crazy." And I said, "Sir. That is why they call me the Popstar."',
     pick(['Boggs: Nobody calls you that!','Boggs: Nobody. Calls. You. That.','Boggs: Who is "they"?! Who?!'])
   ];
+  const VL={semi:'Boggs: BIG TRUCK. BIG TRUCK. BIG TRUCK.',pickup:'Boggs: Bandit. Pickup truck. PICKUP TRUCK.',minivan:'Boggs: Bandit, that is a MINIVAN. Slow down.',bus:'Boggs: THAT IS A BUS, LARRY!! A BUS!!'};
+  const k1=pick(['pickup','minivan','semi']),k2=pick(['semi','bus']);
+  story[4]=VL[k1];story[10]=k2==='semi'?pick(['Boggs: BANDIT, THE TRUCK! THE TRUCK!','Boggs: WE ARE IN THE OTHER LANE AGAIN! TRUCK!']):VL.bus;
+  IS.swT=undefined;IS.spd=undefined;IS.bt=null;IS.vh=[];
   let ei=0;
   for(let i=0;i<story.length;i++){
+    if(i===2)driveBeatStart('drift');
+    if(i===3)driveBeatStart(k1);
+    if(i===6){IS.bt=null;IS.swT=undefined;IS.spd=undefined;IS.swR=.07;}
+    if(i===9)driveBeatStart(k2);
     yield* talk(story[i],0);
     if(ei<slots.length&&slots[ei]===i){
       const id=deck[ei++];startDriveEvent(id);
@@ -4552,7 +4642,7 @@ function* introGen(){
       yield 20;
     }
   }
-  IS.ev=null;
+  IS.ev=null;IS.bt=null;IS.vh=[];IS.swT=undefined;IS.spd=undefined;
   IS.auto=2;
   IS.lights=1;IS.cop.show=1;IS.copX=-150;sfx.siren();playSong(null);
   for(let i=0;i<70;i++){IS.copX+=2.4;IS.cz=30-i*.31;yield 1;}
