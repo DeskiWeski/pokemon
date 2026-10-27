@@ -3727,8 +3727,8 @@ function cineSeated(L,x,y,z,yaw,pose,sc){
   person3(L,x,z,yaw,p,sc||1,y===undefined?-.2:y);
 }
 function phone3(p,on,tilt){
-  B3(p[0],p[1],p[2],.1,.05,.2,[.05,.05,.07,1],null,tilt||0,0,0);
-  B3(p[0],p[1]+.028,p[2],.085,.01,.17,on?[.55,.85,1,1]:[.08,.1,.14,1],{emit:on?1:.1},tilt||0,0,0);
+  B3(p[0],p[1],p[2],.15,.07,.3,[.05,.05,.07,1],null,tilt||0,0,0);
+  B3(p[0],p[1]+.04,p[2],.125,.015,.26,on?[.55,.85,1,1]:[.08,.1,.14,1],{emit:on?1:.1},tilt||0,0,0);
   if(on)glow3(p[0],p[1]+.1,p[2],.9,[.6,.85,1],.55);
 }
 function sceneCouch(){
@@ -3751,12 +3751,12 @@ function sceneCouch(){
   const pose={armR:[ear[0],-.03],elbR:ear[1],armL:[-.35,.25],elbL:1.2,legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5,bob:Math.sin(IS.t/22)*.008,headX:.04,headY:-.3,lean:-.08,roll:.0};
   person3(BSTREET,0,-1.55,0,pose,sc,y0);
   const ph=rigPoint(0,y0,-1.55,0,[.42,1.27,.06],sc);
-  phone3([ph[0],ph[1],ph[2]],!!IS.ring,Math.PI/2);
+  phone3([ph[0],ph[1],ph[2]],true,Math.PI/2);
   r3Flush();
 }
 function sceneGym(){
   nightEnv([.2,.12,.05]);R3.env.amb=[.9,.82,.85];R3.env.sun=[.95,.9,.85];R3.env.fnear=20;R3.env.ffar=46;
-  camSet(33,[2.4,1.7,6.0],[.9,1.3,0],.43);
+  camSet(36,[2.2,1.9,8.2],[.9,1.4,0],.43);
   B3(0,-.05,0,13,.1,13,[.22,.22,.26,1]);B3(0,2.8,-3.6,13,6,.2,[.14,.13,.2,1]);B3(-6.5,2.8,0,.2,6,13,[.16,.14,.22,1]);
   B3(0,3.6,-3.45,5,.8,.06,[1,.4,.2,1],{emit:.7});
   B3(4,2.2,-3.45,3,3,.06,[.3,.55,.9,1],{emit:.35});
@@ -3793,6 +3793,12 @@ function sceneGym(){
       pose.headX=.1;
     }
     let inHand=false;
+    const ga=sm01(IS.gans||0);
+    if(gw>=1&&gt<=0&&IS.gans!==undefined)yaw=lerp3(1.35,.35,ga);
+    if(gw>=1&&gt<=0&&IS.gans!==undefined){
+      const r0=armIK(.2*sc,.1*sc,sc),r1=armIK(.1*sc,.34*sc,sc);
+      pose={armL:[-.25,.2],elbL:.5,armR:[lerp3(r0[0],r1[0],ga),-.1],elbR:lerp3(r0[1],r1[1],ga),headX:.08,headY:-.15*ga,lean:0,legL:-.05,legR:.05,kneeL:.1,kneeR:.1,bob:ga>.9?Math.abs(Math.sin(IS.t*.12))*.01:0};
+    }
     if(gw>=1){
       // phone is in his right hand; he whips it down onto the table
       inHand=gt<.58;
@@ -3801,12 +3807,12 @@ function sceneGym(){
     }
     person3(BOGGS_ST,x,z,yaw,pose,sc,y);
     if(gw>=1){
-      if(inHand){const hp=rigPoint(x,y,z,yaw,[.4,gt<.4?1.2:1.0,.18],sc);phonePos=[hp[0],hp[1],hp[2]];phoneOn=false;}
+      if(inHand){const hp=(gt<=0&&IS.gans!==undefined)?rigPoint(x,y,z,yaw,[.42,lerp3(.95,1.27,ga),lerp3(.3,.06,ga)],sc):rigPoint(x,y,z,yaw,[.4,gt<.4?1.2:1.0,.18],sc);phonePos=[hp[0],hp[1],hp[2]];phoneOn=(gt<=0&&IS.gans!==undefined);}
       else{const u=Math.min(1,(gt-.58)/.22),from=rigPoint(x,y,z,yaw,[.4,.95,.5],sc);
         phonePos=[lerp3(from[0],TB[0],u),lerp3(from[1],.78,u)+Math.sin(u*Math.PI)*.35*(1-u)+(gt>.8?Math.abs(Math.sin((gt-.8)*20))*.12*(1-gt):0),lerp3(from[2],TB[1],u)];phoneOn=false;tilt=gt>.8?.4:u*2;}
     }
   }
-  phone3(phonePos,phoneOn,tilt);
+  phone3(phonePos,phoneOn,(gw>=1&&gt<=0&&sm01(IS.gans||0)>.5)?1.5:tilt);
   glow3(0,3.2,1,7,[1,.9,.75],.1);
   r3Flush();
 }
@@ -4427,35 +4433,35 @@ function* introGen(){
   IS.scene=6;IS.ring=1;IS.pu=0;IS.puY=0;IS.cut='g';
   yield* talk('Boggs lives in Surfside. Boggs has not missed a leg day since 2016.',0);
   for(let i=0;i<50;i++){IS.pu+=.12;IS.puY=-Math.round((1-Math.cos(IS.pu))/2*8);yield 1;}
-  sfx.crit();IS.ring=1;IS.cut='g';
-  for(let i=0;i<40;i++){IS.pu+=.12;if(i%14===0)sfx.blip();yield 1;}
+  sfx.crit();IS.ring=1;
+  for(let i=0;i<64;i++){IS.pu+=.12;if(i%14===0)sfx.blip();yield 1;}      // keeps cranking out reps while the phone buzzes
+  IS.ring=1;IS.gy=1;IS.gk=0;IS.gw=0;IS.gt=0;IS.gans=undefined;
+  for(let i=0;i<22;i++){IS.gk=i/21;yield 1;}                      // lets go of the bar, drops
+  sfx.bump();yield 10;
+  for(let i=0;i<34;i++){IS.gw=i/33;yield 1;}                      // walks to the table
+  IS.gans=0;for(let i=0;i<16;i++){IS.gans=i/15;yield 1;}          // picks up the phone, raises it to his ear
   IS.ring=0;
-  yield* talk('Boggs: *grunt* ...fourteen... *grunt*... fifteen... what.',0);
-  const pul=function*(n){for(let i=0;i<n;i++){IS.pu+=.14;IS.puY=-Math.round((1-Math.cos(IS.pu))/2*8);yield 1;}};
+  yield* talk('Boggs: Yo. What.',0);
   IS.cut='b';
-  yield* talk('Bandit: Boggs! It is Bandit. Get your butt to Cleveland. We are hitting a lick tonight.',0);
-  IS.cut='g';yield* pul(40);
-  yield* talk('Boggs: *pull-up* ...idk, nah man.',0);
+  yield* talk('Bandit: Boggs! It\'s Bandit, bro. Get your ass to Cleveland, we hittin\' a lick tonight.',0);
+  IS.cut='g';
+  yield* talk('Boggs: Nah, man. I got leg day. Back day. It\'s a back day, dawg.',0);
   IS.cut='b';
-  yield* talk('Bandit: It is easy money. Bring the bag. I will pick you up.',0);
-  IS.cut='g';yield* pul(50);
-  yield* talk('Boggs: *pull-up* ...nah man. I have leg day. And back day. It is a back day.',0);
+  yield* talk('Bandit: Bro it\'s easy money. Bring the bag, I\'m pickin\' you up.',0);
+  IS.cut='g';
+  yield* talk('Boggs: Nah, dude. Hell no.',0);
   IS.cut='b';
   yield* talk('Bandit: YES, BRO!!! Get ready. I am picking your ass up, and we are going to Cleveland!',0);
   sfx.slam();yield 14;
   IS.cut='g';
-  IS.gy=1;IS.gk=0;IS.gw=0;IS.gt=0;
-  for(let i=0;i<22;i++){IS.gk=i/21;yield 1;}                      // lets go of the bar, drops
-  sfx.bump();yield 10;
-  for(let i=0;i<34;i++){IS.gw=i/33;yield 1;}                      // walks to the table, grabs the phone
   yield* talk('Boggs: GOD DAMMIT!',0);
   for(let i=0;i<26;i++){IS.gt=i/25;if(i===14){sfx.slam();Fx.shake=10;}yield 1;}   // winds up and throws it onto the table
-  yield 24;IS.gy=0;
+  yield 24;IS.gy=0;IS.gans=undefined;
   // --- pulling up to the house ---
   IS.scene=7;IS.carX=-80;IS.show={};IS.scroll=0;playSong('calm');
   for(let i=0;i<90;i++){IS.carX+=1.6;yield 1;}
-  yield* talk('Boggs: I said NAH.',0);
-  yield* talk('Bandit: Get in the car, Boggy. I got a BLT.',0);
+  yield* talk('Boggs: Bro, I said NAH, damn.',0);
+  yield* talk('Bandit: Get in the car, Boggy. I got a BLT, bro.',0);
   IS.show={boggs:1};IS.bx=170;IS.bdir=2;IS.hd=0;IS.cd=0;IS.ent=0;
   for(let i=0;i<16;i++){IS.hd=i/15;yield 1;}                       // front door swings open
   for(let i=0;i<44;i++){IS.bx-=1.0;if(i>28)IS.hd=Math.max(0,1-(i-28)/12);yield 1;}   // walks down the path to the car
@@ -4483,16 +4489,16 @@ function* introGen(){
   const BOGWARN=['Boggs: BRO. WATCH THE ROAD. WATCH THE ROAD.','Boggs: LARRY. LANE. STAY IN YOUR LANE.','Boggs: That is the OTHER lane, Larry!!'];
   const story=[
     pick(BOGWARN),
-    'Bandit: Boggy. Boggy. Did I ever tell you about when I was in Afghanistan?',
+    'Bandit: Boggy. Boggy. Did I ever tell you \'bout when I was in Afghanistan, bro?',
     pick(['Boggs: Yes! A hundred times! EYES ON THE ROAD!','Boggs: Not now, man! Not NOW!','Boggs: You are driving on the yellow line!!']),
-    'Bandit: So we are pinned down. Crazy gunfight. Bullets everywhere. Dudes screaming.',
+    'Bandit: So we\'re pinned down, right? Crazy-ass gunfight. Bullets everywhere. Dudes screamin\'.',
     pick(['Boggs: Bandit. Pickup truck. PICKUP TRUCK.','Boggs: BIG TRUCK. BIG TRUCK. BIG TRUCK.','Boggs: Bandit, that is a MINIVAN.']),
-    'Bandit: And I grab the big gun, and I just START BLASTING. Like Rambo! Bap bap bap bap! Like a MANIAC!',
+    'Bandit: And I grab the big-ass gun and I just START BLASTIN\'. Like Rambo, bro! Bap bap bap bap! Like a fuckin\' MANIAC!',
     pick(['Boggs: Two hands on the wheel!! TWO HANDS!!','Boggs: Hands! HANDS! Put your hands on the WHEEL!','Boggs: STOP DOING THE GUN SOUNDS AND DRIVE!']),
-    'Bandit: Sixteen guys. One magazine. I did not even blink.',
+    'Bandit: Sixteen dudes. One magazine. Didn\'t even blink, bro.',
     pick(['Boggs: YOU ARE NOT BLINKING NOW. THAT IS THE PROBLEM.','Boggs: BLINK, LARRY. PLEASE. BLINK.','Boggs: I am going to die in a Regal.']),
     'Bandit: And the captain looks at me, and he goes...',
-    pick(['Boggs: BANDIT, THE TRUCK! THE TRUCK!','Boggs: BRAKE. BRAKE. BRAAAAKE.','Boggs: WE ARE IN THE OTHER LANE AGAIN!']),
+    pick(['Boggs: BANDIT, THE TRUCK! THE TRUCK!','Boggs: BRAKE. BRAKE. BRAAAAKE, you dumb ass.','Boggs: WE ARE IN THE OTHER LANE AGAIN!']),
     'Bandit: ...he goes, "Soldier, you are crazy." And I said, "Sir. That is why they call me the Popstar."',
     pick(['Boggs: Nobody calls you that!','Boggs: Nobody. Calls. You. That.','Boggs: Who is "they"?! Who?!'])
   ];
@@ -4513,8 +4519,8 @@ function* introGen(){
   for(let i=0;i<70;i++){IS.copX+=2.4;IS.cz=30-i*.31;yield 1;}
   yield 24;
   IS.scene=8;IS.sweat=0;
-  yield* talk('Bandit: Not tonight. NOT TONIGHT. I was going SIXTY.',0);yield* talk('Boggs: You were going NINETY.',0);
-  yield* talk('Boggs: Dude. DUDE. I brought the weed for the lick. It is in my jacket. Right now. ON ME.',0);
+  yield* talk('Bandit: Not tonight, bro. NOT TONIGHT. I was goin\' SIXTY.',0);yield* talk('Boggs: You was goin\' NINETY, dawg.',0);
+  yield* talk('Boggs: Dude. DUDE. I got the weed in my jacket, bro. Right now. ON ME. Shit.',0);
   yield* talk('Boggs: Okay. Let\'s stay calm. Let\'s just stay calm.',0);
   yield* talk('Bandit: I AM calm. I am the calmest person in this car.',0);
   IS.auto=3;for(let i=0;i<40;i++){IS.carX+=Math.max(0,.4-i*.01);IS.copX+=.3;yield 1;}IS.auto=0;
@@ -4533,8 +4539,8 @@ function* introGen(){
   IS.cop.walk=1;for(let i=0;i<40;i++){IS.cop.x-=1.2;IS.cp=1-i/39;yield 1;}IS.cop.walk=0;IS.copIn=1;yield 20;
   IS.scene=8;IS.sweat=0;
   IS.lean=0;yield 16;
-  yield* talk('Bandit: ...Should we give them Lukey?',0);
-  yield* talk('Boggs: HA. No bro. It is five grams of bud. We good.',0);
+  yield* talk('Bandit: ...Yo, should we give \'em Lukey?',0);
+  yield* talk('Boggs: HA. Nah bro. It\'s five grams of bud. We good, dawg.',0);
   IS.sweat=1;
   yield* talk('Bandit: ...Haha. Yeah...',0);
   yield 30;
@@ -4545,8 +4551,8 @@ function* introGen(){
   yield* talk('Bandit: ...',0);
   IS.scene=2;sfx.crit();yield 20;
   yield* talk('Officer: ...Well, well, well. Is that a PUMPER?',0);
-  yield* talk('Boggs: A PUMPER?!  LARRY!! Why is there a PUMPER in your TRUNK?!',0);
-  yield* talk('Bandit: I... never told you about that part.',0);
+  yield* talk('Boggs: A PUMPER?! LARRY!! Why the fuck is there a PUMPER in your TRUNK?!',0);
+  yield* talk('Bandit: I... uh... never told you \'bout that part, bro.',0);
   yield* talk('Bandit: IT WAS LUKEY!!! IT IS LUKEY\'S!!! LUKEY DID IT!!!',0);
   yield* talk('Boggs: LARRY!! We do NOT snitch on Lukey!',0);
   IS.big='-5 RESPECT';sfx.lose&&sfx.lose();Fx.shake=8;yield 60;IS.big=null;window.RESPHIT=1;
@@ -4566,7 +4572,7 @@ function* introGen(){
   yield* talk('Boggs: ...Larry. I TRUSTED you.',0);
   yield* talk('Officer: Sure it was. Into the wagon. Both of you.',0);
   IS.scene=4;IS.copX=-200;IS.cop.show=0;IS.show={bandit:1,cop2:1,cop3:1};IS.bx=60;IS.wagonX=140;IS.bdir=3;IS.ent=0;IS.wclose=0;IS.go=0;IS.dk=0;IS.thr=0;IS.pat=0;CN.wo=1;
-  yield* talk('Boggs: LET GO OF ME! I DID NOTHING! I HAD OREGANO!',0);
+  yield* talk('Boggs: GET YOUR HANDS OFF ME! I DIDN\'T DO SHIT! I HAD OREGANO!',0);
   for(let i=0;i<150;i++){IS.dk=i/149;if(i%12===0){sfx.bump();if(i%24===0)Fx.shake=3;}yield 1;}                 // dragged across the lot
   yield 12;
   for(let i=0;i<84;i++){IS.thr=i/42;if(i===30||i===72){sfx.slam();Fx.shake=12;}yield 1;}   // thrown in, one then the other
