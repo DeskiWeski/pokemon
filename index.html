@@ -625,6 +625,10 @@ const LOOK={
   kingk:{sk:'#f0c9a0',hr:'#222',st:'cap',hc:'#f2f2f2',ac:['beard'],w:1,sh:'#f2f2f2',pn:'#d8d8d8',stripe:'#c8322a'},
   doc:{sk:'#d9a577',hr:'#555',st:'short',ac:['shades','chin'],sh:'#3a9a8a',pn:'#3a9a8a',stripe:'#fff'},
   magoo:{sk:'#c68a5e',hr:'#111',st:'fro',ac:['shades','cig','scar'],sh:'#8a6a1a',pn:'#2a2a2a',stripe:'#ffd23a'},
+  sergio:{sk:'#c68e62',hr:'#121212',st:'short',ac:['beard'],buff:1},
+  chucky:{sk:'#e6bf98',hr:'#1e140c',st:'short',ac:['cig','scar'],w:1},
+  jonr:{sk:'#f2d2b6',hr:'#7a4a22',st:'buzz',ac:['beard','scar']},
+  steph:{sk:'#f3cfb0',hr:'#5a3a1e',st:'long',sh:'#6c7a8c',pn:'#252a36',sleeve:'#6c7a8c',ac:['badge','lashes']},
   cop:{sk:'#e8b48a',hr:'#3a2414',st:'cap',hc:'#10204a',sh:'#2250b0',pn:'#0f1c3c',sleeve:'#2250b0',ac:['shades','badge']},
   guard:{sk:'#d9a577',hr:'#222',st:'cap',hc:'#23262e',sh:'#6c7a8c',pn:'#252a36',sleeve:'#6c7a8c',ac:['shades','badge']},
   nurse:{sk:'#f0c9a0',hr:'#b8451a',st:'long',sh:'#f4f7fa',pn:'#9fd0e8'},
@@ -641,6 +645,10 @@ const SP={
   kitchen:{n:'KITCHEN CREW',t:'MUS',b:[52,50,48,42],ls:[[1,'jab'],[5,'bottle'],[10,'gut'],[15,'headbutt'],[21,'chair']]},
   dougie:{n:'BOTTLE BOY',t:'MUS',b:[48,52,42,48],ls:[[1,'bottle'],[1,'jab'],[6,'mug'],[12,'headbutt'],[17,'chair']]},
   boggs:{n:'BOGGS',t:'MUS',b:[60,58,54,46],ls:[[1,'straight'],[1,'wrestle'],[1,'bodyshot'],[6,'elbow'],[10,'headbutt'],[14,'knee'],[18,'clothesline'],[22,'slam'],[28,'stomp'],[32,'gpound']]},
+  sergio:{n:'SERGIO',t:'MUS',b:[62,60,52,56],ls:[[1,'straight'],[1,'hook'],[8,'bodyshot'],[13,'uppercut'],[18,'muay'],[24,'boxmaster']]},
+  chucky:{n:'CHUCKY CAPUTO',t:'CHM',b:[58,54,60,52],ls:[[1,'haggle'],[1,'cheap'],[7,'smooth'],[12,'chair'],[17,'headbutt'],[22,'counter']]},
+  jonr:{n:'JON REYNOLDS',t:'MUS',b:[60,58,56,58],ls:[[1,'straight'],[1,'wrestle'],[8,'elbow'],[13,'knee'],[18,'roundhouse'],[23,'judo']]},
+  steph:{n:'OFFICER STEPH',t:'CHM',b:[50,50,50,50],ls:[[1,'smooth']]},
   haunchi:{n:'HAUNCHI',t:'SNK',b:[46,58,40,66],ls:[[1,'cheap'],[1,'shank'],[6,'trip'],[12,'backstab'],[18,'smokescreen']]},
   bj:{n:'BJ',t:'CHM',b:[50,52,48,56],ls:[[1,'sing'],[1,'smooth'],[7,'hype'],[13,'pophit'],[19,'fanmail']]},
   corey:{n:'COREY BAPES',t:'CHM',b:[54,46,52,50],ls:[[1,'sing'],[1,'haggle'],[1,'smokebreak'],[8,'smooth'],[14,'pophit'],[20,'stashrip']]},
@@ -727,6 +735,7 @@ function WP(m,x,y,to,tx,ty,dir,o){m.warps.push(Object.assign({x,y,to,tx,ty,dir},
   set(m,19,7,TL.DOOR);m.labels.push({x:18,y:6,t:'EXIT >>'},{x:9,y:2,t:'INTAKE DESK'});
   WP(m,19,7,'yard',24,21,0,{req:'gotSuit',deny:'Officer: Hey! Come here first. You are not walking out in street clothes.'});
   N(m,'officer',9,3,'d','cop',{reach:2,say:['intake']});
+  N(m,'steph',12,6,'l','steph',{say:['steph']});
   N(m,'guardI',17,6,'l','guard',{say:['Guard: Walk straight, keep your mouth shut, and do not look at the cameras.']});
 })();
 
@@ -757,6 +766,7 @@ function WP(m,x,y,to,tx,ty,dir,o){m.warps.push(Object.assign({x,y,to,tx,ty,dir},
   IM(m,'y_perogi1',46,30,'perogi');IM(m,'y_shark',45,22,'shark');IM(m,'y_perogi2',13,36,'perogi');
   N(m,'dougie',24,26,'u','dougie',{tr:TR('Bottle Boy Dougie',[['dougie',5,'DOUGIE']],{sight:6,win:3,join:'dougie',gag:1,
     pre:'Dougie: Yo, new guy! Nobody walks this yard without paying the Bottle Boy!',post:'Dougie: Okay okay, you got heart. Put me on your crew, boss.',lose:'Dougie: Pay up. Come back when you are not a fish.'})});
+  N(m,'sergio',40,15,'l','sergio',{tr:TR('Sergio',[['goon',9],['sergio',11,'SERGIO']],{sight:3,win:12,join:'sergio',pre:'Sergio: Yo, you the dude everybody keeps talkin\' about? Hands up. Let\'s see if it\'s real.',post:'Sergio: Aight, aight. You got hands for real. I ride with you, bro.'})});
   N(m,'corey_y',27,19,'l','corey',{say:['Corey Bapes: Yo, you the new guy? Corey Bapes. I run the commissary, southeast corner.','Corey Bapes: Dirt and wet floors are where inmates jump you. Win fights, then DEAL cigs or weed to recruit them.']});
   N(m,'y1',15,14,'r','rookie',{tr:TR('Hoops Hank',[['rookie',4],['cellie',4]],{sight:4,win:4,pre:'Hank: This is MY court. Game to one, loser pays smokes.',post:'Hank: Nice handles. Take it.'})});
   N(m,'y2',33,14,'l','lifer',{tr:TR('Gym Rat Lenny',[['rookie',5],['lifer',5]],{sight:4,win:5,pre:'Lenny: Do you even lift, bro? Fight me.',post:'Lenny: My ego. Gone.'})});
@@ -862,6 +872,7 @@ function block(id,name,o){
   N(m,'k1',7,13,'r','kitchen',{tr:TR('Dishwasher Dan',[['kitchen',9],['rookie',8]],{sight:5,win:7,pre:'Dan: You touched my tray? Fight me.',post:'Dan: Fine. Tray ladies are scarier anyway.'})});
   N(m,'k2',21,14,'l','lifer',{tr:TR('Mashed Potato Mike',[['lifer',10],['kitchen',10]],{sight:6,win:8,pre:'Mike: These potatoes are MINE.',post:'Mike: Take a perogi, you earned it.'})});
   IM(m,'cf_cigs',25,14,'cigs',3);
+  N(m,'chucky',8,11,'r','chucky',{tr:TR('Chucky Caputo',[['lifer',14],['chucky',16,'CHUCKY']],{sight:0,win:30,join:'chucky',pre:'Chucky Caputo: Sit down, kid. Everybody in this cafeteria owes Chucky Caputo somethin\'. You? You owe me a beatin\'.',post:'Chucky Caputo: Heh. You got moxie. I like moxie. Chucky Caputo don\'t forget a friend. I\'m in.'})});
   N(m,'kingk',22,14,'l','kingk',{boss:'pKing',tr:TR('KITCHEN KING',[['kitchen',17],['lifer',17],['kingk',19]],{sight:0,win:40,pre:'Kitchen King: Nobody eats in MY kitchen without paying the toll. Hands up, fish.',post:'Kitchen King: ...Take the patch. Tell the tray ladies I said be nice.',lose:'Kitchen King: Soup is getting cold. Come back.'})});
   m=newMap('comm','COMMISSARY',16,12,TL.WALL,{song:'calm'});
   fill(m,1,1,14,10,TL.FLOOR);fill(m,2,1,12,1,TL.SHELF);fill(m,4,4,8,1,TL.COUNTER);set(m,2,8,TL.CRATE);set(m,13,8,TL.CRATE);set(m,3,8,TL.CRATE);set(m,13,3,TL.POSTER);
@@ -876,6 +887,7 @@ function block(id,name,o){
   m=newMap('gym','GYM',22,14,TL.WALL,{song:'yard'});
   fill(m,1,1,20,12,TL.FLOOR);fill(m,2,8,18,4,TL.MAT);fill(m,3,2,16,1,TL.WEIGHT);[4,6,16,18].forEach(x=>set(m,x,5,TL.WEIGHT));set(m,10,13,TL.DOOR);
   WP(m,10,13,'yard',41,15,2);
+  N(m,'jonr',14,8,'l','jonr',{tr:TR('Jon Reynolds',[['jonr',13,'JON']],{sight:0,win:20,join:'jonr',pre:'Jon Reynolds: Wrestled all four years at North. Pinned dudes twice your size. Get on the mat.',post:'Jon Reynolds: Damn. Okay. You can scrap. Put me on the team, I\'ll hold the line.'})});
   N(m,'ironm',16,6,'d','ironm',{boss:'pIron',tr:TR('IRON MIKE',[['goon',13],['lifer',13],['ironm',15]],{sight:0,win:30,pre:'Iron Mike: Nobody benches more than me. Nobody. Get under the bar, fish.',post:'Iron Mike: ...Respect. Take my patch. Lift more.',lose:'Iron Mike: Weak. Go train.'})});
   IM(m,'g_shank',2,2,'shank');IM(m,'g_perogi',20,2,'perogi');
   N(m,'gym1',6,10,'r','lifer',{tr:TR('Spotter Steve',[['lifer',7],['rookie',7]],{sight:5,win:6,pre:'Steve: I will spot you. Into the floor.',post:'Steve: Dang. Strong.'})});
@@ -947,7 +959,7 @@ function* battleMain(){
 }
 function* intro(){
   sfx.blip();
-  for(let i=0;i<30;i++){B.off.e.vx=Math.max(0,B.off.e.vx-3);B.off.p.vx=Math.min(0,B.off.p.vx+3);yield 1;}
+  for(let i=0;i<=56;i++){const k=i/56,e=1-(1-k)*(1-k);B.off.e.vx=90*(1-e);B.off.p.vx=-90*(1-e);yield 1;}   // walk in from opposite ends and meet
   B.off.e.vx=0;B.off.p.vx=0;
   const o=B.o;
   if(B.boss||o.card){B.card={t:110,n:o.cardName||B.em.nm,sub:o.sub||(B.boss?'POD BOSS':'ELITE'),lv:B.em.l};sfx.siren();Fx.shake=10;yield 70;
@@ -1603,6 +1615,7 @@ function talkNpc(n){
   if(s[0]==='baba')return baba();
   if(s[0]==='corey')return corey();
   if(s[0]==='nurse')return nurse();
+  if(s[0]==='steph')return steph();
   s.forEach(t=>say(t));
 }
 function officer(){
@@ -1631,6 +1644,18 @@ function baba(){
       yield* talk(`Baba Halina: Here, bubbeleh. ${n>1?'Two':'One'} for the road. Do not tell the guards.`,0);
       yield* talk(`Got ${n} Perogi${n>1?'s':''}!`,0);
     }else yield* talk('Baba Halina: They are still frying! Walk around, make some friends, come back later.',0);
+  })());
+}
+function steph(){
+  const d=(G.W&&G.W.day)||1;
+  Cs.run((function*(){
+    if(!G.flags.metSteph){G.flags.metSteph=1;
+      yield* talk('Officer Steph: So YOU are the Popstar. Half the block is already talkin\' about you.',0);
+      yield* talk('Officer Steph: I run intake on second shift. Keep your nose clean on my watch and I will look out for you. Little bit.',0);}
+    if(G.flags.stephDay!==d){G.flags.stephDay=d;G.items.perogi=(G.items.perogi||0)+1;G.items.cigs=(G.items.cigs||0)+1;sfx.pick();
+      yield* talk(pick(['Officer Steph: Here. Extra perogi from the staff room. You did not get it from me.','Officer Steph: Take this and go. Before Dunkle sees.','Officer Steph: Somebody left this on the desk. Finders keepers.']),0);
+      yield* talk('Got a Perogi and an L&M pack!',0);}
+    else yield* talk(pick(['Officer Steph: One favor a day, Popstar. Come back tomorrow.','Officer Steph: Stay out of the showers after lights out. I mean it.','Officer Steph: Chucky Caputo in the cafeteria is collecting debts again. Watch yourself.','Officer Steph: Sergio is in the yard looking for a fight. Your kinda guy.','Officer Steph: Jon Reynolds wrestled in high school. Do NOT let him get your legs.']),0);
   })());
 }
 function nurse(){
@@ -2179,8 +2204,8 @@ function headMesh(k){
 /* ---------- anatomical segment profiles (metres; y down the limb) ---------- */
 function thighRings(bf,w){const f=bf;return [rY(.05,.088*f,.092*f,0,0),rY(-.03,.093*f,.098*f,0,0),rY(-.14,.09*f,.099*f,0,.004,2.1),rY(-.27,.077*f,.085*f,0,.004),rY(-.37,.063*f,.069*f,0,.002),rY(-.445,.056*f,.06*f,0,.004,2,.9)];}
 function shinRings(bf){const f=bf;return [rY(.03,.056*f,.06*f,0,.002,2,.9),rY(-.04,.057*f,.062*f,0,0),rY(-.11,.06*f,.071*f,0,-.012,2.1),rY(-.2,.05*f,.056*f,0,-.008),rY(-.3,.037,.04,0,0),rY(-.375,.035,.036,0,0)];}
-function upperArmRings(bf,sd,s){s=s||1;const f=bf*s;return [rY(-.012,.062*f,.066*f,sd*.004,0),rY(-.08,.06*f,.066*f,0,.006),rY(-.18,.053*f,.058*f,0,.004),rY(-.26,.045*f,.048*f,0,0),rY(-.33,.041*f,.043*f,0,0)];}
-function foreArmRings(bf){const f=bf;return [rY(.025,.04*f,.043*f,0,0),rY(-.03,.044*f,.048*f,0,.002),rY(-.1,.05*f,.054*f,0,.002,2.1),rY(-.18,.042*f,.044*f,0,0),rY(-.26,.033,.034,0,0),rY(-.315,.028,.026,0,0)];}
+function upperArmRings(bf,sd,s){s=s||1;const f=bf*s;return [rY(-0.011,.062*f,.066*f,sd*.004,0),rY(-0.074,.06*f,.066*f,0,.006),rY(-0.166,.053*f,.058*f,0,.004),rY(-0.239,.045*f,.048*f,0,0),rY(-0.304,.041*f,.043*f,0,0)];}
+function foreArmRings(bf){const f=bf;return [rY(0.020,.04*f,.043*f,0,0),rY(-0.024,.044*f,.048*f,0,.002),rY(-0.080,.05*f,.054*f,0,.002,2.1),rY(-0.144,.042*f,.044*f,0,0),rY(-0.208,.033,.034,0,0),rY(-0.252,.028,.026,0,0)];}
 function torsoRings(w,bf,s,y0,y1){
   s=s||1;const R=[
     rY(-.012,.168*w*s,.108*s,0,-.004,2.2,.85),rY(.05,.158*w*s,.103*s,0,-.002,2.2,.96),rY(.15,.134*w*s,.092*s,0,0,2.1,.93),
@@ -2365,7 +2390,7 @@ function numTex(col,txt){const k=col+txt;if(NUMC[k])return NUMC[k];
   return NUMC[k]=glTexMip(can);}
 const shellCache={};
 function shellOf(a,b,c,d){const k=[a,b,c,d].join();return shellCache[k]||(shellCache[k]=shellMesh(a,b,c,d));}
-const RIG={hip:.84,sh:1.36,hd:1.42,up:.32,fo:.36,ys:1.0,H:1.7};
+const RIG={hip:.84,sh:1.36,hd:1.42,up:.30,fo:.33,ys:1.0,H:1.7};
 const CLOTH={};
 function clothTex(col,kind){
   const k=col.join(',')+kind;if(CLOTH[k])return CLOTH[k];
@@ -2426,15 +2451,15 @@ function getRig(L){
   // ---- arms: deltoid, bicep, elbow, forearm, hand ----
   const sl=L.sleeve?hx(L.sleeve):SH,SLT=L.sleeve?clothTex(sl,'cloth'):SHT,WRAP=hx(L.wrap||'#e8e4da'),SHRT=JS||L.short;
   [['armL',-1],['armR',1]].forEach(([r,sd])=>{
-    const pv=[sd*.205*w,SHY,0],el=[0,-.32,0];
+    const pv=[sd*.205*w,SHY,0],el=[0,-.30,0];
     if(SHRT){
       mesh(r,pv,sweep(upperArmRings(bf,sd)),SK,{mat:'skin',tex:SKT});
       mesh(r,pv,sweep(upperArmRings(bf,sd,1.11).filter(q=>q.c[1]>=-.11),{capE:false}),sl,{tex:SLT});               // sleeve
     }else mesh(r,pv,sweep(upperArmRings(bf,sd,1.1)),sl,{tex:SLT});
     const fore=SHRT?sweep(foreArmRings(bf)):sweep(foreArmRings(bf).map(q=>Object.assign({},q,{ra:q.ra*1.12,rb:q.rb*1.12})));
     mesh(r+'f',pv,fore,SHRT?SK:sl,SHRT?{sub:el,sr:r,mat:'skin',tex:L.tat?tatTex(L.sk||'#e8b48a',r==='armL'?L.tat[0]:L.tat[1]):SKT}:{sub:el,sr:r,tex:SLT});
-    mesh(r+'f',pv,sweep([rY(-.265,.037,.034),rY(-.31,.037,.034)],{capS:false,capE:false}),WRAP,{sub:el,sr:r,tex:null});   // wrist wrap
-    mesh(r+'f',pv,handMesh(sd,bf),SK,{sub:el,sr:r,mat:'skin',tex:SKT,hand:1});
+    mesh(r+'f',pv,sweep([rY(-.215,.036,.033),rY(-.255,.036,.033)],{capS:false,capE:false}),WRAP,{sub:el,sr:r,tex:null});   // wrist wrap
+    mesh(r+'f',pv,handMesh(sd,bf),SK,{sub:el,sr:r,mat:'skin',tex:SKT,hand:1,off:[0,.052,0]});
   });
   // ---- head: sculpted cranium/face/jaw, neck, ears ----
   const HP=[0,HDY,0],HS=[.18,.252,.21],HO=[0,.13,0],HX=.84,HZ=.89;
@@ -2542,6 +2567,7 @@ function poseWalk(t,amt){
     legL:-swing,legR:swing,kneeL:amt*(.08+.95*Math.pow(fL,1.6)+.1*Math.sin(Math.PI*sL)),kneeR:amt*(.08+.95*Math.pow(fR,1.6)+.1*Math.sin(Math.PI*sR)),
     bob:(Math.abs(c)-.62)*.032*amt,twist:-s*.09*a,roll:s*.022*a,lean:.045*amt,headY:s*.035*a,headX:.02};
 }
+const _tw=new Float32Array(16);
 function drawRig(L,x,y,z,yaw,pose,opt){
   const rig=getRig(L),gl=R3.gl;opt=opt||{};pose=pose||POSE0;
   const sc=opt.scale||1,sq=pose.sq||1;
@@ -2568,6 +2594,7 @@ function drawRig(L,x,y,z,yaw,pose,opt){
           case 'body':ry=pose.twist||0;break;
         }
         m4.trs(p.piv[0],p.piv[1],p.piv[2],rx,ry,rz,1,1,1,_pa);
+        if(pose.twist&&(rl==='armL'||rl==='armR')){m4.trs(0,0,0,0,pose.twist,0,1,1,1,_tw);m4.mul(_tw,_pa,_pf);_pa.set(_pf);}   // arms ride on the torso's rotation
         if(p.sub){
           const ex=rl==='armL'?-(pose.elbL||0):rl==='armR'?-(pose.elbR||0):rl==='legL'?(pose.kneeL||0):(pose.kneeR||0);
           m4.trs(p.sub[0],p.sub[1],p.sub[2],ex,0,0,1,1,1,_pe);
@@ -3292,7 +3319,7 @@ const MOVEANIM={jab:'jab',haymaker:'hook',headbutt:'butt',chair:'swing',shank:'s
  smokescreen:'taunt',lukey:'voice',sing:'voice',pophit:'voice',smooth:'taunt',fanmail:'taunt',hype:'taunt',haggle:'taunt',smokebreak:'taunt',bottle:'throw',struggle:'tackle',
  cross:'cross',straight:'cross',hook:'hook',uppercut:'upper',elbow:'elbow',knee:'knee',slam:'slam',suplex:'slam',choke:'choke',stomp:'stomp',clothesline:'cline',gpound:'gpound',pipe:'pipe',bodyshot:'body',eyejab:'eye',wrestle:'tackle'};
 /* how far the striking fist/foot reaches from the attacker's center at full extension (world units at scale 1) */
-const REACH={jab:.8,cross:.84,hook:.66,upper:.54,body:.7,elbow:.46,knee:.52,kick:1.12,teep:1.06,spin:1.12,fknee:.64,butt:.4,tackle:.32,swing:.76,stab:.66,throw:2.6,voice:2.2,taunt:2.2,
+const REACH={jab:.68,cross:.74,hook:.62,upper:.5,body:.64,elbow:.46,knee:.52,kick:1.12,teep:1.06,spin:1.12,fknee:.64,butt:.4,tackle:.32,swing:.76,stab:.66,throw:2.6,voice:2.2,taunt:2.2,
   slam:.32,throwj:.32,lock:.32,choke:.32,stomp:.36,cline:.55,lariat:.55,gpound:.32,eye:.72,knux:.8,slash:.76,smash:.62,pipe:.78,parry:1.7};
 const HEAVYK=new Set(['slam','throwj','cline','lariat','stomp','gpound','smash','swing','upper','fknee','kick','spin','knee','butt','tackle','hook','pipe','chair']);
 const BODYK=new Set(['body','tackle','teep']);
@@ -3359,7 +3386,7 @@ function b3Hit(s,n){
 }
 function b3Base(s){   // where the fighter stands: his side, lateral shuffle, knockback and dodge steps (no attack extension)
   const S=B.s3,u=S.u,sgn=s==='p'?-1:1,o=B.off[s],an=B.an[s]||{};
-  const slide=o.vx?sgn*Math.abs(o.vx)/90*4.2:0,lat=[-u[1],u[0]];
+  const slide=o.vx?Math.abs(o.vx)/90*2.3:0,lat=[-u[1],u[0]];
   const busy=an.kind||an.rec>0||an.down>0||an.stag>0||o.vx;
   const sw=busy?0:(an.sw||0),d=.74+slide+(an.kb||0)+(an.dodge>0?.35*an.dodge/20:0)+(an.block>0?.1:0);
   const wob=an.stag>0?Math.sin(an.stag*.5)*.12:0;
@@ -3382,6 +3409,52 @@ function b3Pos(s){
 }
 /* pose for an action: reuses the swing/jab/hook/kick vocabulary and adds weapons/voice */
 function wcol(an){const w=an&&an.mid&&WPN[(''+an.mid).slice(2)];return w?w.col:[.8,.82,.9];}
+
+/* ---- 3D two-bone arm IK: put the fist exactly on a point, elbow toward a pole, in the body frame (facing +z) ---- */
+const AIK={u:.30,f:.345};
+function _v(a,b,k){return [a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];}
+function armIK3(P,side,T,pole,tw){
+  const c=Math.cos(-tw),s=Math.sin(-tw),rot=v=>[v[0]*c+v[2]*s,v[1],-v[0]*s+v[2]*c];
+  const t=rot(T),pl=rot(pole),S=[(side==='R'?1:-1)*.205,RIG.sh,0],u=AIK.u,f=AIK.f;
+  let D=[t[0]-S[0],t[1]-S[1],t[2]-S[2]],d=Math.hypot(D[0],D[1],D[2])||1e-4;
+  const dc=Math.max(Math.abs(u-f)+.02,Math.min((u+f)*.995,d)),Dn=[D[0]/d,D[1]/d,D[2]/d];
+  const tt=[S[0]+Dn[0]*dc,S[1]+Dn[1]*dc,S[2]+Dn[2]*dc];
+  const e=Math.PI-Math.acos(Math.max(-1,Math.min(1,(u*u+f*f-dc*dc)/(2*u*f))));
+  const a=Math.acos(Math.max(-1,Math.min(1,(u*u+dc*dc-f*f)/(2*u*dc))));
+  const pd=pl[0]*Dn[0]+pl[1]*Dn[1]+pl[2]*Dn[2];let Pp=_nrm([pl[0]-pd*Dn[0],pl[1]-pd*Dn[1],pl[2]-pd*Dn[2]]);
+  const U=_nrm([Dn[0]*Math.cos(a)+Pp[0]*Math.sin(a),Dn[1]*Math.cos(a)+Pp[1]*Math.sin(a),Dn[2]*Math.cos(a)+Pp[2]*Math.sin(a)]);
+  const E=[S[0]+U[0]*u,S[1]+U[1]*u,S[2]+U[2]*u],F=_nrm([tt[0]-E[0],tt[1]-E[1],tt[2]-E[2]]);
+  let W;const se=Math.sin(e);
+  if(se>.08)W=_nrm([(F[0]-U[0]*Math.cos(e))/se,(F[1]-U[1]*Math.cos(e))/se,(F[2]-U[2]*Math.cos(e))/se]);
+  else{const up=[0,1,0],q=U[1];W=_nrm([up[0]-q*U[0],up[1]-q*U[1],up[2]-q*U[2]]);if(W[1]<0)W=[-W[0],-W[1],-W[2]];}
+  const Xa=_crs([-U[0],-U[1],-U[2]],W);
+  const rx=Math.asin(Math.max(-1,Math.min(1,-W[1]))),ry=Math.atan2(W[0],W[2]),rz=Math.atan2(Xa[1],-U[1]);
+  P['arm'+side]=[rx,rz+(side==='R'?-.04:.04)];P['arm'+side+'y']=ry;P['elb'+side]=e;
+}
+const GUARD={L:[-.1,1.47,.33],R:[.1,1.43,.23],pL:[-.4,-1,-.15],pR:[.4,-1,-.15]};
+function boxArms(P,an,k,f,bk,s){
+  let L=GUARD.L,R=GUARD.R,pL=GUARD.pL,pR=GUARD.pR,tw=.28;
+  const sw=Math.sin((Date.now()/1000)*5+(s==='p'?0:2))*.012;L=[L[0],L[1]+sw,L[2]];R=[R[0],R[1]-sw,R[2]];
+  const RE=x=>REACH[x]||.8;
+  switch(an&&an.kind){
+    case 'jab':{                    // lead hand straight down the centre line, shoulder turns in, snaps back
+      const tip=[-.03,1.53,RE('jab')];L=_v(L,tip,f);L=[L[0],L[1]-.02*bk,L[2]-.04*bk];tw=.28+.18*f;pL=[-.55,-1,-.1];break;}
+    case 'cross':case 'knux':{       // rear hand drives straight through, hips and shoulders rotate ~60 degrees
+      const tip=[.0,1.51,RE('cross')];R=_v([R[0]+.03*bk,R[1]-.02*bk,R[2]-.07*bk],tip,f);tw=.28+.15*bk-1.05*f;pR=_v([.4,-1,-.15],[.75,-.55,0],f);break;}
+    case 'hook':{                   // elbow up at shoulder height, fist travels on a horizontal arc from the side
+      const th=(55-28*Math.min(1,bk*2)+47*f)*Math.PI/180,Rr=.62;
+      R=[Rr*Math.cos(th),1.47+.03*f,Rr*Math.sin(th)];
+      if(f<=0)R=_v(GUARD.R,R,Math.min(1,bk*2.5));
+      pR=[1,.75,-.35];tw=.28+.4*Math.min(1,bk*2)-1.0*f;break;}
+    case 'upper':{                  // drops low, then rips straight up the middle, palm toward the face
+      const low=[.15,1.06,.2],high=[.02,1.6,RE('upper')];
+      R=f>0?_v(low,high,f):_v(GUARD.R,low,Math.min(1,bk*2.2));pR=[.25,-1,-.7];tw=.28+.3*Math.min(1,bk*2)-.7*f;break;}
+    case 'body':{                   // dips at the knees, short shovel shot to the ribs
+      const low=[.12,1.25,.24],tip=[.02,1.12,RE('body')];
+      R=f>0?_v(low,tip,f):_v(GUARD.R,low,Math.min(1,bk*2.2));pR=[.5,-1,-.2];tw=.28+.3*Math.min(1,bk*2)-.85*f;break;}
+  }
+  armIK3(P,'L',L,pL,tw);armIK3(P,'R',R,pR,tw);P.twist=tw;P.armLy=P.armLy;
+}
 /* pose for an action: fighter stance, elbows/knees, martial-arts strikes, grapples, weapons */
 const P2=(p,o)=>Object.assign(p,o);
 function actPose(an,tt,s){
@@ -3428,6 +3501,10 @@ function actPose(an,tt,s){
     // weight transfer: lean into the punch, hips pivot, rear foot drives
     if(['jab','cross','hook','upper','body','elbow','knux','eye','stab','knee','kick','teep'].includes(an.kind)){const side=(an.kind==='jab')?1:-1;roll+=.09*f*side;P.bob=(P.bob||0)-.03*bk+.02*f;}
   }
+  {const BOX=new Set(['jab','cross','hook','upper','body','knux']);
+   if(!an.rec&&!an.down&&!an.stag&&!an.block&&!(an.dodge>0&&!an.kind)&&(!an.kind||BOX.has(an.kind))){
+     const k=an.kind?an.k:0,ex=an.kind?(k<.35?-.5*Math.sin(k/.35*Math.PI/2):k<.55?-.5+1.5*((k-.35)/.2):1-((k-.55)/.45)):0;
+     boxArms(pose,an.kind&&an.k>0&&an.k<1?an:null,k,Math.max(ex,0),Math.max(-ex,0),s);}}
   if(an.block>0){const q=an.block/16;P2(pose,{armL:[-1.15,.22],armR:[-1.15,-.22],elbL:2.05,elbR:2.05,headX:.3,kneeL:.55,kneeR:.55,bob:-.04*q});lean=.18+.05*Math.sin(an.block*1.5);roll=Math.sin(an.block*2)*.03*q;}
   else if(an.dodge>0&&!an.kind){const q=an.dodge/20,e=Math.sin(q*Math.PI);
     if(an.dk==='block'){P2(pose,{armL:[-1.15,.22],armR:[-1.15,-.22],elbL:2.05,elbR:2.05,headX:.3,kneeL:.5,kneeR:.5});lean=.15;}
@@ -3499,8 +3576,8 @@ function battle3D(){
     a.sw=(a.sw||0)+((a.swT||0)-(a.sw||0))*.08;
   }
   // camera: wide establishing shot sweeping in, then a gentle sway; punch-in on hits
-  const intro=Math.min(1,S.t/55),e=1-Math.pow(1-intro,3);
-  const asp=R3.asp||.8,wide=asp<1.1?1.3:1.0,dist=(4.3*wide+.6)+(1-e)*3.6,h=(1.75*wide)+(1-e)*2.6+(B.boss?.3:0);
+  const intro=Math.min(1,S.t/68),e=intro*intro*(3-2*intro);
+  const asp=R3.asp||.8,wide=asp<1.1?1.3:1.0,dist=(4.3*wide+.6)+(1-e)*4.0,h=(1.75*wide)+(1-e)*2.6+(B.boss?.3:0);
   S.ca=(S.ca||0)+((S.cat||0)-(S.ca||0))*.07;S.chh=(S.chh||0)+((S.cht||0)-(S.chh||0))*.08;
   if(S.zoomT>0){S.zoom=Math.max(S.zoom||0,S.zoomT*2.2);S.zoomT=0;}
   const sway=Math.sin(tt*.55)*(S.cat||S.zoom>0?.15:.7);
@@ -3528,7 +3605,7 @@ function battle3D(){
     const face=[-sgn*S.u[0],-sgn*S.u[1]],yaw=Math.atan2(face[0],face[1]);
     const mv=o.vx&&Math.abs(o.vx)>1;
     let ap=actPose(a,tt,s),pose=ap.pose,roll=0,yy=0,fl=ap.flash;
-    if(mv){const w=poseWalk(tt*12,1.3);pose=Object.assign(pose,w);}
+    if(mv){const w=poseWalk(tt*8,1.0);if(Math.abs(o.vx)<28){delete w.armL;delete w.armR;delete w.elbL;delete w.elbR;delete w.twist;}pose=Object.assign(pose,w);}
     else if(!a.kind&&!a.rec&&!a.down&&!a.stag&&!a.dodge&&!a.block){const st=Math.sin(tt*7+(s==='p'?0:1.5));pose.legL=-.28+st*.07;pose.legR=.32-st*.07;pose.kneeL=.4+Math.max(0,st)*.12;pose.kneeR=.32+Math.max(0,-st)*.12;pose.headY=Math.sin(tt*1.3+(s==='p'?0:2))*.12;}
     if(dying[s]){const k=Math.min(1,o.y/42);roll=-1.45*k;yy=.32*k;pose={armL:[.3,0],armR:[-.2,0]};}
     {const oa=B.an[s==='p'?'e':'p'];
