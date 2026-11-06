@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#050305">
-<title>Regal Bandit Lockup</title>
+<title>PodBoss</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <style>
@@ -100,7 +100,7 @@ body{position:fixed;inset:0;padding:0;font:12px/1.3 ui-monospace,Menlo,Consolas,
 <div class="face">
 <div class="eyes"><span class="eye"></span><span class="mid"><span class="led"></span>BATTERY</span><span class="eye r"></span></div>
 <div class="lcd" id="lcd"><canvas id="gl" width="480" height="600"></canvas><canvas id="screen" width="480" height="600" aria-label="Game screen"></canvas><div class="glass"></div></div>
-<div class="brand"><svg><use href="#leaf"/></svg><span>REGAL BANDIT <b>POPSTAR</b></span><svg><use href="#leaf"/></svg></div>
+<div class="brand"><svg><use href="#leaf"/></svg><span>POD<b>BOSS</b></span><svg><use href="#leaf"/></svg></div>
 </div>
 <div class="controls">
 <div class="ctlL">
@@ -180,11 +180,12 @@ function clickSnd(down){
   }catch(e){}
 }
 function feel(down){if(down)haptic();clickSnd(down);}
+const LAND=()=>document.documentElement&&document.documentElement.dataset&&document.documentElement.dataset.o==='l';
 document.querySelectorAll('[data-k]').forEach(el=>{
   const k=el.dataset.k;
   if(!window.PointerEvent){el.addEventListener('touchstart',e=>{e.preventDefault();setKey(k,1);el.classList.add('on');},{passive:false});el.addEventListener('touchend',e=>{e.preventDefault();setKey(k,0);el.classList.remove('on');},{passive:false});el.addEventListener('mousedown',()=>setKey(k,1));el.addEventListener('mouseup',()=>setKey(k,0));return;}
-  const dn=e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}setKey(k,1);el.classList.add('on');feel(true);};
-  const up=e=>{e.preventDefault();if(el.classList.contains('on'))feel(false);setKey(k,0);el.classList.remove('on');};
+  const dn=e=>{if(e.pointerType==='touch'&&LAND())return;e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}setKey(k,1);el.classList.add('on');feel(true);};
+  const up=e=>{if(e.pointerType==='touch'&&LAND())return;e.preventDefault();if(el.classList.contains('on'))feel(false);setKey(k,0);el.classList.remove('on');};
   el.addEventListener('pointerdown',dn);el.addEventListener('pointerup',up);
   el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',e=>{if(!e.buttons&&e.pointerType==='mouse')up(e);});
   el.addEventListener('contextmenu',e=>e.preventDefault());
@@ -200,10 +201,46 @@ function dpSet(e){
   if(dir!==(dpEl.dataset.dir||'')){if(dir){feel(true);}dpEl.dataset.dir=dir;}
 }
 function dpEnd(e){e.preventDefault();['up','down','left','right'].forEach(k=>setKey(k,0));if(dpEl.dataset.dir)feel(false);dpEl.classList.remove('on');dpEl.dataset.dir='';}
-dpEl.addEventListener('pointerdown',e=>{e.preventDefault();try{dpEl.setPointerCapture(e.pointerId);}catch(_){}dpSet(e);});
-dpEl.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')dpSet(e);});
-dpEl.addEventListener('pointerup',dpEnd);dpEl.addEventListener('pointercancel',dpEnd);
+dpEl.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&LAND())return;e.preventDefault();try{dpEl.setPointerCapture(e.pointerId);}catch(_){}dpSet(e);});
+dpEl.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&LAND())return;if(e.buttons||e.pointerType==='touch')dpSet(e);});
+dpEl.addEventListener('pointerup',e=>{if(e.pointerType==='touch'&&LAND())return;dpEnd(e);});dpEl.addEventListener('pointercancel',e=>{if(e.pointerType==='touch'&&LAND())return;dpEnd(e);});
 dpEl.addEventListener('contextmenu',e=>e.preventDefault());
+/* landscape touch router: maps each finger straight onto the control under it by its on-screen rectangle,
+   so iPhone Safari's hit-testing in the side-bar layout can never swallow a press */
+const TRT={};
+function ctlAt(x,y){
+  const els=[dpEl,...document.querySelectorAll('[data-k]')];
+  for(const el of els){const r=el.getBoundingClientRect();if(!r.width||getComputedStyle(el).display==='none')continue;
+    if(x>=r.left-8&&x<=r.right+8&&y>=r.top-8&&y<=r.bottom+8)return el;}
+  return null;
+}
+const NOPE={preventDefault(){}};
+function trPress(id,el,t){
+  if(el===dpEl){TRT[id]={dp:1};dpSet(t);return;}
+  const k=el.dataset.k;TRT[id]={k,el};setKey(k,1);el.classList.add('on');feel(true);
+}
+function trRelease(id){
+  const s=TRT[id];if(!s)return;delete TRT[id];
+  if(s.dp){if(!Object.values(TRT).some(v=>v.dp))dpEnd(NOPE);return;}
+  if(!Object.values(TRT).some(v=>v.k===s.k)){setKey(s.k,0);s.el.classList.remove('on');feel(false);}
+}
+const inModal=t=>t&&t.closest&&t.closest('.pbmodal');
+addEventListener('touchstart',e=>{
+  if(!LAND()||inModal(e.target))return;let hit=false;
+  for(const t of e.changedTouches){const el=ctlAt(t.clientX,t.clientY);if(el){hit=true;trPress(t.identifier,el,t);}}
+  if(hit&&e.cancelable)e.preventDefault();
+},{passive:false,capture:true});
+addEventListener('touchmove',e=>{
+  if(!LAND()||inModal(e.target))return;let hit=false;
+  for(const t of e.changedTouches){const s=TRT[t.identifier];if(!s)continue;hit=true;
+    if(s.dp){dpSet(t);continue;}
+    const el=ctlAt(t.clientX,t.clientY);if(el&&el!==s.el&&el!==dpEl){trRelease(t.identifier);trPress(t.identifier,el,t);}}
+  if(hit&&e.cancelable)e.preventDefault();
+},{passive:false,capture:true});
+['touchend','touchcancel'].forEach(ev=>addEventListener(ev,e=>{
+  if(!LAND())return;let hit=false;for(const t of e.changedTouches){if(TRT[t.identifier]){hit=true;trRelease(t.identifier);}}
+  if(hit&&e.cancelable)e.preventDefault();
+},{passive:false,capture:true}));
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 
@@ -249,8 +286,8 @@ const SONGS={
 let song=null,sstep=0;
 function playSong(n){if(song!==n){song=n;sstep=0;}}
 (function mus(){
-  const s=SONGS[song];
-  if(s&&!muted&&AC){
+  const s=SONGS[song];let mine=false;try{mine=musActive()&&MUS.on;musTick();}catch(e){}
+  if(s&&!muted&&AC&&!mine){
     const i=sstep++,m=s.l[i%s.l.length],b=s.b[i%s.b.length];
     if(m!=null)beep(220*Math.pow(2,m/12),s.t/1000*.85,'square',.014);
     if(b!=null)beep(110*Math.pow(2,b/12),s.t/1000*1.3,'triangle',.035);
@@ -969,11 +1006,12 @@ function startBattle(o){
   if(o.boss==='pBones'){o.foes.forEach(f=>{if(G.flags.bonesMad){f.l=Math.min(100,f.l+3);mstat(f);f.hp=f.mhp;}else if(G.flags.bonesFriend){f.l=Math.max(1,f.l-2);mstat(f);f.hp=f.mhp;}});}
   const foes=o.foes.map(f=>{resetTemp(f);return f;});
   G.gang.forEach(resetTemp);
-  const first=G.gang.findIndex(alive);
+  const SQ=o.squad?G.gang.map((m,i)=>i).filter(i=>alive(G.gang[i])).slice(0,o.squad):null;
+  const first=SQ?SQ[0]:G.gang.findIndex(alive);
   B={o,foes,fi:0,em:foes[0],pm:G.gang[first],part:new Set(),trainer:!!o.tr,boss:!!o.boss,
      off:{p:{x:0,y:0,a:1,fl:0,vx:-90},e:{x:0,y:0,a:1,fl:0,vx:90}},proj:null,hint:null,choice:null,t:0,dizzy:{p:0,e:0},res:null,intro:true,env:battleEnv(),
      chain:0,guard:0,used:{},card:null,ei:-1,tele:null,solo:!!o.solo,turn:0,ep:{last:null,n:0}};
-  B.part.add(B.pm);
+  B.squad=SQ;B.part.add(B.pm);
   G.mode='battle';Fx.fade=1;Fx.st=2;playSong(B.boss?'boss':'battle');
   Say.clear();Menus.length=0;
   Co.run(battleMain());
@@ -1032,7 +1070,7 @@ function openMoves(){
   }});
 }
 function openGang(forced){
-  const items=G.gang.map((m,i)=>({l:m.nm,r:`L${m.l} ${m.hp}/${m.mhp}`,d:!alive(m)||m===B.pm,f:()=>{Menus.length=0;B.choice={t:'switch',i};}}));
+  const items=G.gang.map((m,i)=>({l:m.nm,r:`L${m.l} ${m.hp}/${m.mhp}`,d:!alive(m)||m===B.pm||(B.squad&&!B.squad.includes(i)),f:()=>{Menus.length=0;B.choice={t:'switch',i};}}));
   openMenu({x:4,y:30,w:232,items,title:forced?'SEND IN WHO?':'GANG',stay:true,vis:6,nocancel:forced,cancel:()=>{}});
 }
 function openBag(){
@@ -1104,7 +1142,7 @@ function* resolveTurn(pc){
   if(pc.t==='switch'){
     const old=B.pm;
     yield* talk(`Come back, ${old.nm}!`,20);
-    B.pm=G.gang[pc.i];B.part.add(B.pm);B.off.p.a=1;sfx.ok();
+    B.pm=G.gang[pc.i];B.part.add(B.pm);B.off.p.a=1;if(B.an&&B.an.p){B.an.p.ko=null;B.an.p.kb=0;}sfx.ok();
     yield* talk(`Go! ${B.pm.nm}!`,20);
     r=yield* enemyTurn();return r||'continue';
   }
@@ -1127,6 +1165,7 @@ function* resolveTurn(pc){
     yield* execMove(s,mv);
     r=yield* checkFaints();
     if(r)return r;
+    if(B.o.jump){yield* benchJump(s);r=yield* checkFaints();if(r)return r;}
   }
   r=yield* endTurn();
   return r||'continue';
@@ -1136,6 +1175,7 @@ function* enemyTurn(){
   const mv=ei>=0?B.em.moves[ei]:{id:'struggle',pp:1};
   yield* execMove('e',mv);
   let r=yield* checkFaints();if(r)return r;
+  if(B.o.jump){yield* benchJump('e');r=yield* checkFaints();if(r)return r;}
   return yield* endTurn();
 }
 function* endTurn(){
@@ -1318,23 +1358,23 @@ function* tryDealOld(pc){
 /* ---- faint, xp ---- */
 function* checkFaints(){
   if(!alive(B.em)){
-    sfx.hit();for(let i=0;i<14;i++){B.off.e.y+=3;B.off.e.a=1-i/14;yield 1;}B.off.e.a=0;
+    sfx.hit();if(R3.ok&&B.s3&&B.an){B.an.e.ko={t:0,k:B.an.e.hitk||'jab'};B.an.e.kind=null;yield 64;if(B.o.jump&&B.fi+1<B.foes.length&&typeof b3Downed==='function')b3Downed('e');}else{for(let i=0;i<14;i++){B.off.e.y+=3;B.off.e.a=1-i/14;yield 1;}B.off.e.a=0;}
     yield* talk(`${B.em.nm} is down!`,30);
     if(typeof plCount==='function')plCount('ko',1);
     yield* award();
     if(B.fi+1<B.foes.length){
-      B.fi++;B.em=B.foes[B.fi];B.off.e={x:0,y:0,a:1,fl:0,vx:90};
+      B.fi++;B.em=B.foes[B.fi];B.off.e={x:0,y:0,a:1,fl:0,vx:90};if(B.an&&B.an.e){B.an.e.ko=null;B.an.e.kb=0;B.an.e.rec=0;B.an.e.hitk=null;}
       for(let i=0;i<20;i++){B.off.e.vx=Math.max(0,B.off.e.vx-5);yield 1;}B.off.e.vx=0;
       yield* talk(`${B.o.name} sends out ${B.em.nm}!`,34);
     }else return 'win';
     return null;
   }
   if(!alive(B.pm)){
-    sfx.hit();for(let i=0;i<14;i++){B.off.p.y+=3;B.off.p.a=1-i/14;yield 1;}B.off.p.a=0;
+    sfx.hit();if(R3.ok&&B.s3&&B.an){B.an.p.ko={t:0,k:B.an.p.hitk||'jab'};B.an.p.kind=null;yield 64;if(B.o.jump&&typeof b3Downed==='function')b3Downed('p');}else{for(let i=0;i<14;i++){B.off.p.y+=3;B.off.p.a=1-i/14;yield 1;}B.off.p.a=0;}
     yield* talk(`${B.pm.nm} is knocked out!`,30);
-    if(B.solo||!G.gang.some(alive))return 'lose';
+    if(B.solo||!G.gang.some((m,i)=>alive(m)&&(!B.squad||B.squad.includes(i))))return 'lose';
     B.choice=null;openGang(true);yield()=>B.choice!==null;
-    const c=B.choice;B.pm=G.gang[c.i];B.part.add(B.pm);B.off.p={x:0,y:0,a:1,fl:0,vx:0};sfx.ok();
+    const c=B.choice;B.pm=G.gang[c.i];B.part.add(B.pm);B.off.p={x:0,y:0,a:1,fl:0,vx:0};if(B.an&&B.an.p){B.an.p.ko=null;B.an.p.kb=0;B.an.p.rec=0;B.an.p.hitk=null;}sfx.ok();
     yield* talk(`Go! ${B.pm.nm}!`,22);
     return null;
   }
@@ -1506,6 +1546,7 @@ function onStep(){
     return;
   }
   if(checkSight())return;
+  if(typeof gangJumpCheck==='function'&&G.steps>Wd.noEnc&&gangJumpCheck())return;
   if(ENC.has(tileAt(m,G.x,G.y))&&m.enc&&G.steps>Wd.noEnc&&Math.random()<.12)startWild();
 }
 function doWarp(w){
@@ -2618,7 +2659,7 @@ function drawRig(L,x,y,z,yaw,pose,opt){
         switch(rl){
           case 'armL':rx=(pose.armL?pose.armL[0]:0);rz=(pose.armL?pose.armL[1]:0)-.04;ry=pose.armLy||0;break;
           case 'armR':rx=(pose.armR?pose.armR[0]:0);rz=(pose.armR?pose.armR[1]:0)+.04;ry=pose.armRy||0;break;
-          case 'legL':rx=pose.legL||0;break;case 'legR':rx=pose.legR||0;break;
+          case 'legL':rx=pose.legL||0;rz=pose.legLz||0;break;case 'legR':rx=pose.legR||0;rz=pose.legRz||0;break;
           case 'head':rx=pose.headX||0;ry=pose.headY||0;break;
           case 'body':ry=pose.twist||0;break;
         }
@@ -3327,7 +3368,7 @@ function brawlInteract(n){
      {l:`BET 2 L&M ON ${nm.split(' ').pop().toUpperCase().slice(0,10)}`,d:G.items.cigs<2||!!br.bet,f:()=>{G.items.cigs-=2;br.bet={on:n,amt:2};sfx.ok();say(`Tuna the bookie scribbles on a napkin. "Two smokes on ${nm}. No refunds. Also no receipts."`);}},
      {l:'BREAK IT UP',f:()=>{
         const p=.35+Math.max(-.1,Math.min(.4,v.resp*.03));
-        if(Math.random()<p){v.resp+=2;sfx.ok();br.st='end';br.endT=200;br.win=null;n.br.k=other.br.k=0;
+        if(Math.random()<p){v.resp+=2;sfx.ok();br.st='end';br.endT=200;br.win=null;if(n.br)n.br.k=0;if(other&&other.br)other.br.k=0;
           say(`You step between them. "Hey! Break it up! Cardio is on Thursdays!" They both stare... and they both cave. Respect +2.`);}
         else{const l=Math.min(G.items.cigs,ri(1,2));G.items.cigs-=l;v.resp--;sfx.ow&&sfx.ow();CAM.shake=8;say(`You step in. You get an elbow in the ribs. ${l?l+' L&M fall out of your pocket and vanish.':'You have nothing to lose but pride.'} Respect -1.`);}
      }},
@@ -3417,7 +3458,7 @@ function b3Base(s){   // where the fighter stands: his side, lateral shuffle, kn
   const S=B.s3,u=S.u,sgn=s==='p'?-1:1,o=B.off[s],an=B.an[s]||{};
   const slide=o.vx?Math.abs(o.vx)/90*2.3:0,lat=[-u[1],u[0]];
   const busy=an.kind||an.rec>0||an.down>0||an.stag>0||o.vx;
-  const sw=busy?0:(an.sw||0),d=.74+slide+(an.kb||0)+(an.dodge>0?.35*an.dodge/20:0)+(an.block>0?.1:0);
+  const sw=busy?(an.isw||0):(an.sw||0)+(an.isw||0),d=.74+slide+(an.kb||0)+(an.ifw||0)+(an.dodge>0?.35*an.dodge/20:0)+(an.block>0?.1:0);
   const wob=an.stag>0?Math.sin(an.stag*.5)*.12:0;
   return [S.c[0]+u[0]*sgn*d+lat[0]*(sw+wob),0,S.c[1]+u[1]*sgn*d+lat[1]*(sw+wob)];
 }
@@ -3439,6 +3480,75 @@ function b3Pos(s){
 /* pose for an action: reuses the swing/jab/hook/kick vocabulary and adds weapons/voice */
 function wcol(an){const w=an&&an.mid&&WPN[(''+an.mid).slice(2)];return w?w.col:[.8,.82,.9];}
 
+
+
+/* ---- knockouts: every loss is a different fall, nobody vanishes ---- */
+const KOTYPE=k=>(['body','knee','teep','stomp','fknee','tackle'].includes(k)?'crumple':['hook','spin','elbow','swing','pipe','slash','cline','lariat','chair'].includes(k)?'spin':['slam','gpound','choke','throwj','lock'].includes(k)?'flat':['voice','taunt'].includes(k)?'faint':'timber');
+function koPose(a,sc,tt){
+  const K=a.ko;K.t++;const t=K.t,sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},ty=K.type||(K.type=KOTYPE(K.k));
+  let pose={},roll=0,yy=0,lean=0,yaw=0,fwd=0;
+  const twitch=t>70&&(t%55)<6?Math.sin((t%55)*1.1):0;       // a leg twitch every couple of seconds (it's funny)
+  const star={armL:[-.3,1.3],armR:[-.3,-1.3],elbL:.3,elbR:.3,legLz:-.35,legRz:.35,legL:0,legR:-.15*twitch,kneeR:.6*Math.abs(twitch),kneeL:.1};
+  if(ty==='timber'){               // stiff as a board, straight back, one bounce
+    const u=sm((t-8)/18);lean=-1.53*u;yy=.12*sc*u+(t>26&&t<38?Math.sin((t-26)/12*Math.PI)*.07:0);
+    pose=t<8?{headX:-.6,armL:[-1.2,.6],armR:[-1.2,-.6],kneeL:.25,kneeR:.25}:Object.assign({headX:-.2,headY:.3},u<1?{armL:[-1.9*u,1.0*u],armR:[-1.9*u,-1.0*u]}:star);}
+  else if(ty==='crumple'){        // grabs the gut, knees buckle, folds forward, face in the floor, butt up
+    const a1=sm(t/14),a2=sm((t-14)/14),a3=sm((t-28)/12);
+    yy=-(.42*a1)*sc+(.12*sc+.12*sc*a3)*a3*0;lean=.35*a1+.55*a2+.55*a3;
+    pose={armL:[-.6+(-1.1)*a3,.15+.5*a3],armR:[-.6+(-1.1)*a3,-.15-.5*a3],elbL:2.2-1.2*a3,elbR:2.2-1.2*a3,legL:-.2-1.3*a2,legR:-.2-1.3*a2,kneeL:.8*a1+1.4*a2,kneeR:.8*a1+1.4*a2,headX:.4+.3*a3};
+    yy=(-.32*a1*(1-a3)-.12*a2*(1-a3)+.13*a3)*sc;fwd=-.78*sc*a3;if(t>60)pose.legR-=.12*twitch;}
+  else if(ty==='spin'){           // spins around, wobbles, drops sideways
+    const u=sm(t/22),f=sm((t-18)/14);yaw=u*Math.PI*1.6;roll=-1.45*f;yy=.13*sc*f;
+    pose=Object.assign({headY:.6*Math.sin(t*.4)*(1-f),armL:[-.5,1.0],armR:[-.5,-1.0],elbL:.4,elbR:.4,kneeL:.4+.3*Math.sin(t*.5),kneeR:.4},f>=1?{legR:-.5+.1*twitch,kneeR:1.2,legL:-.2,kneeL:.6}:{});}
+  else if(ty==='flat'){           // already on the floor: starfish
+    const u=sm(t/10);lean=-1.53;yy=.12*sc;pose=Object.assign({},star,{armL:[-.3*u,1.3*u],armR:[-.3*u,-1.3*u],headY:.4});}
+  else{                           // faint: back of the hand to the forehead, swoons, slow drop
+    const u=sm((t-16)/26);lean=-1.53*u;yy=.12*sc*u;roll=.2*Math.sin(t*.15)*(1-u);
+    pose={armR:[-2.4,-.5],elbR:2.2,armL:[-.2,1.0*u+.2],elbL:.3,kneeL:.5*(1-u)+.1,kneeR:.7*(1-u)+.1,legL:-.2*(1-u),headX:-.5,headY:.3};}
+  if(fwd===0&&lean<-.2)fwd=.78*sc*Math.min(1,-lean/1.53);   // lying on his back: keep the whole body centred on his spot
+  return {pose,roll,yy,lean,yaw,fwd};
+}
+/* ---- footwork variety: random bobs, weaves, slips, side steps, feints, step-backs between exchanges ---- */
+const IDLEMV=['bob','weave','slip','step','step','back','feint','bob'];
+function idleMoves(a,s){
+  const I=a.idl||(a.idl={t:0,next:60+Math.random()*90,m:null});
+  if(!I.m){if(++I.t>=I.next){I.m={type:IDLEMV[Math.floor(Math.random()*IDLEMV.length)],t:0,d:Math.random()<.5?-1:1};
+      I.m.len={bob:22,weave:34,slip:18,step:16,back:26,feint:16}[I.m.type];
+      if(I.m.type==='step'){I.m.from=a.isw||0;I.m.to=Math.max(-.45,Math.min(.45,(a.isw||0)+I.m.d*(.22+Math.random()*.18)));}
+      I.t=0;I.next=50+Math.random()*120;}return null;}
+  const M=I.m;M.t++;const u=Math.min(1,M.t/M.len),e=Math.sin(u*Math.PI),d=M.d,r={};
+  switch(M.type){
+    case 'bob':r.kn=.45*e;r.bob=-.08*e;r.headX=.25*e;r.lean=.12*e;break;
+    case 'weave':r.kn=.4*Math.sin(u*Math.PI);r.bob=-.09*Math.sin(u*Math.PI);r.roll=d*.26*Math.sin(u*Math.PI*2);a.isw=(a.iswB||0)+d*.14*Math.sin(u*Math.PI*2);r.lean=.15*e;r.twist=d*.2*Math.sin(u*Math.PI*2);break;
+    case 'slip':r.roll=d*.3*e;r.headY=d*.25*e;r.lean=.06*e;r.kn=.15*e;break;
+    case 'step':a.isw=M.from+(M.to-M.from)*(u*u*(3-2*u));r.legStep=e;r.bob=.02*e;break;
+    case 'back':a.ifw=.3*e;r.lean=-.08*e;r.legStep=e;break;
+    case 'feint':r.twist=.18*e;r.headX=.12*e;r.kn=.12*e;break;
+  }
+  if(u>=1){if(M.type==='weave')a.isw=a.iswB||0;if(M.type==='back')a.ifw=0;if(M.type==='step')a.iswB=a.isw;I.m=null;}
+  return r;
+}
+/* ---- ground and pound: mounted on top, knees either side, one hand posting on the chest, the other hammering the face ---- */
+const GP_HITS=[.38,.5,.62,.74,.86];
+function gpMount(k,an){if(an&&an.miss)return 0;return k<.04?0:k<.14?((k-.04)/.1)*((k-.04)/.1)*(3-2*(k-.04)/.1):k<.9?1:Math.max(0,1-(k-.9)/.1);}
+function gpPose(an,k,s){
+  const sc=(s==='e'&&B.boss)?1.28:1.12,m=gpMount(k,an),P={};
+  const yy=(.5-RIG.hip)*sc*m;
+  // which hit we're on and where in its cycle: contact exactly at each GP_HITS time
+  let idx=GP_HITS.findIndex(h=>k<h+.001);if(idx<0)idx=GP_HITS.length;
+  const prev=idx>0?GP_HITS[idx-1]:.14,next=idx<GP_HITS.length?GP_HITS[idx]:.98,q=Math.max(0,Math.min(1,(k-prev)/(next-prev)));
+  const face=[0,.6,.64],cock=[.12,1.78,.02],post=[0,.42,.4];
+  const pr=idx%2===0?'R':'L',ps=pr==='R'?'L':'R',sd=pr==='R'?1:-1;
+  // retract up fast, hang at the top, then drive straight down to the face
+  let F;if(q<.3){const u=q/.3;F=_v(face,[cock[0]*sd,cock[1],cock[2]],u*u*(3-2*u));}else if(q<.78)F=[cock[0]*sd,cock[1]+.03*Math.sin(q*20),cock[2]];else{const u=(q-.78)/.22;F=_v([cock[0]*sd,cock[1],cock[2]],face,u*u);}
+  if(idx>=GP_HITS.length)F=_v(F,[cock[0]*sd,1.4,.1],Math.min(1,(k-.86)/.06));
+  const tw=sd*(q>.78?-.35:.25);
+  armIK3(P,pr,F,[sd*.6,-.3,-.5],tw);armIK3(P,ps,[-sd*.05,post[1],post[2]],[-sd*.5,-1,0],tw);
+  // blend from fighting stance into the mount
+  P.legL=-.05*m;P.legR=-.05*m;P.kneeL=1.6*m+.35*(1-m);P.kneeR=1.6*m+.3*(1-m);P.legLz=-.42*m;P.legRz=.42*m;
+  P.twist=tw*m;P.headX=.35*m;P.bob=0;
+  return {P,lean:.12*m,y:yy};
+}
 /* ---- 3D two-bone arm IK: put the fist exactly on a point, elbow toward a pole, in the body frame (facing +z) ---- */
 const AIK={u:.30,f:.345};
 function _v(a,b,k){return [a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k];}
@@ -3519,7 +3629,7 @@ function actPose(an,tt,s){
       case 'stomp':{const ph=Math.sin(k*3*Math.PI*2.6);P.legR=ph>0?-1.3*ph:0;P.kneeR=ph>0?1.5*(1-ph):.3;lean=-.12;P.armL=[-.5,.9];P.armR=[-.5,-.9];P.elbL=.6;P.elbR=.6;break;}
       case 'cline':P.armR=[-1.5,-1.5*Math.min(1,f*1.4)-.2];P.elbR=.1;lean=.45*f+.1;P.legL=.9*Math.sin(k*30);P.legR=-.9*Math.sin(k*30);P.kneeL=.8;P.kneeR=.8;P.armL=[-1.4,.3];P.elbL=1.2;break;
       case 'lariat':P.armR=[-1.5,-1.5];P.elbR=.1;lean=.45*f;P.twist=3*k;break;
-      case 'gpound':{const pn=Math.sin(k*5*Math.PI*2);P.armR=[-1.6+pn*.9,0];P.armL=[-1.6-pn*.9,0];P.elbR=1.0+pn*.9;P.elbL=1.0-pn*.9;lean=.7;P.headX=.3;P.kneeL=.9;P.kneeR=.9;break;}
+      case 'gpound':{const g=gpPose(an,k,s);Object.assign(P,g.P);lean=g.lean;y=g.y;roll=0;break;}
       case 'eye':P.armR=[-1.7*f-.5,.15];P.elbR=.2+1.4*ch;P.armL=[-1,.4];lean=.15+.15*f;break;
       case 'knux':P.armR=[-1.65*f-(1-f)*1.2,-.15];P.elbR=.1+1.8*ch;P.twist=.28-.95*f;lean=.1+.25*f;P.kneeR=.3+.5*f;prop={t:'knux',k:f,col:wcol(an)};break;
       case 'slash':P.armR=[-3.0*bk-.4*f-(f>0?(1-f)*1.6:0),0];P.armL=[-1.1,.6];P.elbR=.3;P.twist=.7*bk-.9*f;lean=-.2*bk+.35*f;prop={t:'sword',k:f>0?1:0,col:wcol(an)};break;
@@ -3614,6 +3724,8 @@ function battle3D(){
   let dd=dist-.035*push;if(S.zoom>0){dd-=S.zoom*.06;S.zoom--;}
   let sx=0,sy=0;if(S.shake>0){sx=(Math.random()-.5)*.14*S.shake/8;sy=(Math.random()-.5)*.1*S.shake/8;S.shake--;}
   const c=S.c;
+  {let m=0,dx=0,dz=0;for(const q of ['p','e']){const A=B.an[q];if(A&&A.kind==='gpound'&&A.k>0&&A.k<1){m=gpMount(A.k,A);const sg=q==='p'?-1:1;dx=-sg*S.u[0];dz=-sg*S.u[1];}}
+   S.gpf=(S.gpf||0)+(m-(S.gpf||0))*.15;if(m>0)S.gpd=[dx,dz];}   // slide the whole mount back toward centre frame
   const ca_=S.ca||0,cc=Math.cos(ca_),sn=Math.sin(ca_),vx=S.cam[0]*dd,vz=S.cam[1]*dd,eye=[c[0]+vx*cc-vz*sn+S.u[0]*sway+sx,Math.max(.8,h+(S.chh||0)+sy),c[1]+vx*sn+vz*cc+S.u[1]*sway],tgt=[c[0]+sx*.5,.8,c[1]];
   r3Begin(B.boss?40:38,eye,tgt,env.bg);
   r3Mesh(mc.main,null,R3.atlas,{cut:.5});r3Mesh(mc.glow,null,R3.atlas,{emit:1});
@@ -3628,27 +3740,38 @@ function battle3D(){
   (S.blood||[]).forEach(b=>r3Flat(R3.glow,b.x,.045,b.z,b.r*2,b.r*2,{a:.9,col:[.45,.02,.04,.9]}));
   // fighters
   const sc=B.boss?1.28:1.12;
-  const dying={p:B.off.p.y>0,e:B.off.e.y>0};
+  const dying={p:!!(B.an.p&&B.an.p.ko),e:!!(B.an.e&&B.an.e.ko)};
   for(const [s,col] of rings){
-    const o=B.off[s],P=b3Pos(s),a=B.an[s],sgn=s==='p'?-1:1;
-    const face=[-sgn*S.u[0],-sgn*S.u[1]],yaw=Math.atan2(face[0],face[1]);
+    const o=B.off[s],a=B.an[s],sgn=s==='p'?-1:1;let P=b3Pos(s);
+    const gpShift=(S.gpf>.01&&S.gpd)?[-S.gpd[0]*.95*S.gpf,-S.gpd[1]*.95*S.gpf]:[0,0];
+    const face=[-sgn*S.u[0],-sgn*S.u[1]];let yaw=Math.atan2(face[0],face[1]),lnO=null;
+    if(a.kind==='gpound'&&a.k>0&&a.k<1){const m=gpMount(a.k,a),D=b3Base(s==='p'?'e':'p'),dsc=((s==='p'&&B.boss)?1.28:1.12);   // climb on top: knees astride his hips
+      P=[P[0]+(D[0]+face[0]*.9*dsc-P[0])*m,0,P[2]+(D[2]+face[1]*.9*dsc-P[2])*m];}
+    P=[P[0]+gpShift[0],0,P[2]+gpShift[1]];
     const mv=o.vx&&Math.abs(o.vx)>1;
     let ap=actPose(a,tt,s),pose=ap.pose,roll=0,yy=0,fl=ap.flash;
     if(mv){const w=poseWalk(tt*8,1.0);if(Math.abs(o.vx)<28){delete w.armL;delete w.armR;delete w.elbL;delete w.elbR;delete w.twist;}pose=Object.assign(pose,w);}
     else if(!a.kind&&!a.rec&&!a.down&&!a.stag&&!a.dodge&&!a.block){const st=Math.sin(tt*7+(s==='p'?0:1.5));pose.legL=-.28+st*.07;pose.legR=.32-st*.07;pose.kneeL=.4+Math.max(0,st)*.12;pose.kneeR=.32+Math.max(0,-st)*.12;pose.headY=Math.sin(tt*1.3+(s==='p'?0:2))*.12;}
-    if(dying[s]){const k=Math.min(1,o.y/42);roll=-1.45*k;yy=.32*k;pose={armL:[.3,0],armR:[-.2,0]};}
+    if(!mv&&!dying[s]&&!a.kind&&!a.rec&&!a.down&&!a.stag&&!a.dodge&&!a.block&&!(B.an[s==='p'?'e':'p']||{}).kind){
+      const r=idleMoves(a,s);
+      if(r){if(r.kn){pose.kneeL=(pose.kneeL||0)+r.kn;pose.kneeR=(pose.kneeR||0)+r.kn;}if(r.bob)pose.bob=(pose.bob||0)+r.bob;if(r.headX)pose.headX=(pose.headX||0)+r.headX;if(r.headY)pose.headY=(pose.headY||0)+r.headY;
+        if(r.twist)pose.twist=(pose.twist||0)+r.twist;if(r.lean)ap.lean+=r.lean;if(r.roll)ap.roll+=r.roll;if(r.legStep){pose.legL=(pose.legL||0)-.22*r.legStep;pose.kneeL=(pose.kneeL||0)+.4*r.legStep;}}}
+    else if(a.idl&&a.idl.m&&(a.kind||a.rec)){a.idl.m=null;a.ifw=0;}
+    if(dying[s]){const K=koPose(a,s==='e'&&B.boss?1.28:1.12,tt);pose=K.pose;roll=K.roll;yy=K.yy;lnO=K.lean;yaw+=K.yaw;P=[P[0]+face[0]*K.fwd,0,P[2]+face[1]*K.fwd];}
     {const oa=B.an[s==='p'?'e':'p'];
      if(oa&&oa.kind&&oa.k>0&&oa.k<1&&!dying[s]){
       const k=oa.k,sm=x=>x*x*(3-2*x);
       switch(oa.kind){
        case 'slam':{if(k<.45){const u=sm(k/.45);yy=1.7*u;roll=-1.2*u;}else if(k<.62){const u=(k-.45)/.17;yy=1.7*(1-u*u);roll=-1.2-.25*u;}else if(k<.9){yy=0;roll=-1.45;}else{const u=(k-.9)/.1;roll=-1.45*(1-u);}pose={armL:[-2.6,.5],armR:[-2.6,-.5],legL:.4,legR:-.4};break;}
        case 'choke':{const sh=Math.sin(k*90);yy=k<.85?.25:0;roll=k<.85?-.15+sh*.08:-.8*Math.min(1,(k-.85)/.1)*(k<.95?1:Math.max(0,(1-k)/.05));pose={headX:.5,armL:[-1.4+sh*.5,.9],armR:[-1.4-sh*.5,-.9],legL:sh*.4,legR:-sh*.4};break;}
-       case 'stomp':case 'gpound':{if(k>.1&&k<.93){const u=Math.min(1,(k-.1)/.08)*(k>.88?(.93-k)/.05:1);roll=-1.45*u;yy=.12*u;pose={armL:[-.4,1],armR:[-.4,-1]};if(oa.kind==='gpound'||true)pose.headY=Math.sin(k*60)*.3;}break;}
+       case 'gpound':{const m=gpMount(k,oa),dsc=(s==='e'&&B.boss)?1.28:1.12,an=B.an[s],fl2=an.rec>0?(an.hdir||1)*Math.min(1,an.rec/10):0;
+         lnO=-1.53*m;yy=.12*dsc*m;roll=0;pose={armL:[-2.55*m,.45*m],armR:[-2.55*m,-.45*m],elbL:1.95*m,elbR:1.95*m,legL:-.85*m,legR:-.65*m,kneeL:1.55*m,kneeR:1.35*m,legLz:-.25*m,legRz:.25*m,headY:.55*fl2,headX:-.2*m};break;}
+       case 'stomp':{if(k>.1&&k<.93){const u=Math.min(1,(k-.1)/.08)*(k>.88?(.93-k)/.05:1);roll=-1.45*u;yy=.12*u;pose={armL:[-.4,1],armR:[-.4,-1]};if(oa.kind==='gpound'||true)pose.headY=Math.sin(k*60)*.3;}break;}
        case 'cline':case 'lariat':{if(k>.5&&k<.97){const u=(k-.5)/.47;yy=Math.sin(u*Math.PI)*.8;roll=-1.45*Math.min(1,u*2)*(k>.9?(.97-k)/.07:1);pose={armL:[-2.4,.6],armR:[-2.4,-.6],legL:.6,legR:-.5};}break;}
        case 'upper':{if(k>.5&&k<.8){const u=Math.sin((k-.5)/.3*Math.PI);yy=.45*u;pose=Object.assign(pose,{headX:-.7*u});roll=.35*u;}break;}
        case 'knee':{if(k>.55){pose=Object.assign(pose,{headX:.9,armL:[-.6,.5],armR:[-.6,-.5]});roll=.25;yy=.1;}break;}
       }}}
-    pose.lean=ap.lean;pose.roll=roll+ap.roll;yy+=ap.y;
+    pose.lean=ap.lean;pose.roll=roll+ap.roll;yy+=ap.y;if(lnO!==null){pose.lean=lnO;if(dying[s])pose.roll=roll;}
     if(o.fl>3)fl=Math.max(fl,.12);
     if(o.a<=0)continue;
     const alpha=o.a<.4?o.a/.4:1;
@@ -3667,9 +3790,12 @@ function battle3D(){
       if(mp.t==='pipe'){const kk=mp.k,m4_=m4.trs(hx,(kk?1.0:2.0)*sc,hz+(kk?fwd[1]*.5:0),kk?-1.3:-.2,yaw,0,.07,.07,.9*sc);r3Cube(m4_,[.55,.58,.62,1],{});}
       if(mp.t==='chair'){const m4_=m4.trs(hx,(1.1+(k<.35?.9:0))*sc,hz,k<.35?-.4:(k<.6?-1.2:-.2),yaw,0,.5,.55,.5);r3Cube(m4_,[.55,.36,.2,1],{});}
     }
+    if(dying[s]&&a.ko&&a.ko.t>24){const ty=a.ko.type,dir=ty==='crumple'?1:-1,hx=P[0]+face[0]*dir*1.5*sc,hz=P[2]+face[1]*dir*1.5*sc;
+      for(let i=0;i<3;i++){const aa=tt*3+i*2.1;r3Bill(R3.star,hx+Math.cos(aa)*.32,.55+Math.sin(tt*5+i)*.05,hz+Math.sin(aa)*.32,.22,.22,{emit:1,col:[1,.85,.25,1]});}}
     // dizzy stars
     if(B[s==='p'?'pm':'em'].stn>0||B.dizzy[s]>0){for(let i=0;i<3;i++){const aa=tt*4+i*2.1;r3Bill(R3.star,P[0]+Math.cos(aa)*.45,2.15*sc,P[2]+Math.sin(aa)*.45,.28,.28,{emit:1,col:[1,.85,.25,1]});}}
   }
+  if(B.o&&B.o.jump&&typeof squadDraw==='function')squadDraw(S,tt);
   // projectile (bottle toss / fumble)
   if(B.proj&&B.proj.k!==undefined||(B.proj&&B.proj.ph)){
     const pp=B.proj,Pp=b3Pos('p'),Pe=b3Pos('e');
@@ -3776,7 +3902,7 @@ function* comboFight(s,id,dmg,miss){
   const ds=s==='p'?'e':'p',A=B.an[s],def=comboOf(id),S=B.s3,beats=def.b,T=def.t||1.55;
   const tot=beats.reduce((a,b)=>a+b[1],0)||1;let left=dmg,lastIdx=-1;
   beats.forEach((b,i)=>{if(b[1]>0)lastIdx=i;});
-  A.combo=true;
+  A.combo=true;A.miss=!!miss;
   for(let i=0;i<beats.length;i++){
     const [kind,w,cap,o]=beats[i],o2=o||{},an=ANIM[kind]||ANIM.jab;
     A.kind=kind;A.k=0;A.len=Math.round(an.len*T);A.run=true;A.mid=id;
@@ -3809,7 +3935,7 @@ function* comboFight(s,id,dmg,miss){
     yield (kind==='choke'||kind==='gpound')?6:12;      // footwork between beats
   }
   if(left>0&&!miss)yield* hurt(ds,left);
-  A.combo=false;S.cat=0;S.cht=0;S.zoomT=0;
+  A.combo=false;A.miss=false;S.cat=0;S.cht=0;S.zoomT=0;
 }
 /* ===== ARMS: weapons with rarity, durability, loot, commissary stand, battle ARM menu ===== */
 const RAR={C:{n:'COMMON',c:'#c8c8c8',w:55,pr:8},U:{n:'UNCOMMON',c:'#5ac06b',w:28,pr:22},R:{n:'RARE',c:'#4aa0ff',w:12,pr:60},E:{n:'EPIC',c:'#c060ff',w:4,pr:160},L:{n:'LEGENDARY',c:'#ffb020',w:1,pr:0}};
@@ -4703,6 +4829,7 @@ function cineIntro(){
     case 6:IS.cut==='g'?sceneGym():sceneCouch();return true;
     case 7:sceneHouse();return true;
     case 8:sceneInside();return true;
+    case 9:sceneCourt();return true;
     case 0:sceneDrive();return true;
     case 1:sceneStop();return true;
     case 3:sceneOut();return true;
@@ -4721,6 +4848,7 @@ function cineSpeaker(){
 function cineTalking(){return !!(Say.cur&&Say.n<Say.full);}
 function lookIsSpeaker(L,spk){
   if(!spk)return false;
+  if(IS.scene===9&&CN.spkMap){for(const [re,LL] of CN.spkMap)if(LL===L)return re.test(spk);return false;}
   if(L===BSTREET||L===LOOK.bandit)return /bandit|bando|larry/.test(spk);
   if(L===BOGGS_ST||L===LOOK.boggs)return /bogg/.test(spk);
   if(L===LOOK.cop)return /cop|officer|deputy/.test(spk);
@@ -5096,6 +5224,76 @@ function sceneInside(){
 function cineWarm(){
   if(CN.warmQ===undefined){CN.warmQ=[];for(const L of [BSTREET,BOGGS_ST,LOOK.cop])for(const ex of ['talk','talk wide','blink','talk blink','talk wide blink'])CN.warmQ.push([L,ex]);}
   const w=CN.warmQ.shift();if(w)faceTex(w[0],0,w[1]);
+}
+/* ---------- the courtroom: Hauncho for the defense, Judge Cobb on the bench ---------- */
+const CRT={
+  judge:{sk:'#e9c6a2',hr:'#d9d9d9',st:'short',ac:['glasses','beard'],sh:'#141418',pn:'#141418',sleeve:'#141418',w:1},
+  hauncho:null,pros:{sk:'#f3cfb0',hr:'#a8662a',st:'bun',sh:'#4a2233',pn:'#24242c',sleeve:'#4a2233',ac:['glasses','lashes']},
+  bandit:null,boggs:null};
+function crtLooks(){
+  if(!CRT.hauncho){CRT.hauncho=Object.assign({},LOOK.haunchi,{sh:'#262a36',pn:'#262a36',sleeve:'#262a36'});
+    CRT.bandit=Object.assign({},LOOK.bandit,{sh:null,pn:null,nike:0});CRT.boggs=Object.assign({},LOOK.boggs,{sh:null,pn:null,nike:0});}
+  CN.spkMap=[[/judge/,CRT.judge],[/hauncho/,CRT.hauncho],[/prosecutor/,CRT.pros],[/bandit/,CRT.bandit],[/bogg/,CRT.boggs],[/bailiff/,LOOK.guard]];
+}
+function courtRoom(){
+  const W=[.36,.2,.12,1],Wd=[.27,.14,.08,1],Wl=[.5,.31,.18,1];
+  B3(0,-.05,-1,14,.1,14,[.42,.3,.2,1]);B3(0,.005,1.5,1.6,.01,8,[.42,.08,.1,1]);                         // floor + aisle runner
+  B3(0,3,-6,14,6,.2,Wd);for(let i=-6;i<=6;i++)B3(i*1.0,1.6,-5.88,.06,3.2,.04,[.2,.1,.06,1]);B3(0,3.25,-5.88,14,.1,.06,[.2,.1,.06,1]);
+  for(const s of [-1,1]){B3(s*7,3,-1,.2,6,14,Wd);for(let i=0;i<4;i++){B3(s*6.88,3.4,-3.6+i*2.4,.06,1.8,1.1,[.75,.7,.55,1],{emit:.35});}}
+  C3(0,4.2,-5.85,1.4,.05,1.4,[.75,.6,.25,1],{emit:.25},Math.PI/2);C3(0,4.2,-5.82,1.1,.04,1.1,[.25,.3,.55,1],null,Math.PI/2);  // the seal
+  for(const s of [-1,1]){C3(s*2.6,1.6,-5.4,.05,3.2,.05,[.75,.65,.3,1],{emit:.3});B3(s*2.6+s*.32,2.75,-5.4,.6,.85,.02,s<0?[.85,.15,.15,1]:[.15,.25,.65,1]);}   // flags
+  // the bench (raised), witness box, clerk
+  B3(0,.3,-4.6,4.8,.6,2,Wd);B3(0,.85,-3.75,4.4,1.7,.22,W);B3(0,1.73,-3.85,4.6,.08,.55,Wl);
+  for(let i=-2;i<=2;i++)B3(i*.85,.85,-3.63,.05,1.5,.02,Wd);
+  B3(0,1.25,-3.63,1.2,.24,.02,[.85,.75,.4,1],{emit:.3});                                                  // nameplate
+  B3(2.9,.55,-3.0,1.3,1.1,1.1,W);B3(2.9,1.13,-3.0,1.4,.06,1.2,Wl);B3(-2.9,.45,-3.1,1.4,.9,.9,W);
+  // counsel tables + chairs, bar rail, gallery
+  for(const s of [-1,1]){B3(s*2.4,.76,-.9,2.6,.06,1.1,Wl);for(const lx of [-1.1,1.1])B3(s*2.4+lx,.38,-.9,.08,.76,.9,Wd);B3(s*2.4,.5,-1.4,2.4,.6,.04,Wd);}
+  B3(0,.95,1.0,14,.07,.07,Wl);for(let i=-6;i<=6;i++)if(Math.abs(i)>0)C3(i,.5,1.0,.06,.9,.06,Wd);
+  for(let r=0;r<3;r++)for(const s of [-1,1]){B3(s*3.6,.45,2.2+r*1.3,5,.08,.5,W);B3(s*3.6,.9,2.45+r*1.3,5,.9,.08,W);}
+  // paperwork, water, laptop glow
+  B3(-2.0,.8,-.85,.32,.01,.24,[.95,.95,.92,1]);B3(2.5,.8,-.9,.4,.02,.3,[.15,.15,.18,1]);B3(2.5,.95,-1.12,.4,.28,.02,[.4,.6,.9,1],{emit:.7});
+  C3(-1.4,.86,-.7,.08,.18,.08,[.7,.85,1,1],{emit:.2});
+  pool3(0,-3.4,5,[1,.9,.7],.18);pool3(-2.4,-.9,4,[1,.9,.7],.12);pool3(2.4,-.9,4,[1,.9,.7],.12);
+}
+function sceneCourt(){
+  crtLooks();
+  Object.assign(R3.env,{sun:[1.05,.95,.82],dir:[.25,.9,.45],amb:[.62,.55,.5],sky:[.55,.5,.45],gnd:[.3,.22,.16],fog:[.08,.05,.04],fnear:30,ffar:90});
+  const t=IS.t||0,spk=cineSpeaker(),talking=cineTalking(),gv=IS.gav||0,hh=Math.sin(t*.023)*.03,hv=Math.sin(t*.037)*.02;
+  // shots: cut to whoever talks (from the bench side so we see faces), wide when nobody does
+  let sh={e:[0,3.0,8.5],l:[0,1.4,-2.2],f:40};
+  if(/judge/.test(spk)||gv>0)sh=gv>0?{e:[.7,1.5,-1.5],l:[.15,2.0,-4.5],f:24}:{e:[.9,1.55,-.6],l:[0,1.95,-4.6],f:30};
+  else if(/hauncho/.test(spk))sh={e:[-2.1,1.75,-3.1],l:[-3.35,1.55,-.7],f:30};
+  else if(/prosecutor/.test(spk))sh={e:[1.9,1.75,-3.1],l:[3.1,1.55,-.7],f:30};
+  else if(/bandit/.test(spk))sh={e:[-2.2,1.4,-2.9],l:[-2.75,1.22,-1.15],f:26};
+  else if(/bogg/.test(spk))sh={e:[-1.3,1.4,-2.9],l:[-1.75,1.22,-1.15],f:26};
+  else if(/bailiff/.test(spk))sh={e:[-3.0,1.75,-.9],l:[-4.7,1.5,-3.3],f:30};
+  if(IS.title)sh={e:[0,3.4,9.5-Math.min(1,t%400/240)*.8],l:[0,1.6,-3],f:42};
+  const key=spk+'|'+(gv>0)+'|'+!!IS.title;if(CN.ctK!==key){CN.ctK=key;CN.ct={z:0};}CN.ct.z=Math.min(1,CN.ct.z+.003);
+  const pz=CN.ct.z*.25,dir=[sh.l[0]-sh.e[0],sh.l[1]-sh.e[1],sh.l[2]-sh.e[2]];
+  const eye=[sh.e[0]+dir[0]*pz*.3+hh,sh.e[1]+dir[1]*pz*.3+hv,sh.e[2]+dir[2]*pz*.3];
+  camSet(sh.f,eye,sh.l,.5,.75);
+  courtRoom();
+  const isT=re=>re.test(spk)&&talking,gest=(on)=>on?{armL:[-.75+.2*Math.sin(t*.21),.35],armR:[-.6-.2*Math.sin(t*.17),-.35],elbL:1.0+.3*Math.sin(t*.3),elbR:.9}:{armL:[-.05,.08],armR:[-.05,-.08]};
+  // Judge Cobb behind the bench (seated, raised); the gavel goes up and comes DOWN
+  const up=gv<.6?Math.min(1,gv/.35):Math.max(0,1-(gv-.6)/.08),slam=gv>=.6;
+  const jp=Object.assign({legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5,headX:.12,armL:[-.95,.25],elbL:.7},isT(/judge/)&&!gv?{headY:.15*Math.sin(t*.07)}:{});
+  const JS_=1.08,jy=1.42-RIG.hip*JS_,low=[.26,1.2,.58],high=[.3,2.15,.2],G=up>0||slam?_v(low,high,slam?0:up):[.26,1.22,.5];
+  if(typeof armIK3==='function')armIK3(jp,'R',G,[.7,-.4,-.4],0);
+  person3(CRT.judge,0,-4.55,0,jp,JS_,jy);
+  {const gx=G[0]*JS_,gy=jy+G[1]*JS_,gz=-4.55+G[2]*JS_;B3(gx,gy,gz+.02,.05,.05,.32,[.35,.2,.1,1],null,-.3);B3(gx,gy+.03,gz+.18,.17,.08,.08,[.38,.22,.12,1]);B3(.3,1.79,-3.95,.26,.04,.2,[.3,.18,.1,1]);}
+  // defense table: Bandit + Boggs seated, Hauncho on his feet
+  const vd=IS.verdict||0;
+  const seat={legL:-1.5,legR:-1.5,kneeL:1.5,kneeR:1.5};
+  const bp=Object.assign({},seat,{armL:[-.95,.2],armR:[-.95,-.2],elbL:.9,elbR:.9,headX:.05},isT(/bandit/)?{headX:-.1,armR:[-1.3,-.4],elbR:.6+.3*Math.sin(t*.3)}:{},vd?{headX:.65,armL:[-.6,.3],armR:[-.6,-.3],elbL:1.4,elbR:1.4}:{});
+  person3(CRT.bandit,-2.75,-1.15,Math.PI,bp,1,.5-RIG.hip);
+  const gp=Object.assign({},seat,{armL:[-.25,1.25],armR:[-.35,-1.25],armLy:1.25,armRy:-1.25,elbL:1.75,elbR:1.75,headY:.2},isT(/bogg/)?{headY:.55,headX:.1}:{},vd?{armR:[-2.35,-.25],elbR:2.3,armRy:0,headX:.35}:{});
+  person3(CRT.boggs,-1.75,-1.15,Math.PI+(isT(/bogg/)?-.35:0),gp,1,.5-RIG.hip);
+  const hp=Object.assign({},gest(isT(/hauncho/)),{headY:isT(/hauncho/)?0:-.4});
+  person3(CRT.hauncho,-3.45,-.75,Math.PI-.15,hp,1.03);
+  person3(CRT.pros,3.1,-.75,Math.PI+.2,Object.assign({},gest(isT(/prosecutor/)),{headY:isT(/prosecutor/)?0:.4}),1.0);
+  person3(LOOK.guard,-4.7,-3.3,Math.PI/2+.4,{armL:[-.35,.15],armR:[-.35,-.15],elbL:1.2,elbR:1.2},1.05);
+  r3Flush();
 }
 /* ===== CHARACTER PROGRESSION (Bandit's own level, stats, boxing traits) + CREW (named later, its own level) ===== */
 const STATD=[
@@ -6081,7 +6279,7 @@ Object.assign(ACH,{spoon:{n:'THE SPOON IS REAL',d:'Find the golden spoon',ok:()=
 
 tunnelBuild();guardPatrols();
 /* ===== SAVES: version number, update-safe saves (migration), 3 slots + autosave, backup codes ===== */
-const GAME_VERSION='1.41';
+const GAME_VERSION='1.44';
 const SAVE_SCHEMA=2;
 const SLOTKEYS={1:SAVEKEY,2:SAVEKEY+'_s2',3:SAVEKEY+'_s3',auto:SAVEKEY+'_auto'};
 const SLOTS=[1,2,3,'auto'];
@@ -6152,7 +6350,7 @@ function loadMenu(fromTitle){
 }
 function systemMenu(){
   openMenu({x:4,y:20,w:170,title:'SYSTEM  v'+GAME_VERSION,items:[
-    {l:'SAVE',f:saveMenu},{l:'LOAD',f:()=>loadMenu(false)},{l:'BACKUP / RESTORE',f:()=>backupModal()},
+    {l:'SAVE',f:saveMenu},{l:'LOAD',f:()=>loadMenu(false)},{l:'BACKUP / RESTORE',f:()=>backupModal()},{l:'SOUNDTRACK',f:()=>soundtrackModal()},
     {l:muted?'SOUND: OFF':'SOUND: ON',f:()=>{muted=!muted;}},
     {l:'TITLE SCREEN',f:()=>{ask('Quit to title? (unsaved progress is lost)',()=>{openTitle();});}}]});
 }
@@ -6163,7 +6361,7 @@ function backupModal(){
   if(typeof document==='undefined'||!document.body||!document.body.appendChild)return say('Backups need a browser.');
   const inGame=G.mode==='world';const src=inGame?snapSave():readSlot(latestSlot());
   const code=src?encodeSave(src):'';
-  const wrap=document.createElement('div');
+  const wrap=document.createElement('div');wrap.className='pbmodal';
   wrap.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(8,4,16,.88);display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
   wrap.innerHTML=`<div style="background:#1b1226;border:2px solid #f3a65a;border-radius:14px;max-width:420px;width:100%;padding:16px;color:#fff">
     <div style="font-weight:800;font-size:17px;color:#ffd23a">Backup / Restore <span style="font-weight:400;font-size:12px;color:#c9a6ff">v${GAME_VERSION}</span></div>
@@ -6190,6 +6388,204 @@ function backupModal(){
 }
 function versionNotice(){
   try{const last=localStorage.getItem('rbl_lastver');if(last!==GAME_VERSION){localStorage.setItem('rbl_lastver',GAME_VERSION);if(last&&typeof toast==='function')toast('UPDATED TO v'+GAME_VERSION+' - SAVES KEPT','#7dff9a');}}catch(e){}
+}
+/* ===== SOUNDTRACK: your own songs, added from the phone, saved on the device, played as the game's music ===== */
+const MUS={list:[],mode:'mine',i:0,el:null,on:false,db:null,ready:false,shuffle:true,url:null,vol:.55};
+function musPrefs(){try{const p=JSON.parse(localStorage.getItem('rbl_music')||'{}');MUS.mode=p.mode||'mine';MUS.shuffle=p.shuffle!==false;MUS.vol=p.vol===undefined?.55:p.vol;}catch(e){}}
+function musSavePrefs(){try{localStorage.setItem('rbl_music',JSON.stringify({mode:MUS.mode,shuffle:MUS.shuffle,vol:MUS.vol}));}catch(e){}}
+function musDB(){
+  return new Promise((res,rej)=>{
+    if(MUS.db)return res(MUS.db);
+    if(typeof indexedDB==='undefined')return rej('no idb');
+    const r=indexedDB.open('podboss_music',1);
+    r.onupgradeneeded=()=>{r.result.createObjectStore('songs',{keyPath:'id'});};
+    r.onsuccess=()=>{MUS.db=r.result;res(MUS.db);};r.onerror=()=>rej(r.error);
+  });
+}
+function musTx(mode,fn){return musDB().then(db=>new Promise((res,rej)=>{const t=db.transaction('songs',mode),st=t.objectStore('songs');const out=fn(st);t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);t.onerror=()=>rej(t.error);}));}
+function musLoadList(){
+  return musDB().then(db=>new Promise(res=>{const out=[];const c=db.transaction('songs').objectStore('songs').openCursor();
+    c.onsuccess=()=>{const cur=c.result;if(cur){out.push({id:cur.value.id,name:cur.value.name,n:cur.value.n||0});cur.continue();}else{out.sort((a,b)=>a.n-b.n);MUS.list=out;MUS.ready=true;res(out);}};
+    c.onerror=()=>res(out);})).catch(()=>{MUS.ready=true;return [];});
+}
+function musAdd(files){
+  const arr=[...files].filter(f=>/^audio\//.test(f.type)||/\.(mp3|m4a|aac|wav|ogg)$/i.test(f.name));
+  const base=Date.now();
+  return Promise.all(arr.map((f,k)=>musTx('readwrite',st=>st.put({id:'s'+base+'_'+k,name:f.name.replace(/\.[^.]+$/,'').slice(0,40),blob:f,n:base+k})))).then(musLoadList).then(()=>arr.length);
+}
+function musRemove(id){return musTx('readwrite',st=>st.delete(id)).then(musLoadList);}
+function musGet(id){return musDB().then(db=>new Promise(res=>{const r=db.transaction('songs').objectStore('songs').get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}));}
+function musActive(){return MUS.mode==='mine'&&MUS.list.length>0&&!muted;}
+function musEl(){
+  if(!MUS.el&&typeof Audio!=='undefined'){MUS.el=new Audio();MUS.el.preload='auto';MUS.el.setAttribute('playsinline','');MUS.el.addEventListener('ended',()=>musNext());}
+  return MUS.el;
+}
+function musPlay(i){
+  if(!MUS.list.length)return;
+  MUS.i=((i%MUS.list.length)+MUS.list.length)%MUS.list.length;
+  const s=MUS.list[MUS.i],el=musEl();if(!el)return;
+  musGet(s.id).then(rec=>{if(!rec)return;if(MUS.url)URL.revokeObjectURL(MUS.url);MUS.url=URL.createObjectURL(rec.blob);
+    el.src=MUS.url;el.volume=MUS.vol;const p=el.play();MUS.on=true;if(p&&p.catch)p.catch(()=>{MUS.on=false;});
+    if(typeof toast==='function')toast('NOW PLAYING: '+s.name.toUpperCase().slice(0,24),'#9ad');});
+}
+function musNext(){if(!MUS.list.length)return;musPlay(MUS.shuffle&&MUS.list.length>2?MUS.i+1+Math.floor(Math.random()*(MUS.list.length-1)):MUS.i+1);}
+function musStop(){if(MUS.el){MUS.el.pause();}MUS.on=false;}
+/* the chiptune engine stays quiet while your songs are playing */
+function musTick(){
+  if(musActive()){if(!MUS.on||(MUS.el&&MUS.el.paused&&MUS.el.src&&!MUS.el.ended)){/* waits for a tap (iPhone needs one) */}}
+  else if(MUS.on)musStop();
+  if(MUS.el)MUS.el.volume=MUS.vol;
+}
+function musUnlock(){ // called from real taps: iPhone only starts audio inside a gesture
+  if(musActive()&&(!MUS.on||(MUS.el&&MUS.el.paused))){if(MUS.el&&MUS.el.src&&MUS.el.paused&&MUS.on!==false){const p=MUS.el.play();if(p&&p.catch)p.catch(()=>{});}else musPlay(MUS.shuffle?Math.floor(Math.random()*MUS.list.length):MUS.i);}
+}
+if(typeof document!=='undefined'&&document.addEventListener){
+  ['touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,()=>{try{musUnlock();}catch(e){}},{passive:true}));
+}
+musPrefs();try{musLoadList();}catch(e){}
+/* ---- the Soundtrack sheet (real HTML so the file picker works on iPhone) ---- */
+function soundtrackModal(){
+  if(typeof document==='undefined'||!document.body||!document.body.appendChild)return say('Soundtrack needs a browser.');
+  const wrap=document.createElement('div');wrap.className='pbmodal';
+  wrap.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(8,4,16,.9);display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
+  document.body.appendChild(wrap);
+  const B='padding:11px 12px;border-radius:10px;border:0;font-weight:800;font-size:15px;color:#fff';
+  const render=()=>{
+    const rows=MUS.list.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #2e2340">
+      <button data-p="${i}" style="${B};background:${MUS.on&&MUS.i===i?'#f27a12':'#3a2d4e'};padding:8px 11px">${MUS.on&&MUS.i===i&&MUS.el&&!MUS.el.paused?'❚❚':'▶'}</button>
+      <div style="flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name.replace(/</g,'&lt;')}</div>
+      <button data-r="${s.id}" style="${B};background:transparent;border:1px solid #6a5a80;color:#d88;padding:7px 10px;font-size:13px">Remove</button></div>`).join('')
+      ||'<div style="color:#a99bbd;font-size:14px;padding:14px 0">No songs yet. Add MP3s or any audio from your Files app.</div>';
+    wrap.innerHTML=`<div style="background:#1b1226;border:2px solid #f3a65a;border-radius:14px;max-width:440px;width:100%;max-height:88vh;display:flex;flex-direction:column;color:#fff;padding:16px;box-sizing:border-box">
+      <div style="font-weight:800;font-size:18px;color:#ffd23a">PodBoss Soundtrack</div>
+      <div style="font-size:12px;color:#c9a6ff;margin:4px 0 10px">Songs are saved on this phone and play as the game's music. Updates keep them.</div>
+      <label style="${B};background:#2d7a5a;text-align:center;display:block;cursor:pointer">+ Add songs<input id="mf" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav" multiple style="display:none"></label>
+      <div id="ml" style="overflow:auto;margin:8px 0;flex:1;min-height:60px">${rows}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="mm" style="${B};flex:1;background:${MUS.mode==='mine'?'#f27a12':'#3a2d4e'}">${MUS.mode==='mine'?'Playing: MY SONGS':'Playing: GAME MUSIC'}</button>
+        <button id="ms" style="${B};background:#3a2d4e">${MUS.shuffle?'Shuffle: ON':'Shuffle: OFF'}</button>
+        <button id="mn" style="${B};background:#3a2d4e">Next ⏭</button></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:#ccc">Volume <input id="mv" type="range" min="0" max="1" step="0.05" value="${MUS.vol}" style="flex:1"></div>
+      <div id="mmsg" style="font-size:13px;color:#7dff9a;min-height:18px;margin-top:6px"></div>
+      <button id="mx" style="${B};background:transparent;border:1px solid #6a5a80;color:#ccc;margin-top:4px">Close</button></div>`;
+    const $=q=>wrap.querySelector(q),msg=t=>{$('#mmsg').textContent=t;};
+    $('#mx').onclick=()=>wrap.remove();
+    $('#mf').onchange=e=>{const fs=e.target.files;if(!fs||!fs.length)return;msg('Saving...');
+      musAdd(fs).then(n=>{MUS.mode='mine';musSavePrefs();render();wrap.querySelector('#mmsg').textContent=n?`Added ${n} song${n>1?'s':''}.`:'Those files are not audio.';if(n&&!MUS.on)musPlay(MUS.list.length-n);})
+        .catch(()=>msg('This browser blocked saving songs.'));};
+    wrap.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const i=+b.dataset.p;if(MUS.on&&MUS.i===i&&MUS.el&&!MUS.el.paused){MUS.el.pause();}else if(MUS.on&&MUS.i===i&&MUS.el){MUS.el.play();}else{MUS.mode='mine';musSavePrefs();musPlay(i);}setTimeout(render,250);});
+    wrap.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const id=b.dataset.r,cur=MUS.list[MUS.i];musRemove(id).then(()=>{if(cur&&cur.id===id){musStop();if(MUS.list.length)musPlay(0);}render();});});
+    $('#mm').onclick=()=>{MUS.mode=MUS.mode==='mine'?'game':'mine';musSavePrefs();if(MUS.mode==='game')musStop();else if(MUS.list.length)musPlay(MUS.i);render();};
+    $('#ms').onclick=()=>{MUS.shuffle=!MUS.shuffle;musSavePrefs();render();};
+    $('#mn').onclick=()=>{if(MUS.list.length){MUS.mode='mine';musNext();setTimeout(render,250);}};
+    $('#mv').oninput=e=>{MUS.vol=+e.target.value;if(MUS.el)MUS.el.volume=MUS.vol;musSavePrefs();};
+  };
+  musLoadList().then(render);render();
+}
+/* ===== GANG JUMPS: rival crews roll up on you. 1v1, 2v1, 2v2, 3v2, 3v3, 4v4... both squads on the floor, benches jump in ===== */
+const RIVALS=[
+  {n:'WILLOWAY WOLVES',lines:['Willoway runs this hallway, fish.','Wolves eat first. You eat never.','Look who wandered off the porch.']},
+  {n:'ERIE STREET KINGS',lines:['Erie Street don\'t knock, we just come in.','Kings tax every tray in this pod. Pay up.','You been talkin\' reckless, Popstar.']},
+  {n:'VINE ST VULTURES',lines:['Vultures wait. Then we eat. Guess what time it is.','Somebody said you got cigs. Somebody was right.','Walmart Street sends its regards.']},
+  {n:'ROUTE 91 RIDERS',lines:['91 rolls deep, dawg.','We heard you\'re the new big dog. Bark.','Wrong tier, wrong time, wrong guy.']}
+];
+const GJ_ZONES=new Set(['cafe','yard','gym','blockA','blockB','blockC','blockD']);
+function gangAlive(){return G.gang.filter(alive);}
+function gangScenario(){
+  const n=Math.min(4,gangAlive().length),v=vv(),heat=v.heat||0,o=[];
+  const add=(p,e,w)=>o.push({p,e,w});
+  if(n<=1){add(1,1,4);add(1,2,4);if(heat>=3)add(1,3,2);}
+  else if(n===2){add(2,2,5);add(2,1,2);add(2,3,3);add(1,2,1);}          // 1v2: they caught you alone
+  else if(n===3){add(3,3,5);add(3,2,2);add(3,4,3);add(2,3,1);}
+  else{add(4,4,6);add(4,3,2);add(3,4,2);if(heat>=4)add(4,5,2);}
+  let r=Math.random()*o.reduce((a,b)=>a+b.w,0);for(const x of o){r-=x.w;if(r<=0)return x;}return o[0];
+}
+function gangJumpCheck(){
+  if(G.mode!=='world'||!G.flags.gotSuit||G.rush||Cs.g||Say.on||Menus.length)return false;
+  if(!GJ_ZONES.has(G.map))return false;
+  G.gjNext=G.gjNext||G.steps+120;if(G.steps<G.gjNext)return false;
+  const z=ZONE[G.map]||ZONE.yard,heat=(vv().heat||0);
+  if(Math.random()>.012*(.6+z.d)*(1+heat*.2))return false;
+  G.gjNext=G.steps+220+Math.floor(Math.random()*260);
+  gangJump();return true;
+}
+function gangJump(force){
+  const sc=force||gangScenario(),crew=pick(RIVALS),z=ZONE[G.map]||ZONE.yard,top=maxLevel();
+  const lvBase=Math.max(z.lv[0],Math.min(z.lv[1],top-1));
+  const foes=[];for(let i=0;i<sc.e;i++){const lv=Math.max(2,lvBase+(i===sc.e-1?2:0)-Math.max(0,sc.e-sc.p)+ri(-1,1));
+    foes.push(mkMon(pick(z.sp),lv,pick(WILDNAMES).slice(0,9)));}
+  foes[foes.length-1].nm=(crew.n.split(' ')[0].slice(0,6)+' BOSS').slice(0,11);
+  const tag=`${sc.p} vs ${sc.e}`,line=pick(crew.lines);
+  const odds=sc.e>sc.p?'You\'re outnumbered.':sc.e<sc.p?'You got the numbers.':'Even numbers. Let\'s go.';
+  Cs.run((function*(){
+    sfx.crit();Fx.flashCol='#fff';Fx.flash=8;Fx.shake=8;yield 16;
+    yield* talk(`The ${crew.n} roll up on you! "${line}"`,0);
+    yield* talk(sc.p===1&&gangAlive().length>1?`Your crew is across the pod. It's just you. ${odds}`:`GANG JUMP: ${tag}. ${odds}`,0);
+    let res=null;
+    fadeTo(()=>startBattle({foes,name:crew.n,jump:true,squad:sc.p,card:true,cardName:crew.n,sub:'GANG JUMP  '+tag,
+      tr:{name:crew.n,win:sc.e*2+ri(0,2),post:pick(['Aight, aight! We\'re done! Damn.','This ain\'t over. ...It\'s kinda over.','You got a crew for real. Respect.']),lose:'They stomp you out and take your stuff.'},
+      pre2:`${crew.n}: ${pick(['Get him!','Swing on him!','Run that!'])}`,done:(r)=>{res=r;G.mode='world';}}));
+    yield()=>res!==null;
+    playSong(cur().song);Wd.noEnc=G.steps+8;
+    if(res==='win'){const v=vv();v.resp=(v.resp||0)+sc.e*2+(sc.e>sc.p?3:0);if(typeof crewGain==='function')crewGain(8*sc.e);
+      if(typeof toast==='function')toast(`+${sc.e*2+(sc.e>sc.p?3:0)} RESPECT - ${crew.n} DOWN`,'#7dff9a');
+      if(sc.e>sc.p)yield* talk(`Word spreads: you beat ${tag} odds. The ${crew.n} will think twice.`,0);}
+    if(res==='lose'){const lost=Math.min(G.items.cigs||0,ri(2,5));G.items.cigs-=lost;if(lost)yield* talk(`They took ${lost} L&M packs off you.`,0);yield* whiteout();}
+  })());
+}
+/* ---- squads on the floor ---- */
+function squadList(s){
+  if(!B)return [];
+  if(s==='e')return B.foes.filter(f=>f!==B.em&&alive(f));
+  return (B.squad||[]).map(i=>G.gang[i]).filter(m=>m&&m!==B.pm&&alive(m));
+}
+function benchSpot(s,i){
+  const S=B.s3,u=S.u,lat=[-u[1],u[0]],sgn=s==='p'?-1:1,off=(i%2?1:-1)*(1.05+Math.floor(i/2)*.85);
+  return [S.c[0]+u[0]*sgn*2.05+lat[0]*off,S.c[1]+u[1]*sgn*2.05+lat[1]*off];
+}
+function monLook(m,s){return (s==='p'&&m.s==='bandit'&&typeof playerLook==='function')?playerLook():(LOOK[m.s]||LOOK.rookie);}
+function* benchJump(s){
+  if(!B||!B.o||!B.o.jump)return;
+  const ds=s==='p'?'e':'p',target=s==='p'?B.em:B.pm;if(!target||!alive(target))return;
+  const bench=squadList(s);if(!bench.length)return;
+  if(Math.random()>Math.min(.6,.2+.14*bench.length))return;
+  const i=Math.floor(Math.random()*bench.length),mon=bench[i],kind=pick(['cross','hook','kick','jab','body']);
+  const dmg=Math.max(2,Math.round(target.mhp*(.05+.05*Math.random())*Math.max(.6,Math.min(1.5,mon.l/Math.max(1,target.l)))));
+  yield* talk(s==='e'?`${mon.nm} jumps in from the side!`:`${mon.nm} runs in with a cheap shot!`,22);
+  if(R3.ok&&B.s3){const S=B.s3;S.jump={s,mon,kind,t:0,from:benchSpot(s,i)};
+    let g=0;while(S.jump&&S.jump.t<22&&g++<200)yield 1;
+    b3Impact(ds,kind);yield* hurt(ds,dmg);
+    g=0;while(S.jump&&S.jump.t<46&&g++<200)yield 1;S.jump=null;}
+  else yield* hurt(ds,dmg);
+}
+function b3Downed(s){
+  const S=B.s3;if(!S||!B.an||!B.an[s]||!B.an[s].ko)return;
+  const P=b3Pos(s),u=S.u,lat=[-u[1],u[0]],sgn=s==='p'?-1:1,face=[-sgn*u[0],-sgn*u[1]];S.down=S.down||[];
+  const k=S.down.filter(d=>d.s===s).length,side=k%2?1:-1,sh=1.55+.5*Math.floor(k/2);
+  S.down.push({s,L:b3Look(s),x:P[0]+lat[0]*sh*side+u[0]*sgn*.5,z:P[2]+lat[1]*sh*side+u[1]*sgn*.5,yaw:Math.atan2(face[0],face[1]),fx:face[0],fz:face[1],a:{ko:{t:80,k:B.an[s].ko.k,type:B.an[s].ko.type}}});
+}
+function squadDraw(S,tt){
+  const sc=1.12;
+  for(const s of ['p','e']){
+    squadList(s).forEach((m,i)=>{
+      if(S.jump&&S.jump.mon===m)return;
+      const [x,z]=benchSpot(s,i),yaw=Math.atan2(S.c[0]-x,S.c[1]-z),ph=tt*6+i*1.7+(s==='p'?0:1);
+      const hype=Math.sin(ph),pose={bob:Math.abs(hype)*.035,legL:-.2,legR:.25,kneeL:.35,kneeR:.3,armL:[-.5,.2],armR:[-.45,-.18],elbL:2.2,elbR:2.3,headY:.15*Math.sin(tt*.9+i)};
+      if(i%2)Object.assign(pose,{armR:[-2.5-.35*hype,-.3],elbR:.5});                 // one arm pumping, yelling
+      drawRig(monLook(m,s),x,0,z,yaw,pose,{scale:sc});
+    });
+  }
+  (S.down||[]).forEach(d=>{const K=koPose(d.a,sc,tt),p=K.pose;p.lean=K.lean;p.roll=K.roll;
+    drawRig(d.L,d.x+d.fx*K.fwd,K.yy,d.z+d.fz*K.fwd,d.yaw+K.yaw,p,{scale:sc});});
+  const J=S.jump;
+  if(J){J.t++;const ds=J.s==='p'?'e':'p',T=b3Pos(ds),u=S.u,lat=[-u[1],u[0]],side=(J.from[0]-T[0])*lat[0]+(J.from[1]-T[2])*lat[1]>0?1:-1;
+    const spot=[T[0]+lat[0]*.78*side,T[2]+lat[1]*.78*side],L=monLook(J.mon,J.s);
+    let x,z,pose,ty=Math.atan2(T[0]-spot[0],T[2]-spot[1]);
+    if(J.t<14){const k=J.t/14,e=k*k*(3-2*k);x=J.from[0]+(spot[0]-J.from[0])*e;z=J.from[1]+(spot[1]-J.from[1])*e;pose=poseWalk(tt*12,1.2);ty=Math.atan2(spot[0]-J.from[0],spot[1]-J.from[1]);}
+    else if(J.t<32){x=spot[0];z=spot[1];const an={kind:J.kind,k:Math.min(.99,(J.t-14)/18*.9+.05),rec:0};const ap=actPose(an,tt,J.s);pose=ap.pose;pose.lean=ap.lean;pose.roll=ap.roll;}
+    else{const k=Math.min(1,(J.t-32)/14),e=k*k*(3-2*k);x=spot[0]+(J.from[0]-spot[0])*e;z=spot[1]+(J.from[1]-spot[1])*e;pose=poseWalk(tt*12,1.2);ty=Math.atan2(J.from[0]-spot[0],J.from[1]-spot[1]);}
+    drawRig(L,x,0,z,ty,pose,{scale:sc});
+  }
 }
 /* ===== INTRO, TITLE, ENDING, MAIN LOOP ===== */
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
@@ -6273,7 +6669,7 @@ function lights(){
 function introDraw(){
   const OF=OFF();
   if(cineIntro()){IS.t++;g.save();g.translate(0,OF);
-    if(IS.title){g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,80,W,36);tx(IS.title,120,92,'#ffd23a','center');tx('Lake County Jail',120,104,'#fff','center');}
+    if(IS.title){g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,80,W,36);tx(IS.title,120,92,'#ffd23a','center');tx(IS.sub||'Lake County Jail',120,104,'#fff','center');}
     cineFloatsDraw();
     if(IS.big){const bt=IS.big;let ln=[bt];if(bt.length>14){const mid=bt.length/2;let cut=-1,best=99;for(let i=0;i<bt.length;i++)if(bt[i]===' '&&Math.abs(i-mid)<best){best=Math.abs(i-mid);cut=i;}if(cut>0)ln=[bt.slice(0,cut),bt.slice(cut+1)];}
       const L=Math.max(...ln.map(x=>x.length)),fs=L>12?13:L>8?18:24;g.font=fs+'px "Press Start 2P", Impact, sans-serif';g.textAlign='center';g.textBaseline='middle';const bx=120+ri(-2,2),by=70+ri(-2,2),sk=Math.sin(IS.t*.5)*.04;g.save();g.translate(bx,by);g.rotate(sk);g.lineWidth=5;
@@ -6514,8 +6910,33 @@ function* introGen(){
   yield* talk('Boggs: When we get to the pen, I am done with you, Bandit. Done. I am starting my own crew.',0);
   G.bgStart=1;
   IS.scene=5;IS.wagonX=70;IS.lights=1;sfx.siren();
-  for(let i=0;i<100;i++){IS.scroll+=4;IS.wagonX+=(i<30?0:3.4);if(i===20)IS.title='LAKE COUNTY';yield 1;}
-  fadeTo(null);yield()=>Fx.fade>=1;Fx.st=0;
+  for(let i=0;i<100;i++){IS.scroll+=4;IS.wagonX+=(i<30?0:3.4);yield 1;}
+  // ---- court: Hauncho for the defense ----
+  fadeTo(null);yield()=>Fx.fade>=1;
+  IS.scene=9;IS.lights=0;IS.gav=0;IS.verdict=0;IS.title='COURT OF COMMON PLEAS';IS.sub='Painesville, Ohio. 9:00 AM.';CN.lastSpk='';Fx.st=2;playSong('calm');
+  yield 110;IS.title='';IS.sub=null;
+  yield* talk('Bailiff: All rise! Lake County Court of Common Pleas is now in session. The Honorable Judge Cobb presiding.',0);
+  yield* talk('Judge Cobb: Sit down. State of Ohio versus... Larry "Regal Bandit Popstar"... and Boggs. Who typed this docket?',0);
+  yield* talk("Hauncho: Hauncho, Your Honor. Counsel for the defense. Also their ride. Also Bandit owes me forty bucks.",0);
+  yield* talk('Judge Cobb: Mr. Hauncho. Are you a licensed attorney?',0);
+  yield* talk("Hauncho: I watched every season of Suits, Your Honor. Twice. And I got the suit.",0);
+  yield* talk('Prosecutor: Your Honor. Ninety in a forty-five. Six cars nearly hit. A pound in a bag labelled WEED. And a pumper in the trunk.',0);
+  yield* talk('Hauncho: OBJECTION!',0);
+  yield* talk('Judge Cobb: On what grounds?',0);
+  yield* talk("Hauncho: ...It's real early, Your Honor. And these are good Cleveland boys. They tip. They call their moms. They brought the officer a BLT.",0);
+  yield* talk('Boggs: (whispering) We did NOT bring him a BLT, bro.',0);
+  yield* talk("Hauncho: (whispering) Shut up. I'm cookin'.",0);
+  yield* talk('Prosecutor: The State rests. Honestly, it rested in the parking lot.',0);
+  yield* talk('Judge Cobb: Mr. Larry. Anything to say before I rule?',0);
+  yield* talk('Bandit: Your Honor. With respect. I am the Popstar. Nobody can contain the Popstar.',0);
+  yield* talk('Judge Cobb: Lake County Jail is going to give it a shot.',0);
+  for(let i=0;i<34;i++){IS.gav=i/33;if(i===21){sfx.slam();Fx.shake=14;IS.flash=4;IS.big='GUILTY';}yield 1;}
+  IS.gav=0;IS.verdict=1;yield 40;IS.big=null;
+  yield* talk('Judge Cobb: Guilty on all counts. Ninety days, Lake County Jail. Bailiff, get them out of my courtroom.',0);
+  yield* talk('Boggs: Ninety days. NINETY. Larry, I had leg day tomorrow.',0);
+  yield* talk("Hauncho: Good news, boys. I'm gonna appeal. Bad news, I don't know what that means. I'll Google it.",0);
+  IS.title='LAKE COUNTY';IS.sub='Lake County Jail';yield 100;
+  fadeTo(null);yield()=>Fx.fade>=1;Fx.st=0;IS.title='';IS.sub=null;
   startNewWorld();
 }
 function startNewWorld(){
@@ -6542,15 +6963,16 @@ function startIntro(){
 const TIT={t:0};
 function openTitle(){
   G.mode='title';playSong('title');Menus.length=0;Say.clear();Fx.fade=0;Fx.st=0;
-  openMenu({x:62,y:150+OFF(),w:116,nocancel:true,items:[
+  openMenu({x:62,y:158+OFF(),w:116,rh:12,nocancel:true,items:[
     {l:'NEW GAME',f:()=>{sfx.ok();startIntro();}},
     {l:'CONTINUE',d:!hasSave(),f:()=>{if(loadGame()){Fx.fade=1;Fx.st=2;}else openTitle();}},
     {l:'LOAD GAME',d:!hasSave(),f:()=>loadMenu(true)},
     {l:'NEW GAME+',d:!ngUnlocked(),f:()=>{sfx.level();const d=readSlot(latestSlot());
       const b=d&&d.gang&&d.gang.find(m=>m.s==='bandit');G.ngKeep={pl:(d&&d.pl)||PL0(),ach:(d&&d.W&&d.W.ach)||{},fit:(d&&d.W&&d.W.fit)||'orange',lv:b?b.l:5};startIntro();}},
     {l:'FIGHT CLUB RUSH',f:()=>{sfx.ok();rushStart();}},
+    {l:'SOUNDTRACK',f:()=>soundtrackModal()},
     {l:'BACKUP / RESTORE',f:()=>backupModal()}
-  ],vis:6});versionNotice();
+  ],vis:7});versionNotice();
 }
 function ngUnlocked(){try{return localStorage.getItem('rbl_freed')==='1';}catch(e){return false;}}
 function rushStart(){
@@ -6566,9 +6988,9 @@ function titleDraw(){
   if(R3.ok){cnInit();cineTitle();g.save();g.translate(0,OFF());
     const gb=g.createLinearGradient(0,92,0,200);gb.addColorStop(0,'rgba(10,4,20,0)');gb.addColorStop(.25,'rgba(10,4,20,.72)');gb.addColorStop(1,'rgba(10,4,20,.85)');g.fillStyle=gb;g.fillRect(0,92,W,124);
     g.font='16px "Press Start 2P", Impact, sans-serif';g.textAlign='center';g.textBaseline='top';
-    g.fillStyle='#000';g.fillText('REGAL BANDIT',121,103);const tg=g.createLinearGradient(0,100,0,116);tg.addColorStop(0,'#ffd23a');tg.addColorStop(1,'#e8731c');g.fillStyle=tg;g.fillText('REGAL BANDIT',120,102);
-    g.fillStyle='#000';g.fillText('LOCKUP',121,125);g.fillStyle='#fff';g.fillText('LOCKUP',120,124);
-    tx('A POD BOSS ADVENTURE',120,142,'#c9a6ff','center');tx('v'+GAME_VERSION,232,10,'#8a7a9a','right');g.restore();return;}
+    g.font='28px "Press Start 2P", Impact, sans-serif';g.lineWidth=5;g.strokeStyle='#000';g.strokeText('PODBOSS',120,100);g.fillStyle='#000';g.fillText('PODBOSS',122,103);const tg=g.createLinearGradient(0,100,0,128);tg.addColorStop(0,'#ffd23a');tg.addColorStop(1,'#e8731c');g.fillStyle=tg;g.fillText('PODBOSS',120,100);
+    tx('A REGAL BANDIT STORY',120,132,'#fff','center');
+    tx('LAKE COUNTY JAIL',120,144,'#c9a6ff','center');tx('v'+GAME_VERSION,232,10,'#8a7a9a','right');g.restore();return;}
   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#1a0c2e');gr.addColorStop(1,'#4a1a2a');g.fillStyle=gr;g.fillRect(0,0,W,H);
   g.fillStyle='rgba(255,140,40,.12)';g.beginPath();g.arc(120,70,60,0,7);g.fill();
   for(let x=12;x<W;x+=18){R(x,0,5,H,'#0f0a18');R(x,0,1,H,'#6a6078');}
@@ -6577,10 +6999,10 @@ function titleDraw(){
   const by=Math.sin(TIT.t/20)*2;
   {const sp=smoothSprite(LOOK.bandit,0,0);if(sp)g.drawImage(sp,Math.round(120-96*(sp.mid||.5)),Math.round(101-96*(sp.foot||.9)+by),96,96);else person(g,92,Math.round(34+by),LOOK.bandit,0,0,4);}
   g.font='16px "Press Start 2P", Impact, sans-serif';g.textAlign='center';g.textBaseline='top';
-  g.fillStyle='#000';g.fillText('REGAL BANDIT',121,103);
-  const tg=g.createLinearGradient(0,100,0,116);tg.addColorStop(0,'#ffd23a');tg.addColorStop(1,'#e8731c');g.fillStyle=tg;g.fillText('REGAL BANDIT',120,102);
-  g.font='16px "Press Start 2P", Impact, sans-serif';g.fillStyle='#000';g.fillText('LOCKUP',121,125);g.fillStyle='#fff';g.fillText('LOCKUP',120,124);
-  tx('A POD BOSS ADVENTURE',120,142,'#c9a6ff','center');
+  g.font='28px "Press Start 2P", Impact, sans-serif';g.fillStyle='#000';g.fillText('PODBOSS',122,103);
+  const tg=g.createLinearGradient(0,100,0,128);tg.addColorStop(0,'#ffd23a');tg.addColorStop(1,'#e8731c');g.fillStyle=tg;g.fillText('PODBOSS',120,100);
+  tx('A REGAL BANDIT STORY',120,132,'#fff','center');
+  tx('LAKE COUNTY JAIL',120,144,'#c9a6ff','center');
   tx('(c) BANDIT ENTERTAINMENT',120,204,'#8a7a9a','center');tx('v'+GAME_VERSION,232,10,'#8a7a9a','right');
   g.restore();
 }
