@@ -372,7 +372,7 @@ const say=(t,cb,o)=>Say.add(t,cb,o);
 
 /* ---- menus ---- */
 const Menus=[];
-function openMenu(m){m.cur=m.cur||0;m.top=0;Menus.push(m);sfx.blip();return m;}
+function openMenu(m){m.cur=m.cur||0;m.top=0;if(m.items&&m.items[m.cur]&&m.items[m.cur].d){const j=m.items.findIndex(it=>!it.d);if(j>=0)m.cur=j;}Menus.push(m);sfx.blip();return m;}   // cursor starts on the first thing you can actually pick
 function menuUpdate(){
   const m=Menus[Menus.length-1];if(!m)return false;
   const n=m.items.length,cols=m.cols||1;
@@ -2018,7 +2018,7 @@ float a=t.a*uColor.a;if(a<uCut)discard;
 vec3 base=t.rgb*vCol*uColor.rgb;vec3 n=normalize(vN);
 #ifdef HAS_DERIV
 if(uBump>0.0&&uUseTex>0.5&&uToon<0.5){  /* surface relief from the HD texture: grout, mortar and cracks catch the light */
-  float lum=dot(t.rgb,vec3(0.3,0.59,0.11));vec3 dpx=dFdx(vW),dpy=dFdy(vW);vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);
+  float lum=dot(texture2D(uSamp,vUV,2.5).rgb,vec3(0.3,0.59,0.11));vec3 dpx=dFdx(vW),dpy=dFdy(vW);vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);
   vec3 gr=sign(det)*(dFdx(lum)*r1+dFdy(lum)*r2);n=normalize(abs(det)*n-gr*uBump);}
 #endif
 float d=max(dot(n,normalize(uL)),0.0);float h=n.y*0.5+0.5;
@@ -2253,7 +2253,7 @@ vec3 hi=max(c-0.78,0.0);c=min(c,0.78)+0.22*(1.0-exp(-hi/0.22));
 float g=dot(c,vec3(0.299,0.587,0.114));c=mix(vec3(g),c,1.1);
 c+=vec3(-0.012,0.004,0.018)*(1.0-g)+vec3(0.022,0.008,-0.018)*g;c=c*0.985+0.008;
 vec2 d=vUV-0.5;c*=1.0-uVg*smoothstep(0.25,0.85,dot(d,d)*2.2);
-c+=(hsh(gl_FragCoord.xy+uTm)-0.5)*0.022;                                   /* fine film grain */
+c+=(hsh(gl_FragCoord.xy+uTm)-0.5)*0.01;                                   /* fine film grain */
 gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);}`;
 function fxProg(gl,mk,vs,fs,us){const p=gl.createProgram(),v=mk(gl.VERTEX_SHADER,vs),f=mk(gl.FRAGMENT_SHADER,fs);if(!v||!f)throw new Error('fx shader');
   gl.attachShader(p,v);gl.attachShader(p,f);gl.bindAttribLocation(p,0,'aPos');gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error('fx link');
@@ -2411,13 +2411,9 @@ function tubeRings(pts,rad){
 }
 /* ---------- the head: displaced ellipsoid with real facial relief (same equirect UVs as the face texture) ---------- */
 const _HEADC={};
-function headMesh(k){
-  const key=k.hx+','+k.hy+','+k.hz+','+k.jaw+','+(k.fem?1:0)+','+(k.chin||0);if(_HEADC[key])return _HEADC[key];
-  const m=new MB(),N=60,M=44,P=[],N0=[];
-  const g=(x,s)=>Math.exp(-(x*x)/(2*s*s));
-  for(let j=0;j<=M;j++){P[j]=[];N0[j]=[];const ph=j/M*Math.PI,pd=ph*180/Math.PI;
-    for(let i=0;i<=N;i++){
-      const th=(i/N-.5)*Math.PI*2,td=th*180/Math.PI,lon=Math.abs(td);
+function headPoint(k,th,ph){
+  const g=(x,s)=>Math.exp(-(x*x)/(2*s*s)),pd=ph*180/Math.PI;
+  const td=th*180/Math.PI,lon=Math.abs(td);
       const n0=[Math.sin(th)*Math.sin(ph),Math.cos(ph),Math.cos(th)*Math.sin(ph)];
       const tj=_smooth((pd-98)/62);                       // 0 above the eyes -> 1 at the chin
       const front=Math.max(0,n0[2]);
@@ -2441,7 +2437,14 @@ function headMesh(k){
       d-=.006*g(lon-70,12)*g(pd-97,8);                     // temple hollow
       const dir=_nrm([n0[0],n0[1]*.6,n0[2]*1.0+.001]);
       x+=dir[0]*d;y+=dir[1]*d;z+=dir[2]*d;
-      P[j][i]=[x,y,z];N0[j][i]=n0;}}
+  return {p:[x,y,z],n0};
+}
+function headMesh(k){
+  const key=k.hx+','+k.hy+','+k.hz+','+k.jaw+','+(k.fem?1:0)+','+(k.chin||0);if(_HEADC[key])return _HEADC[key];
+  const m=new MB(),N=60,M=44,P=[],N0=[];
+  const g=(x,s)=>Math.exp(-(x*x)/(2*s*s));
+  for(let j=0;j<=M;j++){P[j]=[];N0[j]=[];const ph=j/M*Math.PI;
+    for(let i=0;i<=N;i++){const th=(i/N-.5)*Math.PI*2,q=headPoint(k,th,ph);P[j][i]=q.p;N0[j][i]=q.n0;}}
   const b0=m.nv;
   for(let j=0;j<=M;j++)for(let i=0;i<=N;i++){
     const p=P[j][i],pa=P[j][(i+1)%N],pb=P[j][(i-1+N)%N],pu=P[Math.min(j+1,M)][i],pd2=P[Math.max(j-1,0)][i];
@@ -2465,17 +2468,18 @@ function headMesh(k){
 /* ---------- anatomical segment profiles (metres; y down the limb) ---------- */
 function thighRings(bf,w){const f=bf;return [rY(.05,.088*f,.092*f,0,0),rY(-.03,.093*f,.098*f,0,0),rY(-.14,.09*f,.099*f,0,.004,2.1),rY(-.27,.077*f,.085*f,0,.004),rY(-.37,.063*f,.069*f,0,.002),rY(-.445,.056*f,.06*f,0,.004,2,.9)];}
 function shinRings(bf){const f=bf;return [rY(.03,.056*f,.06*f,0,.002,2,.9),rY(-.04,.057*f,.062*f,0,0),rY(-.11,.06*f,.071*f,0,-.012,2.1),rY(-.2,.05*f,.056*f,0,-.008),rY(-.3,.037,.04,0,0),rY(-.375,.035,.036,0,0)];}
-function upperArmRings(bf,sd,s){s=s||1;const f=bf*s;return [rY(-0.011,.062*f,.066*f,sd*.004,0),rY(-0.074,.06*f,.066*f,0,.006),rY(-0.166,.053*f,.058*f,0,.004),rY(-0.239,.045*f,.048*f,0,0),rY(-0.304,.041*f,.043*f,0,0)];}
-function foreArmRings(bf){const f=bf;return [rY(0.020,.04*f,.043*f,0,0),rY(-0.024,.044*f,.048*f,0,.002),rY(-0.080,.05*f,.054*f,0,.002,2.1),rY(-0.144,.042*f,.044*f,0,0),rY(-0.208,.033,.034,0,0),rY(-0.252,.028,.026,0,0)];}
+function upperArmRings(bf,sd,s){s=s||1;const f=bf*s;return [rY(-.012,.046*f,.05*f,sd*.004,0),rY(-0.042,.066*f,.07*f,sd*.012,.002),rY(-0.085,.061*f,.066*f,sd*.005,.008),rY(-0.166,.053*f,.058*f,0,.004),rY(-0.239,.045*f,.048*f,0,0),rY(-0.304,.041*f,.043*f,0,0)];}
+function foreArmRings(bf){const f=bf;return [rY(0.020,.04*f,.043*f,0,0),rY(-0.024,.044*f,.048*f,0,.002),rY(-0.080,.053*f,.056*f,0,.002,2.1),rY(-0.144,.042*f,.044*f,0,0),rY(-0.208,.033,.034,0,0),rY(-0.252,.028,.026,0,0)];}
 function torsoRings(w,bf,s,y0,y1){
   s=s||1;const R=[
-    rY(-.012,.168*w*s,.108*s,0,-.004,2.2,.85),rY(.05,.158*w*s,.103*s,0,-.002,2.2,.96),rY(.15,.134*w*s,.092*s,0,0,2.1,.93),
-    rY(.25,.146*w*s,.099*s,0,.002,2.2,1),rY(.34,.164*w*bf*s,.104*s,0,.003,2.5,1),rY(.41,.176*w*bf*s,.107*s,0,.004,2.7,1),
-    rY(.47,.18*w*bf*s,.104*s,0,.002,2.7,.97),rY(.515,.176*w*bf*s,.095*s,0,0,2.3,.92),rY(.545,.135*w*s,.082*s,0,0,2,.88),rY(.57,.078*s,.064*s,0,0,2,.85)];
+    rY(-.012,.158*w*s,.094*s,0,-.012,2.15,.85),rY(.05,.152*w*s,.1*s,0,-.004,2.15,.95),rY(.14,.13*w*s,.09*s,0,.002,2.05,.93),
+    rY(.22,.136*w*s,.094*s,0,.006,2.1,.98),rY(.31,.152*w*bf*s,.103*s,0,.01,2.2,1),rY(.39,.165*w*bf*s,.109*s,0,.012,2.3,1),
+    rY(.45,.166*w*bf*s,.106*s,0,.008,2.3,.98),rY(.49,.152*w*bf*s,.096*s,0,.002,2.15,.95),rY(.522,.118*w*bf*s,.084*s,0,-.004,2.05,.9),
+    rY(.548,.085*s,.07*s,0,-.006,2,.86),rY(.572,.066*s,.06*s,0,-.004,2,.84)];
   if(y0===undefined)return R;
   return R.filter(r=>r.c[1]>=y0&&r.c[1]<=y1);
 }
-function pantsRings(w,bf){return [rY(-.13,.11*w,.085,0,0,2,.78),rY(-.1,.172*w,.112,0,-.006,2.1,.88),rY(-.03,.174*w,.106,0,-.006,2.1,.95),rY(.03,.166*w,.108,0,-.004,2.1,1),rY(.08,.152*w,.1,0,0,2.1,1)];}
+function pantsRings(w,bf){return [rY(-.022,.1*w,.055,0,-.024,2,.6),rY(-.008,.152*w,.084,0,-.018,2.1,.8),rY(-.02,.17*w,.098,0,-.01,2.1,.93),rY(.03,.164*w,.102,0,-.006,2.1,1),rY(.08,.152*w,.1,0,0,2.1,1)];}
 function shoeUpper(){return [rZ(-.088,.04,.05,0,-.335,2,.8),rZ(-.062,.05,.062,0,-.323,2,.95),rZ(0,.052,.062,0,-.323,2.1),rZ(.07,.056,.05,0,-.335,2.2),rZ(.14,.06,.037,0,-.348,2.3),rZ(.19,.056,.029,0,-.356,2.3),rZ(.218,.04,.021,0,-.363,2,.9)];}
 function shoeSole(){return [rZ(-.092,.04,.012,0,-.392,3),rZ(-.07,.053,.013,0,-.392,3),rZ(0,.057,.013,0,-.392,3),rZ(.1,.064,.013,0,-.392,3),rZ(.17,.063,.013,0,-.389,3),rZ(.212,.046,.012,0,-.384,3),rZ(.228,.03,.01,0,-.382,3)];}
 /* hand: palm slab + four curled fingers + thumb merged into one mesh (elbow-local space) */
@@ -2489,6 +2493,43 @@ function handMesh(sd,bf){
   const tx=-sd*1,pts=[[tx*.032,-.325,.008],[tx*.043,-.352,.02],[tx*.036,-.38,.04],[tx*.018,-.405,.05]];
   sweepInto(m,tubeRings(pts,[.02,.018,.016,.014]),{N:10,capS:false});
   return m.build();
+}
+
+/* ---------- hair / beard that hug the sculpted skull: a thin displaced layer over headPoint, masked by a hairline ----------
+   cov(lon,pd) -> 0..1 coverage (soft edge), th(lon,pd) -> thickness in metres. Edges taper to zero so they melt into the skin. */
+const _HSC={};
+function headShell(k,key,cov,thick,ridge){
+  const ck=key+'|'+k.hx+','+k.jaw+','+(k.chin||0);if(_HSC[ck])return _HSC[ck];
+  const m=new MB(),N=72,M=48,P=[],C=[],N0=[];
+  for(let j=0;j<=M;j++){P[j]=[];C[j]=[];N0[j]=[];const ph=j/M*Math.PI,pd=ph*180/Math.PI;
+    for(let i=0;i<=N;i++){const th=(i/N-.5)*Math.PI*2,lon=Math.abs(th*180/Math.PI),q=headPoint(k,th,ph);
+      const c=Math.max(0,Math.min(1,cov(lon,pd))),e=c*c*(3-2*c);let t=(thick(lon,pd)+(ridge?ridge(th*180/Math.PI,pd):0))*e+.0012*Math.min(1,c*4);
+      const n=_nrm([q.p[0],q.p[1]-k.cy,q.p[2]]);P[j][i]=[q.p[0]+n[0]*t,q.p[1]+n[1]*t,q.p[2]+n[2]*t];C[j][i]=c;N0[j][i]=n;}}
+  const ids=[];
+  for(let j=0;j<=M;j++){ids[j]=[];for(let i=0;i<=N;i++){
+    const p=P[j][i],pa=P[j][(i+1)%N],pb=P[j][(i-1+N)%N],pu=P[Math.min(j+1,M)][i],pq=P[Math.max(j-1,0)][i];
+    let n=_crs([pu[0]-pq[0],pu[1]-pq[1],pu[2]-pq[2]],[pa[0]-pb[0],pa[1]-pb[1],pa[2]-pb[2]]);if(Math.hypot(n[0],n[1],n[2])<1e-10)n=N0[j][i];n=_nrm(n);
+    if(n[0]*N0[j][i][0]+n[1]*N0[j][i][1]+n[2]*N0[j][i][2]<0)n=[-n[0],-n[1],-n[2]];
+    const ao=.72+.28*Math.min(1,C[j][i]*1.5);
+    m.p.push(p[0],p[1],p[2]);m.n.push(n[0],n[1],n[2]);m.u.push(i/N*6,j/M*2);m.c.push(ao,ao,ao);ids[j][i]=m.nv++;}}
+  for(let j=0;j<M;j++)for(let i=0;i<N;i++){
+    if(C[j][i]<=0&&C[j][i+1]<=0&&C[j+1][i]<=0&&C[j+1][i+1]<=0)continue;
+    const a=ids[j][i],b=ids[j][i+1],c=ids[j+1][i],d=ids[j+1][i+1];
+    [[a,c,b],[b,c,d]].forEach(t=>{const A=[m.p[t[0]*3],m.p[t[0]*3+1],m.p[t[0]*3+2]],B=[m.p[t[1]*3],m.p[t[1]*3+1],m.p[t[1]*3+2]],Cc=[m.p[t[2]*3],m.p[t[2]*3+1],m.p[t[2]*3+2]];
+      const gg=_crs([B[0]-A[0],B[1]-A[1],B[2]-A[2]],[Cc[0]-A[0],Cc[1]-A[1],Cc[2]-A[2]]);if(Math.hypot(gg[0],gg[1],gg[2])<1e-14)return;
+      const nn=[m.n[t[0]*3],m.n[t[0]*3+1],m.n[t[0]*3+2]];if(gg[0]*nn[0]+gg[1]*nn[1]+gg[2]*nn[2]>=0)m.i.push(t[0],t[1],t[2]);else m.i.push(t[0],t[2],t[1]);});}
+  return _HSC[ck]=m.build();
+}
+const _sm=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+/* hairline: forehead -> temples (slight recession) -> above the ears -> nape */
+function hairLim(lon,low){return (lon<30?56+lon*.28:lon<92?64+(lon-30)*.52:lon<180?96+(lon-92)*.34:126)+(low||0);}
+function hairCov(lon,pd,low){return _sm(-5,5,hairLim(lon,low)-pd);}
+function beardCov(lon,pd,full){
+  const top=lon<14?117:lon<55?111+lon*.0:lon<86?111-(lon-55)*.5:200;     // mustache line, cheeks, sideburn up to the ear
+  const bot=lon<40?166:lon<86?166-(lon-40)*.45:120;
+  let c=_sm(-3,3,pd-top)*_sm(-4,4,bot-pd)*_sm(-6,6,90-lon);
+  if(lon<17&&pd>121&&pd<133)c*=1-_sm(-2,2,17-lon)*_sm(-1.5,1.5,pd-121)*_sm(-1.5,1.5,133-pd)*(full?0.0:1);   // mouth stays clear
+  return c;
 }
 /* ===== 3D MODELS: atlas, character rigs ===== */
 (function addAlphaTiles(){
@@ -2666,6 +2707,21 @@ function clothTex(col,kind){
   });
   return CLOTH[k]=glTexMip(can);
 }
+/* strand texture for hair + beards: thousands of fine strands, darker at the roots, sheen bands */
+const HAIRT={};
+function hairTex(col,kind){
+  const k=col.join(',')+kind;if(HAIRT[k])return HAIRT[k];
+  const h=v=>Math.round(Math.max(0,Math.min(1,v))*255);
+  const can=mkCan(128,256,c=>{
+    c.fillStyle=`rgb(${h(col[0]*(kind==='beard'?1:.8))},${h(col[1]*(kind==='beard'?1:.8))},${h(col[2]*(kind==='beard'?1:.8))})`;c.fillRect(0,0,128,256);
+    let sd=kind==='beard'?7:13;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
+    const n=kind==='beard'?2400:2200;
+    for(let i=0;i<n;i++){const x=r()*128,y=r()*256,l=kind==='beard'?3+r()*5:10+r()*26,k2=kind==='beard'?.75+r()*.9:.6+r()*.75,a=(kind==='beard'?(r()-.5)*1.6:(r()-.5)*.35);
+      c.strokeStyle=`rgba(${h(col[0]*k2)},${h(col[1]*k2)},${h(col[2]*k2)},${.55+r()*.4})`;c.lineWidth=.6+r()*.7;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+Math.sin(a)*l*.5,y+l*.5,x+Math.sin(a)*l,y+l);c.stroke();}
+    if(kind!=='beard'){const g=c.createLinearGradient(0,0,0,256);for(let i=0;i<=8;i++)g.addColorStop(i/8,i%2?'rgba(255,255,255,.07)':'rgba(0,0,0,.08)');c.fillStyle=g;c.fillRect(0,0,128,256);}
+  });
+  return HAIRT[k]=glTexMip(can);
+}
 function getRig(L){
   if(SPK)return getRigSP(L);
   const key=JSON.stringify(L);if(rigCache[key])return rigCache[key];
@@ -2703,7 +2759,9 @@ function getRig(L){
     P('body',B,[.085,.395,.128],[.095,.04,.008],[1,1,1],{shape:'cube',tex:numTex('#'+SH.map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''),L.num||String(10000+((L.sk||'').charCodeAt(2)||5)*137%89999))});
   }
   if(L.stripe)mesh('body',B,sweep(torsoRings(w,bf,1.012,.2,.3),{capS:false,capE:false,N:24}),hx(L.stripe),{tex:null});
-  if(!JS)mesh('body',B,sweep([rY(-.05,.18*w,.118),rY(-.012,.18*w,.118)],{capS:false,capE:false}),[.1,.08,.12],{mat:'leather',tex:null});   // belt
+  if(!JS)mesh('body',B,sweep([rY(.045,.168*w,.104,0,-.004),rY(.085,.158*w,.102,0,-.002)],{capS:false,capE:false,N:28}),[.1,.08,.12],{mat:'leather',tex:null});   // belt, at the waist
+  // ---- trapezius: the slope from the neck down to each shoulder (kills the coat-hanger look) ----
+  [-1,1].forEach(sd=>mesh('body',B,sweep([rX(sd*.035,.045,.058,.552,-.012),rX(sd*.09,.05,.066,.535,-.01),rX(sd*.15*w,.045,.066,.505,-.006),rX(sd*.19*w,.036,.058,.478,-.004)],{N:18}),L.sleeve&&!JS?SH:SH,CL));
   // ---- neck ----
   mesh('head',[0,HDY,0],sweep([rY(-.13,.058,.058),rY(-.05,.05,.053),rY(.04,.047,.05,0,.004),rY(.1,.045,.047,0,.006)]),SK,{mat:'skin',tex:SKT});
   // ---- arms: deltoid, bicep, elbow, forearm, hand ----
@@ -2721,8 +2779,11 @@ function getRig(L){
   });
   // ---- head: sculpted cranium/face/jaw, neck, ears ----
   const HP=[0,HDY,0],HS=[.18,.252,.21],HO=[0,.13,0],HX=.84,HZ=.89;
-  mesh('head',HP,headMesh({hx:.086,hy:.12,hz:.1,cy:.13,jaw:(L.buff||L.w)?.2:.26,chin:(L.buff||L.w)?.016:.012}),[1,1,1],{tex:faceTex(L),head:1,face:1,mat:'skin'});
-  [-1,1].forEach(sd=>P('head',HP,[sd*.086,.128,-.01],[.016,.05,.034],SK,{mat:'skin',tex:SKT}));   // ears
+  const HK={hx:.086,hy:.12,hz:.1,cy:.13,jaw:(L.buff||L.w)?.2:.26,chin:(L.buff||L.w)?.016:.012};
+  mesh('head',HP,headMesh(HK),[1,1,1],{tex:faceTex(L),head:1,face:1,mat:'skin'});
+  [-1,1].forEach(sd=>{P('head',HP,[sd*.084,.124,-.008],[.014,.052,.032],SK,{mat:'skin',tex:SKT,tint:[.8,.74,.7]});P('head',HP,[sd*.091,.126,-.006],[.006,.034,.02],shade(SK,.62),{mat:'skin',tint:[.8,.74,.7]});});   // ears: rim + shadowed bowl
+  const HTX=hairTex(HR,'hair'),scalp=(key,th,low,ridge)=>mesh('head',HP,headShell(HK,key+(low||0),(l,p)=>hairCov(l,p,low),()=>th,ridge),HR,{mat:'hair',tex:HTX});
+  if(ac.includes('beard')||ac.includes('stubble'))mesh('head',HP,headShell(HK,ac.includes('beard')?'beard':'stub',(l,p)=>beardCov(l,p)*(ac.includes('beard')?1:.6),()=>ac.includes('beard')?.0042:.0015),HR,{mat:'hair',tex:hairTex(HR,'beard')});
   const H=(off,size,col,o)=>P('head',HP,off,size,col,Object.assign({mat:'skin',tex:SKT},o||{}));
   const PH=(off,size,col,o)=>P('head',HP,[off[0]*HX,(off[1]-.135)*.94+.13,off[2]*HZ],[size[0]*HX,size[1],size[2]*HZ],col,o);
   const cap=(f1,b1,f2,b2,sc,col,dy,dz)=>PH([0,HO[1]+(dy||0),(dz||0)],[HS[0]*sc,HS[1]*sc,HS[2]*sc],col,{mesh:shellOf(f1,b1,f2,b2),mat:'hair'});
@@ -2730,24 +2791,24 @@ function getRig(L){
   const T=.46;  // head-relative scale vs the old rig
 
   switch(st){
-    case 'short':cap(0,0,56,105,1.06,HR,.005,-.005);for(let i=0;i<10;i++){const a=-1.3+i*.29,r_=.105;PH([Math.sin(a)*r_,.255+Math.cos(a*.9)*.012,Math.cos(a)*r_*.9-.03],[.05,.018,.07],shade(HR,i%2?1.08:.94),{mat:'hair'});}break;
-    case 'buzz':cap(0,0,58,95,1.03,HR);break;
-    case 'rows':cap(0,0,58,100,1.03,HR);[-4,-3,-2,-1,0,1,2,3,4].forEach(k=>{const x=k*.024,rr=.125-Math.abs(x)*Math.abs(x)*4.2;for(let j=0;j<5;j++){const ph=-.95+j*.48,yy=.135+Math.cos(ph)*rr,zz=Math.sin(ph)*rr*.95-.01;PH([x,yy,zz],[.019,.017,.055],shade(HR,1.12+(j%2)*.15),{mat:'hair',rx:ph});}});break;
-    case 'long':cap(0,0,64,150,1.07,HR,.005,-.007);PH([0,.14,-.12],[.22,.34,.12],HR,{mat:'hair'});for(let i=0;i<8;i++){const a=.6+i*.26;PH([Math.sin(a)*.11,-.02-(i%3)*.03,Math.cos(a)*.1-.06],[.035,.22,.035],shade(HR,i%2?1.15:.85),{mat:'hair'});}break;
-    case 'fro':ball(0,.28,-.02,.44,HR);for(let i=0;i<14;i++){const a=i*.46,el=(i%3)*.07;ball(Math.cos(a)*.2,.28+Math.sin(i*1.7)*.12,Math.sin(a)*.19-.02,.1+el,shade(HR,i%2?1.2:.9));}break;
-    case 'mohawk':[-.1,-.05,.01,.065,.12].forEach((z,i)=>PH([0,.33,z-.02],[.06,.1+(i%2)*.03,.1],HR,{mat:'hair'}));break;
-    case 'beanie':cap(0,0,74,98,1.1,HC,.01);cap(76,96,92,112,1.13,shade(HC,1.5),.01);break;
-    case 'bandana':cap(0,0,66,100,1.06,HR);cap(66,90,80,104,1.09,HC,.0);break;
-    case 'cap':cap(0,0,66,100,1.09,HC,.015);PH([0,.232,.16],[.2,.02,.17],shade(HC,.85),{mat:'cloth'});break;
-    case 'wild':cap(0,0,64,120,1.07,HR);for(let i=0;i<9;i++){const a=i*.7;ball(Math.cos(a)*.14,.31+((i*37)%5)*.014,Math.sin(a)*.13,.12+((i*13)%4)*.02,HR);}break;
-    case 'bun':cap(0,0,64,110,1.06,HR);ball(0,.36,-.06,.13,HR);break;
-    case 'bob':cap(0,0,62,128,1.08,HR,.005,-.007);break;
-    case 'slick':cap(0,0,50,110,1.05,HR,.01,-.01);break;
-    case 'headband':cap(0,0,64,105,1.06,HR);cap(60,88,74,100,1.09,HC);break;
+    case 'short':scalp('short',.009,0,(td,pd)=>pd<70?.003*_sm(30,70,pd)*(1-_sm(60,70,pd)):0);break;
+    case 'buzz':scalp('buzz',.0032,0);break;
+    case 'rows':scalp('rows',.0045,0,(td,pd)=>.0045*Math.pow(Math.abs(Math.sin(td*Math.PI/180*11)),.55));break;   // cornrows: real ridges running front to back
+    case 'long':scalp('long',.012,8);PH([0,.14,-.12],[.22,.34,.12],HR,{mat:'hair'});for(let i=0;i<8;i++){const a=.6+i*.26;PH([Math.sin(a)*.11,-.02-(i%3)*.03,Math.cos(a)*.1-.06],[.035,.22,.035],shade(HR,i%2?1.15:.85),{mat:'hair'});}break;
+    case 'fro':scalp('fro',.012,0);ball(0,.28,-.02,.44,HR);for(let i=0;i<14;i++){const a=i*.46,el=(i%3)*.07;ball(Math.cos(a)*.2,.28+Math.sin(i*1.7)*.12,Math.sin(a)*.19-.02,.1+el,shade(HR,i%2?1.2:.9));}break;
+    case 'mohawk':scalp('mohk',.002,0);[-.1,-.05,.01,.065,.12].forEach((z,i)=>PH([0,.33,z-.02],[.06,.1+(i%2)*.03,.1],HR,{mat:'hair'}));break;
+    case 'beanie':mesh('head',HP,headShell(HK,'beanie',(l,p)=>hairCov(l,p,10),(l,p)=>.016+.012*_sm(30,0,p)),HC,{tex:clothTex(HC,'cloth')});mesh('head',HP,headShell(HK,'beanieC',(l,p)=>{const L=hairLim(l,10);return _sm(-2,2,p-(L-13))*_sm(-2,2,L-p);},()=>.027),shade(HC,1.2),{tex:clothTex(shade(HC,1.2),'cloth')});break;   // knit beanie that sits on the skull, folded cuff
+    case 'bandana':mesh('head',HP,headShell(HK,'bandana',(l,p)=>hairCov(l,p,2),()=>.008),HC,{tex:clothTex(HC,'cloth')});break;
+    case 'cap':scalp('capH',.005,0);mesh('head',HP,headShell(HK,'cap',(l,p)=>hairCov(l,p,4),()=>.016),HC,{tex:clothTex(HC,'cloth')});PH([0,.232,.16],[.2,.02,.17],shade(HC,.85),{mat:'cloth'});break;
+    case 'wild':scalp('wild',.012,4);for(let i=0;i<9;i++){const a=i*.7;ball(Math.cos(a)*.14,.31+((i*37)%5)*.014,Math.sin(a)*.13,.12+((i*13)%4)*.02,HR);}break;
+    case 'bun':scalp('bun',.008,0);ball(0,.36,-.06,.13,HR);break;
+    case 'bob':scalp('bob',.013,14);break;
+    case 'slick':scalp('slick',.007,0);break;
+    case 'headband':scalp('hbd',.008,0);cap(60,88,74,100,1.09,HC);break;
     case 'bald':break;
   }
   if(ac.includes('crown')){const g=hx('#ffd23a');PH([0,.32,0],[.22,.05,.21],g,{shape:'cyl'});[0,1,2,3,4].forEach(i=>{const a=i*1.2566;PH([Math.sin(a)*.085,.37,Math.cos(a)*.08],[.05,.09,.05],g,{shape:'cone'});});}
-  if(ac.includes('hband')){cap(58,92,76,106,1.09,hx(L.hbc||'#f27a12'),.0);PH([-.14,.2,-.06],[.04,.03,.09],hx(L.hbc||'#f27a12'),{mat:'cloth'});PH([-.165,.16,-.09],[.03,.09,.03],hx(L.hbc||'#f27a12'),{mat:'cloth'});}
+  if(ac.includes('hband')){mesh('head',HP,headShell(HK,'hband',(l,p)=>{const c=l<95?67:76;return _sm(-2.5,2.5,p-(c-6))*_sm(-2.5,2.5,c+6-p);},()=>.012),hx(L.hbc||'#f27a12'),{tex:null});PH([-.14,.2,-.06],[.04,.03,.09],hx(L.hbc||'#f27a12'),{mat:'cloth'});PH([-.165,.16,-.09],[.03,.09,.03],hx(L.hbc||'#f27a12'),{mat:'cloth'});}
   if(ac.includes('shades')){const K=hx('#0a0a10');[-1,1].forEach(sd=>{PH([sd*.05,.152,.104],[.082,.046,.022],K,{mat:'leather'});PH([sd*.103,.16,.03],[.008,.011,.15],K,{mat:'leather'});});PH([0,.162,.11],[.03,.008,.012],K,{mat:'leather'});}   // two lenses, a bridge, temple arms
   if(ac.includes('badge')){const G=hx('#ffd23a');P('body',B,[.1,.38,.12],[.06,.075,.02],G,{mat:'leather'});P('body',B,[-.09,.3,.108],[.09,.03,.014],hx('#e8e8f0'));P('body',B,[.0,-.03,.118],[.06,.05,.014],G,{mat:'leather'});}
   if(ac.includes('chin'))H([0,.04,.055],[.15,.09,.12],SK);
@@ -2862,6 +2923,7 @@ function drawRig(L,x,y,z,yaw,pose,opt){
           m4.trs(p.sub[0],p.sub[1],p.sub[2],ex,0,0,1,1,1,_pe);
           m4.mul(_pa,_pe,_pf);_pa.set(_pf);
         }
+        if(R3.hmOn&&p.hand&&pass===1){m4.mul(_base,_pa,_pc);R3.hm[rl]=new Float32Array(_pc);}   // remember where each hand is (weapons ride in it)
         const g=pass===0?(SPK?.065:.045):0;
         m4.trs(p.off[0],p.off[1],p.off[2],p.rx||0,0,0,p.size[0]+g,p.size[1]+g,p.size[2]+g,_pb);
         m4.mul(_base,_pa,_pc);m4.mul(_pc,_pb,_pm);
@@ -2902,9 +2964,14 @@ const MENV={
   roof:{sun:[1.25,.86,.6],dir:[-.62,.5,-.35],amb:[.62,.56,.66],sky:[1,.86,.76],gnd:[.5,.44,.42],fog:[.86,.56,.46],fnear:24,ffar:60,bg:[.9,.58,.45],lamps:false,out:1},
   tier:{sun:[.32,.36,.42],dir:[.2,.9,.3],amb:[.56,.6,.68],sky:[.92,.98,1],gnd:[.5,.55,.6],fog:[.03,.04,.07],fnear:14,ffar:34,bg:[.02,.03,.06],lamps:true,lamp:[.85,.95,1]},
   hole:{sun:[.14,.09,.09],dir:[.2,.9,.3],amb:[.36,.22,.24],sky:[.65,.4,.4],gnd:[.3,.18,.18],fog:[.025,0,0],fnear:9,ffar:22,bg:[.02,0,0],lamps:true,lamp:[1,.25,.15]},
+  chapel:{sun:[.75,.6,.45],dir:[.3,.9,.2],amb:[.66,.56,.5],sky:[1,.92,.8],gnd:[.55,.45,.38],fog:[.08,.05,.03],fnear:14,ffar:34,bg:[.06,.04,.03],lamps:true,lamp:[1,.78,.45]},
+  library:{sun:[.5,.5,.48],dir:[.2,.9,.3],amb:[.7,.68,.64],sky:[1,.98,.92],gnd:[.6,.56,.5],fog:[.06,.05,.04],fnear:14,ffar:34,bg:[.05,.04,.03],lamps:true,lamp:[1,.9,.7]},
+  maxsec:{sun:[.28,.32,.4],dir:[.2,.9,.3],amb:[.5,.55,.64],sky:[.85,.92,1],gnd:[.45,.5,.58],fog:[.02,.03,.05],fnear:12,ffar:30,bg:[.02,.03,.05],lamps:true,lamp:[.75,.9,1]},
+  laundry:{sun:[.45,.42,.4],dir:[.2,.9,.3],amb:[.7,.68,.66],sky:[1,1,1],gnd:[.6,.6,.6],fog:[.18,.18,.2],fnear:8,ffar:26,bg:[.12,.12,.14],lamps:true,lamp:[1,.95,.85]},
+  boiler:{sun:[.2,.12,.08],dir:[.2,.9,.3],amb:[.42,.28,.22],sky:[.8,.5,.35],gnd:[.35,.22,.16],fog:[.04,.015,.0],fnear:9,ffar:24,bg:[.03,.01,0],lamps:true,lamp:[1,.5,.2]},
   tunnel:{sun:[.2,.18,.15],dir:[.2,.9,.3],amb:[.4,.36,.34],sky:[.7,.65,.6],gnd:[.35,.3,.28],fog:[.02,.015,.01],fnear:8,ffar:20,bg:[.02,.015,.01],lamps:true,lamp:[1,.6,.25]}
 };
-const MENVMAP={yard:'yard',blockA:'indoor',blockB:'cool',blockC:'hot',blockD:'dark',cafe:'indoor',comm:'indoor',med:'bright',gym:'indoor',intake:'indoor',cell12:'indoor',tunnel:'tunnel',roof:'roof',tier2:'tier',hole:'hole'};
+const MENVMAP={yard:'yard',blockA:'indoor',blockB:'cool',blockC:'hot',blockD:'dark',cafe:'indoor',comm:'indoor',med:'bright',gym:'indoor',intake:'indoor',cell12:'indoor',tunnel:'tunnel',roof:'roof',tier2:'tier',hole:'hole',chapel:'chapel',library:'library',maxsec:'maxsec',laundry:'laundry',boiler:'boiler',elev:'maxsec'};
 const MESHC={};
 const AMB3D={};
 function envOf(id){return MENV[MENVMAP[id]||'indoor'];}
@@ -3075,6 +3142,8 @@ function buildMapMesh(id){
       for(let k=0;k<10;k++){if(rr()<.45)box(gb,bx+.2+rr()*(w-.5),h-1-rr()*10,bz+d+.01,.22,.3,.02,{side:[1,.85,.55],top:[1,.85,.55]});}}
     face(mb,[-60,-4,-30],[90,-4,-30],[90,-4,-80],[-60,-4,-80],[0,1,0],WT,[.16,.26,.4],1);   // Lake Erie
   }
+  // per-map glowing panels (stained glass, furnace mouths, elevator buttons)
+  (m.glows||[]).forEach(g=>box(gb,g.x,g.y,g.z,g.w,g.h,g.d,{side:g.c,top:g.c}));
   // shower heads
   const emit=[];
   for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){
@@ -4099,7 +4168,7 @@ function battle3D(){
      const fp=rate>=1?pose:blendPose(prv,pose,rate);S.sp[s]=fp;S.spm[s]=mon;
      drawRig(b3Look(s),P[0],yy,P[2],yaw,fp,{scale:sc*wsc,flash:fl,alpha,dmg:dl});}
     // weapon props
-    if(ap.prop&&a.kind){
+    if(ap.prop&&a.kind&&!(typeof drawHandProp==='function'&&drawHandProp(ap.prop,a.k))){
       const fwd=[face[0],face[1]],hx=P[0]+fwd[0]*.55-fwd[1]*(-.25),hz=P[2]+fwd[1]*.55+fwd[0]*(-.25);
       const mp=ap.prop,k=a.k;
       if(mp.t==='blade'){const m4_=m4.trs(hx+fwd[0]*.2,1.0*sc,hz+fwd[1]*.2,0,yaw,0,.06,.06,.55*sc);r3Cube(m4_,[.85,.88,.95,1],{emit:.3});}
@@ -6648,7 +6717,7 @@ Object.assign(ACH,{spoon:{n:'THE SPOON IS REAL',d:'Find the golden spoon',ok:()=
 
 tunnelBuild();guardPatrols();
 /* ===== SAVES: version number, update-safe saves (migration), 3 slots + autosave, backup codes ===== */
-const GAME_VERSION='1.60';
+const GAME_VERSION='1.70';
 const SAVE_SCHEMA=2;
 const SLOTKEYS={1:SAVEKEY,2:SAVEKEY+'_s2',3:SAVEKEY+'_s3',auto:SAVEKEY+'_auto'};
 const SLOTS=[1,2,3,'auto'];
@@ -7289,15 +7358,16 @@ function smoothAtlas(){
     const grime=Math.max(0,(y-S*.7)/(S*.3));k*=1-.18*grime*fbm(x,y,seed+5,3);  // grime creeping up from the floor
     return mul(base,k);});
   const concrete=(i,base,seed,joints)=>{paint(i,(x,y)=>{
-    let k=.88+.2*fbm(x,y,seed,4);if(hash(x,y,seed)>.95)k*=1.07;if(hash(x+3,y,seed)>.97)k*=.88;
+    let k=.9+.16*fbm(x,y,seed,3);
     if(joints&&((x%48)<2||(y%48)<2))k*=.6;return mul(base,k);});
     c.strokeStyle='rgba(30,25,25,.45)';c.lineWidth=1;let s=seed;const r=()=>(s=(s*16807)%2147483647)/2147483647;
     for(let n=0;n<3;n++){c.beginPath();let px=i*S+r()*S,py=r()*S;c.moveTo(px,py);for(let k=0;k<6;k++){px=Math.max(i*S,Math.min(i*S+S,px+(r()-.5)*22));py=Math.max(0,Math.min(S,py+(r()-.5)*22));c.lineTo(px,py);}c.stroke();}};
-  const grass=(i,base,seed)=>{paint(i,(x,y)=>mul(base,.7+.35*fbm(x,y,seed,3)));
+  const grass=(i,base,seed)=>{paint(i,(x,y)=>mul(base,.84+.2*fbm(x,y,seed,2)+.06*fbm(x,y,seed+3,6)));
     let s=seed;const r=()=>(s=(s*16807)%2147483647)/2147483647;
-    for(let n=0;n<420;n++){const x=r()*S,y=r()*S,l=3+r()*6,a=-Math.PI/2+(r()-.5)*1.1,k=.82+r()*.4;
-      c.strokeStyle=`rgb(${base[0]*k|0},${base[1]*k*1.05|0},${base[2]*k*.9|0})`;c.lineWidth=.8+r()*.8;c.beginPath();c.moveTo(i*S+x,y);c.lineTo(i*S+x+Math.cos(a)*l,y+Math.sin(a)*l);c.stroke();}};
-  const dirt=(i,base,seed)=>{paint(i,(x,y)=>{let k=.75+.4*fbm(x,y,seed,4);return mul(base,k);});
+    for(let n=0;n<260;n++){const x=r()*S,y=r()*S,l=4+r()*6,a=-Math.PI/2+(r()-.5)*1.1,k=.9+r()*.22;
+      c.strokeStyle=`rgb(${base[0]*k|0},${base[1]*k*1.05|0},${base[2]*k*.9|0})`;c.lineWidth=1.2+r()*.9;c.beginPath();c.moveTo(i*S+x,y);c.lineTo(i*S+x+Math.cos(a)*l,y+Math.sin(a)*l);c.stroke();}
+    if(c.filter!==undefined){const tmp=document.createElement('canvas');tmp.width=S;tmp.height=S;const tc=tmp.getContext('2d');tc.drawImage(out,i*S,0,S,S,0,0,S,S);c.save();c.filter='blur(0.7px)';c.clearRect(i*S,0,S,S);c.drawImage(tmp,i*S,0);c.restore();}};
+  const dirt=(i,base,seed)=>{paint(i,(x,y)=>{let k=.82+.28*fbm(x,y,seed,3);return mul(base,k);});
     let s=seed;const r=()=>(s=(s*16807)%2147483647)/2147483647;
     for(let n=0;n<70;n++){const x=r()*S,y=r()*S,rd=.8+r()*2.2,k=.7+r()*.7;c.fillStyle=`rgb(${base[0]*k*1.05|0},${base[1]*k|0},${base[2]*k*.95|0})`;c.beginPath();c.ellipse(i*S+x,y,rd,rd*.7,r()*3,0,7);c.fill();
       c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(i*S+x+.6,y+.8,rd,rd*.5,0,0,7);c.fill();}};
@@ -7512,6 +7582,722 @@ function sbPose(t){
   pose.lean=lean;pose.roll=roll;
   return {pose,yaw};
 }
+/* ===== ASK TO MOVE: nobody can trap you. Bump into someone twice and you can ask them to step aside.
+   Outcomes depend on who they are and your Respect: guards move (but remember), bosses and unbeaten fighters make you
+   go through them, everyone else rolls on Respect - step aside, want a toll, or want a fight. ===== */
+function stepAside(n){
+  const m=cur(),ahead=[G.x+DX[G.dir],G.y+DY[G.dir]];
+  const opts=[[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>[n.x+dx,n.y+dy]).filter(([x,y])=>freeTileW(x,y,n)&&!(x===G.x&&y===G.y));
+  // prefer a tile that is NOT further along the player's line of travel
+  opts.sort((a,b)=>{const pa=(a[0]-n.x)*DX[G.dir]+(a[1]-n.y)*DY[G.dir],pb=(b[0]-n.x)*DX[G.dir]+(b[1]-n.y)*DY[G.dir];return Math.abs(pa)-Math.abs(pb);});
+  if(opts.length){const [tx,ty]=opts[0],d=tx>n.x?3:tx<n.x?2:ty>n.y?0:1;n.dir=d;n.px=n.x*T;n.py=n.y*T;n.x=tx;n.y=ty;n.rt={d,k:0};if(n.pat){n.pat.x0=n.pat.axis==='x'?n.pat.x0:tx;n.pat.y0=n.pat.axis==='y'?n.pat.y0:ty;}return true;}
+  // boxed in: slide him to the nearest open spot out of the way
+  for(let r=2;r<=5;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const x=n.x+dx,y=n.y+dy;if(Math.abs(dx)+Math.abs(dy)!==r)continue;
+    if(freeTileW(x,y,n)&&!(x===ahead[0]&&y===ahead[1])){n.x=x;n.y=y;n.px=x*T;n.py=y*T;n.rt=null;return true;}}
+  return false;
+}
+function askMove(n){
+  const v=vv(),nm=(n.tr&&n.tr.name)||(n.look==='guard'?'The guard':'He');
+  faceTo(n,G.x,G.y);
+  if(n.look==='guard'||n.role==='patrol'||n.role==='corrupt'){
+    if(v.heat>=4){say(`${nm==='The guard'?'Guard':nm}: You want me to MOVE? ...Fine. I'm writing that down.`);v.heat=Math.min(6,v.heat+1);}
+    else say(pick(['Guard: Go ahead. Walk.','Guard: Keep it moving, Popstar.','Guard: Don\'t make it a habit.']));
+    stepAside(n);return;}
+  if(n.boss&&!defeated(n)||n.tr&&!defeated(n)){say(`${n.tr.name}: You want past me? You go THROUGH me.`,()=>Cs.run((function*(){yield* challenge(n);if(defeated(n))stepAside(n);})()));return;}
+  if(n.reach){say(pick(['They are working. Go around the counter.','Not while they are on the clock.']));return;}
+  const p=Math.max(.25,Math.min(.95,.55+(v.resp||0)*.03));
+  if(Math.random()<p){say(pick([`${nm==='He'?'He':nm} looks you up and down... and steps aside.`,'"My bad, Popstar." He moves.','"Yeah, yeah. Go ahead."','He shrugs and slides out of the way.']));stepAside(n);return;}
+  // refused: pay the toll or make him move
+  const toll=ri(2,4);
+  say(pick(['"Nah. I like it here."','"Who\'s asking?"','"Go around, fish."','"Make me."']));
+  openMenu({x:20,y:60,w:200,title:'HE WON\'T MOVE',items:[
+    {l:`PAY ${toll} L&M`,d:(G.items.cigs||0)<toll,f:()=>{G.items.cigs-=toll;sfx.pick();say('He pockets the smokes and steps aside. "Pleasure doing business."');stepAside(n);}},
+    {l:'MAKE HIM MOVE (FIGHT)',f:()=>moveFight(n)},
+    {l:'NEVERMIND',f:()=>{}}]});
+}
+function moveFight(n){
+  const z=zoneNow(),lv=Math.max(2,ri(z.lv[0],z.lv[1])),sp=SP[n.look]?n.look:pick(z.sp),name=(n.tr&&n.tr.name)||'Inmate';
+  let res=null;
+  Cs.run((function*(){
+    yield* talk(`${name}: Alright. Let's do it right here.`,0);
+    fadeTo(()=>startBattle({foes:[mkMon(sp,lv,name.split(' ').pop().slice(0,10).toUpperCase())],name,
+      tr:{name,win:ri(1,3),post:`${name}: Okay, okay! Hallway's yours.`,lose:`${name}: Next time, go around.`},pre2:`${name}: You asked for it.`,done:r=>{res=r;G.mode='world';}}));
+    yield()=>res!==null;
+    playSong(cur().song);
+    if(res==='win'){vv().resp=(vv().resp||0)+1;stepAside(n);yield* talk('He limps out of your way. Respect +1.',0);}
+    else{yield* whiteout();}
+  })());
+}
+/* pushing into someone for half a second (or bumping them twice) opens the choice */
+(function(){
+  const base=tryMove;
+  tryMove=function(d){
+    const nx=G.x+DX[d],ny=G.y+DY[d],n=npcAt(nx,ny);
+    if(n&&!n.escort&&G.mode==='world'&&!Cs.g&&!Say.on&&!Menus.length){
+      if(Wd.bumpN!==n){Wd.bumpN=n;Wd.bumpK=0;}
+      if(++Wd.bumpK>=26){Wd.bumpN=null;Wd.bumpK=0;G.dir=d;                       // kept pushing into him: give the choice
+        openMenu({x:60,y:70,w:150,title:'IN YOUR WAY',items:[{l:'ASK TO MOVE',f:()=>askMove(n)},{l:'TALK',f:()=>talkNpc(n)},{l:'LEAVE',f:()=>{}}]});
+        return false;}
+    }
+    if(!n)Wd.bumpN=null;
+    return base(d);
+  };
+})();
+/* ...and from the A-button menu when you face someone */
+(function(){
+  const baseI=interact;
+  interact=function(){
+    const fx=G.x+DX[G.dir],fy=G.y+DY[G.dir],n=npcAt(fx,fy);
+    if(n&&!n.escort&&K.b){G.dir=G.dir;askMove(n);return;}   // hold B + A on someone: ask them to move straight away
+    return baseI();
+  };
+})();
+/* ===== 53 NEW MOVES (100 total), each with its own hand-built animation, + TRIP and PAIN statuses,
+   + weapons that sit IN the fighter's hand and actually connect (shivs, socks, pipes, hammers, blades). ===== */
+const sm_=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+// phases: W = wind-up (0..1), A = strike extension (0..1), u = raw progress, B = bell over the whole move
+function phase(k){const ex=k<.35?-sm_(k/.35):k<.55?sm_((k-.35)/.2):1-sm_((k-.55)/.45);return {W:Math.max(-ex,0),A:Math.max(ex,0),u:k,B:Math.sin(Math.PI*k)};}
+const lp=(a,b,t)=>a+(b-a)*t;
+/* arm helpers (s=+1 right, -1 left). rx<0 raises the arm forward, rz spreads it, elb bends */
+function armSet(P,s,rx,rz,el,ry){if(s>0){P.armR=[rx,-rz];P.elbR=el;if(ry!==undefined)P.armRy=ry;}else{P.armL=[rx,rz];P.elbL=el;if(ry!==undefined)P.armLy=-ry;}}
+function legSet(P,s,l,kn,lz){if(s>0){P.legR=l;P.kneeR=kn;if(lz!==undefined)P.legRz=-lz;}else{P.legL=l;P.kneeL=kn;if(lz!==undefined)P.legLz=lz;}}
+const G_GUARD={rx:-.5,rz:.18,el:2.3};
+function straightA(P,s,c,h,el){armSet(P,s,lp(G_GUARD.rx,h,c.A)+.18*c.W,lp(G_GUARD.rz,.06,c.A),lp(G_GUARD.el,el===undefined?.1:el,c.A)+.3*c.W);}
+function hookA(P,s,c,h){armSet(P,s,lp(-.45,h,c.A)-.2*c.W,lp(.2,.75,c.A)+.4*c.W,lp(2.3,1.45,c.A),lp(0,-1.3,c.A)+.8*c.W);}
+function upperA(P,s,c){armSet(P,s,lp(-.3,-1.6,c.A)+.25*c.W,.12,lp(2.3,1.2,c.A)+.1*c.W);}
+function kickL(P,s,c,hi,chamberKnee){legSet(P,s,-hi*c.A-.55*c.W,c.A>0?.12+(chamberKnee||1.5)*(1-c.A):.35+2.1*c.W);}
+/* the move book: id -> name/type/power/acc/pp/effect/flavor + anim (len, approach, family for the victim's reaction, pose fn) */
+const NEWMOVES={
+ superman:{n:'Superman Punch',t:'MUS',p:96,a:84,fx:'stun',c:25,fam:'cross',len:30,fwd:1.1,s:'{a} skips, LEAPS, and throws a flying right!',
+   f:(P,c)=>{straightA(P,1,c,-1.62);legSet(P,1,.5*c.A-.2*c.W,.6*c.A);legSet(P,-1,-.7*c.A,1.1*c.A);return {y:.32*c.B,lean:.35*c.A,twist:.28-.9*c.A};}},
+ hammerfist:{n:'Hammer Fist',t:'MUS',p:70,a:92,fx:'stun',c:15,fam:'upper',len:26,fwd:.7,s:'{a} brings a fist down like a gavel!',
+   f:(P,c)=>{armSet(P,1,c.A>0?lp(-3.0,-1.15,c.A):lp(-.5,-3.0,c.W),.15,.35);P.kneeL+=.3*c.A;P.kneeR+=.3*c.A;return {lean:.1+.35*c.A,y:-.06*c.A};}},
+ backfist:{n:'Spinning Backfist',t:'MUS',p:88,a:82,fx:'stun',c:25,fam:'hook',len:32,fwd:.7,s:'{a} spins all the way around and whips the back of his fist!',
+   f:(P,c)=>{const sp=sm_(Math.min(1,c.u/.55));armSet(P,1,-1.45,lp(.2,1.45,sm_((c.u-.3)/.25)),.25);return {twist:-sp*Math.PI*2+.28,lean:.15};}},
+ overhand:{n:'Overhand Right',t:'MUS',p:84,a:85,fam:'hook',len:28,fwd:.7,s:'{a} loops a looping overhand right over the guard!',
+   f:(P,c)=>{armSet(P,1,c.A>0?lp(-2.6,-1.35,c.A):lp(-.5,-2.6,c.W),lp(.2,.3,c.A),lp(1.2,.25,c.A),.6*c.W-.5*c.A);return {lean:.1+.3*c.A,twist:.28-.85*c.A,roll:.12*c.A};}},
+ shovel:{n:'Shovel Hook',t:'MUS',p:66,a:93,fx:'pain',c:30,fam:'body',len:24,fwd:.75,s:'{a} digs a shovel hook into the ribs!',
+   f:(P,c)=>{armSet(P,1,lp(-.4,-1.15,c.A)+.2*c.W,lp(.2,.5,c.A),lp(2.3,1.5,c.A),-.7*c.A);P.kneeL+=.45*c.A;P.kneeR+=.45*c.A;return {lean:.25*c.A,twist:.28-.7*c.A,y:-.07*c.A};}},
+ liverkick:{n:'Liver Kick',t:'MUS',p:86,a:86,fx:'pain',c:40,fam:'body',len:30,fwd:.55,s:'{a} fires a left kick straight into the liver!',
+   f:(P,c)=>{legSet(P,-1,-1.2*c.A-.4*c.W,.2+1.6*(1-c.A)*(c.A>0?1:0)+1.8*c.W,.9*c.A);armSet(P,-1,-.2,.6*c.A,1.0);return {roll:-.45*c.A,twist:-.6*c.A,lean:-.15*c.A};}},
+ legkick:{n:'Leg Kick',t:'MUS',p:58,a:96,fx:'trip',c:25,fam:'kick',len:24,fwd:.5,s:'{a} chops the thigh with a low kick!',
+   f:(P,c)=>{legSet(P,1,-.85*c.A+.3*c.W,.25+.6*c.W,.55*c.A);armSet(P,1,.25*c.A,.5,1.2);return {twist:.28-1.0*c.A,roll:.18*c.A};}},
+ frontkick:{n:'Front Kick',t:'MUS',p:72,a:92,fam:'kick',len:26,fwd:.45,s:'{a} pushes a front kick into the stomach!',
+   f:(P,c)=>{kickL(P,1,c,1.45,1.8);return {lean:-.3*c.A};}},
+ axekick:{n:'Axe Kick',t:'MUS',p:94,a:80,fx:'stun',c:30,fam:'upper',len:34,fwd:.5,s:'{a} raises a heel to the ceiling and drops it!',
+   f:(P,c)=>{legSet(P,1,c.A>0?lp(-2.5,-.7,c.A):-2.5*c.W,.08);armSet(P,1,.2,.6,.8);armSet(P,-1,.2,.6,.8);return {lean:-.4*c.W+.2*c.A};}},
+ spinback:{n:'Spinning Back Kick',t:'MUS',p:104,a:80,fx:'stun',c:30,fam:'body',len:34,fwd:.55,s:'{a} turns his back... and mule-kicks!',
+   f:(P,c)=>{const sp=sm_(Math.min(1,c.u/.45));legSet(P,1,1.35*c.A,c.A>0?.15:1.6*c.W);return {twist:-sp*Math.PI+.28,lean:.55*c.A};}},
+ qmark:{n:'Question Mark Kick',t:'MUS',p:98,a:78,fx:'stun',c:35,fam:'hook',len:32,fwd:.55,s:'{a} fakes low and swings the kick up high!',
+   f:(P,c)=>{const fake=c.u<.3?Math.sin(c.u/.3*Math.PI):0;legSet(P,1,-.8*fake-2.0*c.A,c.A>0?.15:.6,.4*fake+.6*c.A);return {roll:.45*c.A,twist:-.4*c.A,lean:-.2*c.A};}},
+ doubleleg:{n:'Double Leg',t:'MUS',p:80,a:90,fx:'trip',c:45,fam:'tackle',len:32,fwd:1.6,s:'{a} changes levels and shoots a double leg!',
+   f:(P,c)=>{armSet(P,1,-1.35,.35*c.A,.9);armSet(P,-1,-1.35,.35*c.A,.9);P.kneeL+=1.1*c.B;P.kneeR+=.6*c.B;return {lean:1.0*c.B,y:-.32*c.B};}},
+ spear:{n:'Spear',t:'MUS',p:108,a:80,fx:'trip',c:40,fam:'tackle',len:30,fwd:1.9,s:'{a} lowers his shoulder and SPEARS him!',
+   f:(P,c)=>{armSet(P,1,-.6,.7,1.5);armSet(P,-1,-.6,.7,1.5);P.kneeL+=.9*c.B;P.kneeR+=.9*c.B;return {lean:1.15*c.B,y:-.25*c.B,twist:-.2*c.A};}},
+ discus:{n:'Discus Lariat',t:'MUS',p:96,a:82,fx:'stun',c:30,fam:'hook',len:36,fwd:.9,s:'{a} spins once and swings a lariat like a discus!',
+   f:(P,c)=>{const sp=sm_(Math.min(1,c.u/.55));armSet(P,1,-1.5,1.45,.12);return {twist:-sp*Math.PI*2+.28,lean:.2*c.B};}},
+ bearhug:{n:'Bear Hug',t:'MUS',p:74,a:92,fx:'pain',c:45,fam:'tackle',len:40,fwd:1.1,s:'{a} wraps him up and squeezes the air out!',
+   f:(P,c)=>{const sq=c.u>.3?.15*Math.sin(c.u*40):0;armSet(P,1,-1.3,-.35*c.B,1.75+sq);armSet(P,-1,-1.3,-.35*c.B,1.75-sq);return {lean:.25*c.B,y:.04*c.B};}},
+ suplex:{n:'German Suplex',t:'MUS',p:112,a:78,fx:'trip',c:55,fam:'slam',len:44,fwd:1.1,s:'{a} locks the waist and throws him over his head!',
+   f:(P,c)=>{const b2=sm_((c.u-.3)/.4);armSet(P,1,-1.4+(-.9)*b2,-.3,1.6);armSet(P,-1,-1.4-.9*b2,-.3,1.6);P.kneeL+=.6*(1-b2);P.kneeR+=.6*(1-b2);return {lean:-1.1*b2,y:.12*Math.sin(Math.PI*b2)};}},
+ shoulder:{n:'Shoulder Charge',t:'MUS',p:76,a:90,fx:'trip',c:25,fam:'tackle',len:28,fwd:1.7,s:'{a} runs through him shoulder first!',
+   f:(P,c)=>{armSet(P,1,.2,.1,1.6);armSet(P,-1,-.9,.5,1.8);return {lean:.6*c.B,twist:-.9*c.B,roll:.2*c.B};}},
+ doubleaxe:{n:'Double Axe Handle',t:'MUS',p:88,a:84,fx:'stun',c:25,fam:'upper',len:30,fwd:.7,s:'{a} laces both fists and swings them down!',
+   f:(P,c)=>{const rx=c.A>0?lp(-3.05,-1.2,c.A):lp(-.6,-3.05,c.W);armSet(P,1,rx,-.25,.25);armSet(P,-1,rx,-.25,.25);return {lean:-.25*c.W+.4*c.A};}},
+ kneecombo:{n:'Knee Barrage',t:'MUS',p:90,a:86,fam:'knee',len:40,fwd:.95,hits:[.4,.6,.8],s:'{a} grabs the neck and throws knee after knee!',
+   f:(P,c)=>{const ph2=Math.sin(c.u*Math.PI*6),L=Math.max(0,ph2),R=Math.max(0,-ph2);legSet(P,1,-1.4*R,2.2*R+.3);legSet(P,-1,-1.4*L,2.2*L+.3);armSet(P,1,-1.7,-.3,1.5);armSet(P,-1,-1.7,-.3,1.5);return {lean:.3*c.B};}},
+ elbowup:{n:'Elbow Uppercut',t:'MUS',p:80,a:88,fx:'stun',c:20,fam:'upper',len:24,fwd:1.0,s:'{a} rips an elbow straight up through the chin!',
+   f:(P,c)=>{armSet(P,1,lp(-.4,-2.3,c.A),.15,2.5);P.kneeL+=.5*c.W;P.kneeR+=.5*c.W;return {lean:-.2*c.A,twist:.28-.6*c.A,y:.06*c.A};}},
+ shortupper:{n:'Short Uppercut',t:'MUS',p:60,a:96,fam:'upper',len:20,fwd:.6,s:'{a} slips in a tight left uppercut!',
+   f:(P,c)=>{upperA(P,-1,c);return {lean:-.08*c.A,twist:.28+.45*c.A};}},
+ checkhook:{n:'Check Hook',t:'MUS',p:68,a:92,fam:'hook',len:26,fwd:.4,s:'{a} pivots off the angle and checks him with a hook!',
+   f:(P,c)=>{hookA(P,-1,c,-1.45);P.legR-=.6*c.A;return {twist:.28+1.0*c.A,roll:-.1*c.A};}},
+ bolo:{n:'Bolo Punch',t:'MUS',p:82,a:82,fam:'upper',len:38,fwd:.7,s:'{a} windmills his arm for the crowd... and lands it!',
+   f:(P,c)=>{const wm=c.u<.4?c.u/.4*Math.PI*2:0;armSet(P,1,c.u<.4?-1.2-Math.sin(wm)*1.6:lp(-.3,-1.5,c.A),.4,c.u<.4?.2:lp(1.8,1.2,c.A));return {twist:.28-.6*c.A,lean:.15*c.A};}},
+ sixinch:{n:'Six-Inch Punch',t:'MUS',p:62,a:100,fx:'stun',c:15,fam:'cross',len:18,fwd:.95,s:'{a} barely moves... and he folds anyway.',
+   f:(P,c)=>{armSet(P,1,lp(-1.2,-1.45,c.A),.05,lp(1.0,.35,c.A));return {twist:.28-.35*c.A,lean:.06*c.A};}},
+ dropkick:{n:'Dropkick',t:'MUS',p:100,a:78,fx:'trip',c:30,fam:'kick',len:36,fwd:.75,s:'{a} jumps feet-first into his chest!',
+   f:(P,c)=>{const j=Math.sin(Math.PI*Math.min(1,c.u/.75));legSet(P,1,-1.5*c.A,.2+.9*c.W);legSet(P,-1,-1.5*c.A,.2+.9*c.W);armSet(P,1,.4,.7,.5);armSet(P,-1,.4,.7,.5);return {y:.55*j,lean:-.9*c.A};}},
+ splash:{n:'Body Splash',t:'MUS',p:92,a:80,fx:'trip',c:35,fam:'tackle',len:38,fwd:1.4,s:'{a} launches every pound he owns at him!',
+   f:(P,c)=>{armSet(P,1,-2.6*c.B,.9,.3);armSet(P,-1,-2.6*c.B,.9,.3);return {y:.5*Math.sin(Math.PI*Math.min(1,c.u/.7)),lean:1.2*c.A};}},
+ headkick:{n:'Head Kick',t:'MUS',p:106,a:76,fx:'stun',c:40,fam:'hook',len:30,fwd:.55,s:'{a} swings a shin at the head. CRACK.',
+   f:(P,c)=>{legSet(P,-1,-1.9*c.A-.3*c.W,c.A>0?.12:.4,.75*c.A);armSet(P,-1,.4*c.A,.8*c.A,.8);return {roll:-.55*c.A,twist:-.7*c.A,lean:-.25*c.A};}},
+ diss:{n:'Freestyle Diss',t:'CHM',p:52,a:100,fx:'atkdown',c:40,fam:'voice',len:44,fwd:0,s:'{a} spits a freestyle about {d}\'s mom. The pod goes OOOH.',
+   f:(P,c)=>{const b=Math.sin(c.u*Math.PI*8);armSet(P,1,-1.5+.25*b,.2,.15);armSet(P,-1,-.4-.2*b,.3,1.6);return {bob:.04*Math.abs(b),twist:.25*Math.sin(c.u*Math.PI*4),lean:.12};}},
+ moonwalk:{n:'Moonwalk Jab',t:'CHM',p:58,a:98,fam:'cross',len:30,fwd:.3,s:'{a} moonwalks backwards... then pops a jab!',
+   f:(P,c)=>{const g=Math.sin(c.u*Math.PI*6);if(c.u<.45){legSet(P,1,.35*g,.2+.3*Math.max(0,g));legSet(P,-1,-.35*g,.2+.3*Math.max(0,-g));}straightA(P,-1,c,-1.55);return {lean:-.12*(1-c.A)};}},
+ spotlight:{n:'Spotlight Spin',t:'CHM',p:76,a:88,fam:'hook',len:38,fwd:.6,s:'{a} spins for the cameras and swings out of it!',
+   f:(P,c)=>{const sp=sm_(Math.min(1,c.u/.5));armSet(P,1,lp(-3.0,-1.4,c.A),.4,.2);armSet(P,-1,-3.0*(1-c.A),.4,.3);return {twist:-sp*Math.PI*2+.28,y:.06*Math.sin(sp*Math.PI)};}},
+ micdrop:{n:'Mic Drop',t:'CHM',p:84,a:86,fx:'stun',c:25,fam:'upper',len:34,fwd:.65,s:'{a} raises an invisible mic... and DROPS it on his head!',
+   f:(P,c)=>{armSet(P,1,c.u<.35?lp(-.5,-3.0,c.W):lp(-3.0,-1.05,c.A),.1,.2);armSet(P,-1,-.2,.5,.6);return {lean:-.25*c.W+.3*c.A,headX:-.3*c.W};}},
+ crowdelbow:{n:'Crowd-Surf Elbow',t:'CHM',p:100,a:78,fx:'stun',c:35,fam:'upper',len:40,fwd:.8,s:'{a} climbs a table and drops the elbow!',
+   f:(P,c)=>{const j=Math.sin(Math.PI*Math.min(1,c.u/.7));armSet(P,1,lp(-2.4,-1.0,c.A),.4,2.5);armSet(P,-1,-2.5*j,.8,.3);return {y:.6*j,lean:.7*c.A};}},
+ alishuffle:{n:'Showboat Shuffle',t:'CHM',p:64,a:96,fam:'cross',len:34,fwd:.45,s:'{a} does the Ali shuffle... and pops him!',
+   f:(P,c)=>{const g=c.u<.45?Math.sin(c.u*Math.PI*14):0;legSet(P,1,.3*g,.3);legSet(P,-1,-.3*g,.3);straightA(P,1,c,-1.55);return {bob:.03*Math.abs(g),twist:.28-.85*c.A};}},
+ slap:{n:'Autograph Slap',t:'CHM',p:48,a:100,fx:'atkdown',c:35,fam:'hook',len:22,fwd:.6,s:'{a} slaps him and signs it. "You\'re welcome."',
+   f:(P,c)=>{armSet(P,1,-1.4,lp(-.3,.95,c.A)+.0,.25,lp(.8,-1.2,c.A));return {twist:.28+.35*c.W-.8*c.A};}},
+ encore:{n:'Encore Haymaker',t:'CHM',p:110,a:72,fx:'stun',c:40,fam:'hook',len:40,fwd:.8,s:'{a} winds up for the encore... the WHOLE pod sees it coming.',
+   f:(P,c)=>{armSet(P,1,lp(-.4,-1.4,c.A)+.6*c.W,lp(.4,.8,c.A)+.8*c.W,lp(1.0,1.3,c.A),1.4*c.W-1.5*c.A);return {twist:.28+.9*c.W-1.25*c.A,lean:-.2*c.W+.35*c.A};}},
+ crescent:{n:'Dance-Off Kick',t:'CHM',p:90,a:84,fx:'stun',c:25,fam:'hook',len:34,fwd:.55,s:'{a} busts a dance move that is somehow ALSO a kick!',
+   f:(P,c)=>{legSet(P,1,-1.7*c.B,.15,lp(-.8,.8,c.u));return {roll:.3*Math.sin(c.u*Math.PI*2),twist:.3*Math.sin(c.u*Math.PI*2)};}},
+ victorylap:{n:'Victory Lap',t:'CHM',p:0,a:100,fx:'heal',fam:'taunt',len:48,fwd:0,s:'{a} does a victory lap mid-fight. The crowd LOVES it.',
+   f:(P,c)=>{const r=Math.sin(c.u*Math.PI*8);armSet(P,1,-3.0,.3,.15);armSet(P,-1,-3.0,.3,.15);legSet(P,1,.4*r,.3+.4*Math.max(0,r));legSet(P,-1,-.4*r,.3+.4*Math.max(0,-r));return {bob:.05*Math.abs(r),twist:c.u*Math.PI*2};}},
+ disstrack:{n:'Diss Track',t:'CHM',p:0,a:100,fx:'atkdown',fam:'voice',len:46,fwd:0,s:'{a} drops a diss track. {d} looks shook.',
+   f:(P,c)=>{const b=Math.sin(c.u*Math.PI*10);armSet(P,1,-1.6,.1,.1);armSet(P,-1,-1.1-.3*b,.4,1.2);return {bob:.035*Math.abs(b),headY:.25*b};}},
+ shankflurry:{n:'Shank Flurry',t:'SNK',p:72,a:90,fx:'bleed',c:45,fam:'stab',len:34,fwd:.9,prop:'shiv',hits:[.35,.5,.65,.8],s:'{a} pulls a shiv and goes to work. In. Out. In. Out.',
+   f:(P,c)=>{const t2=Math.max(0,Math.sin(c.u*Math.PI*8));armSet(P,1,lp(-.7,-1.55,t2),.05,lp(1.9,.2,t2));armSet(P,-1,-1.1,-.1,1.6);return {lean:.25+.08*t2,twist:.28-.4*t2};}},
+ sockswing:{n:'Lock in a Sock',t:'SNK',p:92,a:82,fx:'stun',c:30,fam:'upper',len:34,fwd:.65,prop:'sock',s:'{a} swings a padlock in a tube sock. Classic.',
+   f:(P,c)=>{armSet(P,1,c.A>0?lp(-2.9,-.9,c.A):lp(-.4,-2.9,c.W),.25,.2,.4*c.W-.3*c.A);return {twist:.28+.4*c.W-.6*c.A,lean:-.2*c.W+.35*c.A};}},
+ shivslash:{n:'Shiv Slash',t:'SNK',p:78,a:90,fx:'bleed',c:55,fam:'stab',len:26,fwd:.75,prop:'shiv',s:'{a} slashes across with the shiv!',
+   f:(P,c)=>{armSet(P,1,-1.45,lp(-.6,1.1,c.A)+.4*c.W,.3,lp(1.0,-1.0,c.A));return {twist:.28+.5*c.W-.9*c.A};}},
+ lowblow:{n:'Low Blow',t:'SNK',p:60,a:96,fx:'pain',c:55,fam:'body',len:22,fwd:.85,s:'{a} goes low. Way low. The ref is not here.',
+   f:(P,c)=>{armSet(P,1,lp(.1,-.6,c.A),.1,lp(1.2,.3,c.A));P.kneeL+=.5*c.A;P.kneeR+=.5*c.A;return {lean:.3*c.A,y:-.1*c.A};}},
+ earclap:{n:'Ear Clap',t:'SNK',p:56,a:94,fx:'stun',c:35,fam:'upper',len:24,fwd:.85,s:'{a} claps both ears at once. RINGING.',
+   f:(P,c)=>{const rz=lp(1.2,.15,c.A);armSet(P,1,-1.5,rz,.4);armSet(P,-1,-1.5,rz,.4);return {lean:.15*c.A};}},
+ throatchop:{n:'Throat Chop',t:'SNK',p:64,a:92,fx:'accdown',c:40,fam:'cross',len:22,fwd:.8,s:'{a} chops him right in the throat!',
+   f:(P,c)=>{armSet(P,1,-1.5,lp(-.7,.25,c.A),.2,-.6*c.A);return {twist:.28+.4*c.W-.7*c.A};}},
+ kneestomp:{n:'Knee Stomp',t:'SNK',p:70,a:90,fx:'trip',c:40,fam:'kick',len:26,fwd:.6,s:'{a} stomps straight down on the kneecap!',
+   f:(P,c)=>{legSet(P,1,c.A>0?lp(-1.2,-.55,c.A):-1.2*c.W,c.A>0?lp(1.6,.15,c.A):1.6*c.W);return {lean:.2*c.A};}},
+ hairpull:{n:'Hair Pull',t:'SNK',p:44,a:98,fx:'spddown',c:50,fam:'tackle',len:32,fwd:1.0,s:'{a} grabs a fistful of hair and yanks!',
+   f:(P,c)=>{const yank=sm_((c.u-.5)/.3);armSet(P,-1,lp(-1.6,-1.0,yank),-.1,lp(.3,2.0,yank));armSet(P,1,-.5,.2,2.2);return {lean:.25-.45*yank};}},
+ sandeyes:{n:'Sand in the Eyes',t:'SNK',p:0,a:100,fx:'accdown',fam:'throw',len:28,fwd:.3,s:'{a} flings a fistful of yard dirt in his eyes!',
+   f:(P,c)=>{armSet(P,1,c.A>0?lp(.4,-1.9,c.A):lp(-.5,.4,c.W),.2,.4);P.kneeL+=.6*c.W;P.kneeR+=.6*c.W;return {lean:.5*c.W-.1*c.A,y:-.1*c.W};}},
+ chokeslam:{n:'Chokeslam',t:'SNK',p:110,a:76,fx:'trip',c:50,fam:'slam',len:46,fwd:1.0,s:'{a} grabs the throat, lifts... and SLAMS!',
+   f:(P,c)=>{const up=sm_(c.u/.45),dn=sm_((c.u-.5)/.15);armSet(P,1,lp(-1.5,-2.8,up)+1.7*dn,.05,.3);armSet(P,-1,-.4,.4,1.0);return {lean:-.2*up+.6*dn,y:-.1*dn};}},
+ headlockpunch:{n:'Headlock Punches',t:'SNK',p:76,a:90,fam:'upper',len:40,fwd:1.0,hits:[.4,.6,.8],s:'{a} traps the head and fires uppercuts!',
+   f:(P,c)=>{const t2=Math.max(0,Math.sin(c.u*Math.PI*6));armSet(P,-1,-1.5,-.4,2.1);armSet(P,1,lp(-.3,-1.45,t2),.15,lp(2.2,1.3,t2));return {lean:.35,twist:.15};}},
+ sweep:{n:'Leg Sweep',t:'SNK',p:52,a:94,fx:'trip',c:60,fam:'kick',len:32,fwd:.6,s:'{a} drops low and sweeps the legs!',
+   f:(P,c)=>{const sp=sm_(c.u);legSet(P,-1,-.4,.4,lp(0,1.3,c.A));P.kneeR=1.6*c.B;return {twist:-sp*Math.PI*.9,y:-.38*c.B,lean:.3*c.B};}},
+ anklepick:{n:'Ankle Pick',t:'SNK',p:48,a:96,fx:'trip',c:65,fam:'tackle',len:30,fwd:1.3,s:'{a} snatches an ankle and dumps him!',
+   f:(P,c)=>{armSet(P,1,lp(-.4,-.6,c.B),.1,.3);P.kneeL+=1.3*c.B;P.kneeR+=.6*c.B;return {lean:1.1*c.B,y:-.35*c.B};}},
+ pressure:{n:'Pressure Point',t:'SNK',p:46,a:98,fx:'pain',c:70,fam:'cross',len:22,fwd:.85,s:'{a} jams two fingers into a nerve. He SCREAMS.',
+   f:(P,c)=>{armSet(P,1,lp(-.6,-1.35,c.A),.1,lp(1.4,.05,c.A));return {twist:.28-.3*c.A,headX:.15*c.A};}},
+ kidney:{n:'Kidney Shot',t:'SNK',p:70,a:92,fx:'pain',c:45,fam:'body',len:24,fwd:.9,s:'{a} slips behind and hammers the kidney!',
+   f:(P,c)=>{armSet(P,1,lp(-.4,-1.0,c.A),lp(.3,1.0,c.A),lp(2.2,1.2,c.A),-1.0*c.A);return {twist:.28-.9*c.A,lean:.2*c.A,roll:.12*c.A};}}
+};
+/* register: moves, anims, reach, heavy/body families */
+const GENA={};
+for(const [id,d] of Object.entries(NEWMOVES)){
+  M[id]={n:d.n,t:d.t,p:d.p||0,a:d.a,pp:d.p>=95?6:d.p>=75?8:d.p?12:10,fx:d.fx,c:d.c,s:[d.s]};
+  const kind='g_'+id;GENA[kind]=d;ANIM[kind]={len:d.len,fwd:d.fwd,hits:d.hits};MOVEANIM[id]=kind;
+  REACH[kind]=d.fwd<=0?2.2:d.fam==='kick'?1.05:d.fam==='tackle'||d.fam==='slam'?.36:.7;
+  if(d.p>=88||['slam','tackle'].includes(d.fam))HEAVYK.add(kind);if(d.fam==='body'||d.fam==='tackle')BODYK.add(kind);
+}
+Object.assign(FXDESC,{trip:'May trip (lose a turn)',pain:'May cause pain'});
+/* pose: the move's own recipe on top of the fighting stance */
+(function(){
+  const base=actPose;
+  actPose=function(an,tt,s){
+    const d=an&&an.kind&&GENA[an.kind];
+    if(!d||!(an.k>0&&an.k<1))return base(an,tt,s);
+    const ap=base({},tt,s),P=ap.pose,c=phase(an.k);
+    const o=d.f(P,c)||{};
+    if(o.twist!==undefined)P.twist=o.twist;if(o.headX!==undefined)P.headX=o.headX;if(o.headY!==undefined)P.headY=o.headY;if(o.bob!==undefined)P.bob=(P.bob||0)+o.bob;
+    let prop=null;if(d.prop)prop={t:d.prop,k:an.k};
+    return {pose:P,flash:0,lean:(o.lean||0)+.05,roll:o.roll||0,y:o.y||0,prop};
+  };
+  // the victim reacts by family; bladed moves bleed
+  const bi=b3Impact;
+  b3Impact=function(s,kind){const d=GENA[kind];bi(s,d?(d.fam==='voice'||d.fam==='taunt'||d.fam==='throw'?'jab':d.fam):kind);
+    if(d&&d.prop==='shiv'||kind==='stab'||kind==='slash')b3Blood(s,2);};
+})();
+/* ---- TRIP + PAIN statuses ---- */
+(function(){
+  const ba=applyFx;
+  applyFx=function*(fx,c,att,def,ds,s){
+    if(fx==='trip'){if(!alive(def))return;if(Math.random()*100<(c||35)){def.stn=Math.max(def.stn||0,1);if(typeof b3Knockdown==='function'&&B.s3)b3Knockdown(ds);Fx.shake=10;sfx.slam();yield* talk(`${def.nm} gets TRIPPED and hits the floor! He loses his next turn.`,30);}return;}
+    if(fx==='pain'){if(!alive(def))return;if(Math.random()*100<(c||35)&&!def.st){def.st='pain';sfx.ow&&sfx.ow();yield* talk(`${def.nm} is in serious PAIN! He's hurting every turn and can't hit as hard.`,32);}return;}
+    yield* ba(fx,c,att,def,ds,s);
+  };
+  const be=endTurn;
+  endTurn=function*(){
+    for(const s of ['p','e']){const m=s==='p'?B.pm:B.em;if(!m||!alive(m)||m.st!=='pain')continue;
+      yield* hurt(s,Math.max(1,Math.floor(m.mhp/12)));m.sg.atk=Math.max(-2,Math.min(m.sg.atk,0));
+      if(B.an&&B.an[s]){B.an[s].rec=14;B.an[s].hitk='body';}
+      yield* talk(`${m.nm} clutches his side. The pain is eating him alive.`,24);
+      if(Math.random()<.25){m.st=null;yield* talk(`${m.nm} shakes off the pain.`,22);}}
+    return yield* be();
+  };
+})();
+/* ---- new moves become learnable: Bandit levels into them, and the Library's Professor teaches the rest ---- */
+(function(){const ids=Object.keys(NEWMOVES),ls=SP.bandit.ls,start=Math.max(...ls.map(e=>e[0]))+3;
+  ['superman','shovel','liverkick','backfist','checkhook','legkick','headkick','spinback','qmark','encore','micdrop','crowdelbow','alishuffle','moonwalk','discus','sweep'].forEach((id,i)=>ls.push([Math.min(99,start+i*3),id]));
+  const add=(sp,lvls)=>{if(!SP[sp])return;lvls.forEach(([l,id])=>SP[sp].ls.push([l,id]));};
+  add('boggs',[[24,'doubleleg'],[30,'suplex'],[36,'spear'],[44,'bearhug'],[52,'doubleaxe']]);
+  add('corey',[[20,'slap'],[28,'pressure'],[36,'sandeyes'],[44,'kidney']]);
+  add('jonr',[[18,'anklepick'],[26,'doubleleg'],[34,'suplex'],[42,'sweep']]);
+  add('chucky',[[22,'hammerfist'],[30,'overhand'],[40,'chokeslam']]);
+  add('lifer',[[22,'hammerfist'],[30,'headlockpunch'],[38,'chokeslam']]);
+  add('goon',[[20,'shoulder'],[28,'kneecombo']]);add('trustee',[[24,'throatchop'],[32,'earclap']]);
+  add('yardrat',[[14,'sockswing'],[24,'shankflurry']]);add('cellie',[[16,'shivslash'],[26,'lowblow']]);
+})();
+/* ---- weapons live in the hand: record each fighter's hand transform as it is drawn ---- */
+R3.hm={};
+(function(){
+  const bd=drawRig;
+  drawRig=function(L,x,y,z,yaw,pose,opt){R3.hmOn=1;bd(L,x,y,z,yaw,pose,opt);R3.hmOn=0;};
+})();
+function handProp(side,off,rot,size,col,emit){
+  const H=R3.hm&&R3.hm[side];if(!H)return;
+  const T_=m4.trs(off[0],off[1],off[2],rot[0],rot[1],rot[2],size[0],size[1],size[2]);
+  r3Cube(m4.mul(H,T_),col,emit?{emit}:{});
+}
+function drawHandProp(mp,k){
+  if(!mp)return;
+  switch(mp.t){
+    case 'shiv':case 'blade':handProp('armR',[0,-.37,.03],[0,0,0],[.032,.08,.034],[.25,.2,.18,1]);handProp('armR',[0,-.47,.035],[0,0,0],[.012,.16,.03],[.85,.88,.95,1],.35);break;
+    case 'sock':handProp('armR',[0,-.47,0],[0,0,0],[.05,.2,.05],[.92,.92,.88,1]);handProp('armR',[0,-.6,0],[0,0,0],[.08,.09,.06],[.6,.6,.66,1],.2);break;
+    case 'knux':handProp('armR',[0,-.36,.055],[0,0,0],[.1,.04,.035],[...(mp.col||[.8,.75,.4]),1],.5);break;
+    case 'pipe':handProp('armR',[0,-.7,.02],[0,0,0],[.045,.75,.045],[.55,.58,.62,1]);break;
+    case 'sword':handProp('armR',[0,-.38,.03],[0,0,0],[.2,.03,.04],[.9,.75,.3,1]);handProp('armR',[0,-.85,.03],[0,0,0],[.04,.9,.012],[...(mp.col||[.85,.88,.95]),1],.25);break;
+    case 'hammer':handProp('armR',[0,-.66,.02],[0,0,0],[.05,.7,.05],[.45,.3,.18,1]);handProp('armR',[0,-1.02,.06],[0,0,0],[.26,.16,.16],[...(mp.col||[.5,.5,.55]),1],.2);break;
+    default:return false;
+  }
+  return true;
+}
+/* ===== TABLE GAMES: dominoes, spades and chess. Inmates challenge you (or you sit down at their table),
+   you bet smokes and actually play. Who they are decides how it ends: sore losers swing on you, gracious ones
+   become friends, hustlers gloat. And you can always flip the table. ===== */
+function* chooseM(title,items,x,w){let r=null;openMenu({x:x||8,y:24,w:w||224,title,nocancel:true,vis:7,items:items.map((it,i)=>({l:it.l,r:it.r,d:it.d,f:()=>{r=i;}}))});yield()=>r!==null;return r;}
+const GAMER=['sore','gracious','hustler','chill'];
+function gamerOf(n){const h=[...(n.id||'x')].reduce((a,c)=>a+c.charCodeAt(0),0);return n.gamer||GAMER[h%4];}
+const nmOf=n=>(n.tr&&n.tr.name)||(n.say&&n.say[1]&&typeof ROSTER_BY!=='undefined'&&ROSTER_BY[n.say[1]]&&ROSTER_BY[n.say[1]].nm)||n.gname||'Inmate';
+
+/* ---- DOMINOES (double-six, 5 tiles each, draw from the boneyard, first out wins; blocked = lowest pips) ---- */
+function* dominoes(nm){
+  const set=[];for(let a=0;a<=6;a++)for(let b=a;b<=6;b++)set.push([a,b]);set.sort(()=>Math.random()-.5);
+  const me=set.splice(0,5),ai=set.splice(0,5),yard=set;let L=-1,R=-1,passes=0,turn='me';const t=x=>`[${x[0]}|${x[1]}]`;
+  const fits=x=>L<0||x[0]===L||x[1]===L||x[0]===R||x[1]===R;
+  const place=(x,side)=>{if(L<0){L=x[0];R=x[1];return;}if(side==='L'){L=x[0]===L?x[1]:x[0];}else{R=x[0]===R?x[1]:x[0];}};
+  const sideFor=x=>(x[0]===L||x[1]===L)?'L':'R';
+  yield* talk(`${nm} dumps the bones on the table. "Five each. Match the ends. First one out wins."`,0);
+  for(let g=0;g<60;g++){
+    if(turn==='me'){
+      let play=me.filter(fits);
+      while(!play.length&&yard.length){me.push(yard.pop());play=me.filter(fits);yield* talk(`No match. You draw from the boneyard.`,24);}
+      if(!play.length){passes++;yield* talk('You knock on the table. Pass.',24);}
+      else{passes=0;
+        const head=L<0?'Lead any bone':`Ends: ${L} ... ${R}   (${nm}: ${ai.length} bones)`;
+        const items=me.map(x=>({l:t(x),d:!fits(x)}));
+        const i=yield* chooseM(head,items);const x=me[i];
+        let side=sideFor(x);if(L>=0&&(x[0]===L||x[1]===L)&&(x[0]===R||x[1]===R)&&L!==R){const s=yield* chooseM('Which end?',[{l:'LEFT ('+L+')'},{l:'RIGHT ('+R+')'}]);side=s?'R':'L';}
+        place(x,side);me.splice(i,1);sfx.blip();
+        if(!me.length){yield* talk(`You slap your last bone down. DOMINO!`,0);return 'win';}}
+      turn='ai';
+    }else{
+      let play=ai.filter(fits);while(!play.length&&yard.length){ai.push(yard.pop());play=ai.filter(fits);}
+      if(!play.length){passes++;yield* talk(`${nm} knocks. Pass.`,24);}
+      else{passes=0;play.sort((a,b)=>(b[0]+b[1])-(a[0]+a[1]));const x=play[0];place(x,sideFor(x));ai.splice(ai.indexOf(x),1);sfx.blip();
+        yield* talk(`${nm} plays ${t(x)}. Ends: ${L} ... ${R}.`,30);
+        if(!ai.length){yield* talk(`${nm}: "DOMINO." He slaps the table so hard it rattles.`,0);return 'lose';}}
+      turn='me';
+    }
+    if(passes>=2){const a=me.reduce((s,x)=>s+x[0]+x[1],0),b=ai.reduce((s,x)=>s+x[0]+x[1],0);yield* talk(`Blocked! Count the pips: you ${a}, ${nm} ${b}.`,0);return a<=b?'win':'lose';}
+  }
+  return 'lose';
+}
+/* ---- SPADES (head-up, 5 tricks, follow suit, spades trump, most tricks wins) ---- */
+function* spades(nm){
+  const S=[' of SPADES',' of HEARTS',' of DIAMONDS',' of CLUBS'],RK=['9','10','J','Q','K','A'],deck=[];for(let s=0;s<4;s++)for(let r=0;r<6;r++)deck.push({s,r});deck.sort(()=>Math.random()-.5);
+  const me=deck.splice(0,5),ai=deck.splice(0,5);const c=x=>RK[x.r]+S[x.s];let mt=0,at=0,lead='me';
+  const beats=(a,b,led)=>{if(a.s===b.s)return a.r>b.r;if(a.s===0)return true;if(b.s===0)return false;return a.s===led;};
+  yield* talk(`${nm} shuffles like a casino dealer. "Spades are trump. Follow suit. Most books wins."`,0);
+  for(let tr=0;tr<5;tr++){
+    let my,his;
+    if(lead==='me'){const i=yield* chooseM(`Your lead.  Books: you ${mt} - ${at} ${nm}`,me.map(x=>({l:c(x)})));my=me.splice(i,1)[0];
+      const fol=ai.filter(x=>x.s===my.s),pool=fol.length?fol:ai,win=pool.filter(x=>beats(x,my,my.s)).sort((a,b)=>a.r-b.r);his=win.length?win[0]:pool.slice().sort((a,b)=>a.r-b.r)[0];ai.splice(ai.indexOf(his),1);
+      yield* talk(`You lead ${c(my)}. ${nm} throws ${c(his)}.`,30);if(beats(his,my,my.s)){at++;lead='ai';yield* talk(`${nm} takes the book.`,22);}else{mt++;lead='me';yield* talk('Your book.',22);}}
+    else{const hi=ai.slice().sort((a,b)=>b.r-a.r)[0];his=hi;ai.splice(ai.indexOf(his),1);
+      const can=me.some(x=>x.s===his.s);const i=yield* chooseM(`${nm} leads ${c(his)}. Follow suit!`,me.map(x=>({l:c(x),d:can&&x.s!==his.s})));my=me.splice(i,1)[0];
+      if(beats(my,his,his.s)){mt++;lead='me';yield* talk(`${c(my)} takes it. Your book.`,24);}else{at++;lead='ai';yield* talk(`${nm} keeps the book.`,24);}}
+  }
+  yield* talk(`Final: you ${mt} books, ${nm} ${at}.`,0);return mt>at?'win':'lose';
+}
+/* ---- CHESS (speed chess: read the board, find the move. First to 3 good moves wins) ---- */
+const CHESSP=[
+ {q:'His queen and king are on the same diagonal as your bishop.',o:['Pin the queen with your bishop','Push a pawn','Castle'],a:0},
+ {q:'Your knight can jump to a square that hits his king AND rook.',o:['Retreat the knight','Knight fork','Trade queens'],a:1},
+ {q:'His back rank is sealed in by his own pawns.',o:['Rook to the 8th: back-rank mate','Move your king','Offer a draw'],a:0},
+ {q:'He left a rook hanging with nothing guarding it.',o:['Ignore it','Take the free rook','Push your h-pawn'],a:1},
+ {q:'Your pawn is one square from promoting.',o:['Promote to a queen','Move your bishop','Promote to a knight for style'],a:0},
+ {q:'He is threatening mate next move with his queen.',o:['Grab a pawn','Block / defend the mate square','Launch your own attack'],a:1},
+ {q:'Your rook and bishop line up on his king.',o:['Discovered check','Trade rooks','Pass'],a:0},
+ {q:'Opening. Center is wide open.',o:['Take the center with a pawn','Move your rook pawn','Bring the queen out early'],a:0},
+ {q:'His king is stuck in the middle, rooks still home.',o:['Open lines and attack the king','Trade everything','Shuffle pieces'],a:0},
+ {q:'Endgame: your king vs his king and pawn.',o:['Run your king away','Get in front of the pawn (opposition)','Resign'],a:1}];
+function* chess(nm){
+  const deck=CHESSP.slice().sort(()=>Math.random()-.5);let me=0,him=0,i=0;
+  yield* talk(`${nm} sets up the board. The pieces are made of chewed bread. "Clock's running."`,0);
+  while(me<3&&him<3&&i<deck.length){const P=deck[i++];
+    const order=[0,1,2].sort(()=>Math.random()-.5);
+    const pick_=yield* chooseM(`${P.q}   (${me}-${him})`,order.map(k=>({l:P.o[k]})));
+    if(order[pick_]===P.a){me++;sfx.ok();yield* talk(pick([`Good move. ${nm} stares at the board for a long time.`,`${nm} mutters. That hurt him.`,`Strong. The guys watching go "ohhh."`]),26);}
+    else{him++;sfx.bump();yield* talk(pick([`${nm} punishes it immediately.`,`${nm}: "You sure about that?" ...You weren't.`,`That was a blunder. ${nm} smiles.`]),26);}
+  }
+  yield* talk(me>=3?`${nm} tips his king over. Checkmate. You win.`:`${nm}: "Checkmate." He taps the board twice.`,0);return me>=3?'win':'lose';
+}
+const TGAMES={dominoes:{n:'DOMINOES',fn:dominoes},spades:{n:'SPADES',fn:spades},chess:{n:'CHESS',fn:chess}};
+
+/* ---- the table: bet, play, and then whatever this guy does about it ---- */
+function tableGame(n,game,bet){
+  const nm=nmOf(n),G_=TGAMES[game],kind=gamerOf(n),w=WS();bet=bet===undefined?5:bet;
+  Cs.run((function*(){
+    faceTo(n,G.x,G.y);
+    const b=yield* chooseM(`${G_.n} with ${nm}`,[{l:'BET 5 L&M',d:(G.items.cigs||0)<5},{l:'BET 15 L&M',d:(G.items.cigs||0)<15},{l:'JUST FOR FUN'},{l:'NAH'}]);
+    if(b===3){yield* talk(`${nm}: "Scared money don't make money."`,0);return;}
+    bet=[5,15,0][b];G.items.cigs-=bet;
+    const res=yield* G_.fn(nm);
+    w.stats.games=(w.stats.games||0)+1;
+    if(res==='win'){
+      G.items.cigs+=bet*2;if(bet)toast(`+${bet} L&M`,'#7dff9a');
+      if(kind==='sore'&&Math.random()<.6){yield* talk(`${nm} stands up. "Nah. You cheated. Nobody beats me at ${G_.n.toLowerCase()}."`,0);
+        const c=yield* chooseM('He wants to fight',[{l:'FIGHT HIM'},{l:`GIVE THE SMOKES BACK (${bet})`,d:(G.items.cigs||0)<bet}]);
+        if(c===1){G.items.cigs-=bet;yield* talk(`${nm} snatches them. "That's what I thought."`,0);vv().resp=Math.max(-5,(vv().resp||0)-1);return;}
+        moveFight(n);return;}
+      if(kind==='gracious'){vv().resp=(vv().resp||0)+2;G.flags['friend_'+n.id]=1;yield* talk(`${nm}: "Good game. Real good game. You need anything in here, you come see me."`,0);
+        if(Math.random()<.5){G.items.ramen=(G.items.ramen||0)+1;yield* talk(`${nm} slides you a ramen. "Winner eats." Got 1 Ramen!`,0);}
+        toast('NEW FRIEND: '+nm.toUpperCase().slice(0,16),'#7dff9a');return;}
+      if(kind==='hustler'){yield* talk(`${nm}: "...Beginner's luck. Double or nothing tomorrow."`,0);return;}
+      yield* talk(`${nm}: "Alright, alright. You got me."`,0);vv().resp=(vv().resp||0)+1;return;
+    }
+    // lost
+    if(kind==='hustler')yield* talk(`${nm} pockets the smokes. "Pleasure doing business, Popstar. Tell your friends."`,0);
+    else if(kind==='gracious'){yield* talk(`${nm}: "Close one. You'll get me next time."`,0);G.flags['friend_'+n.id]=1;return;}
+    else yield* talk(`${nm}: "Run it back whenever."`,0);
+    const c=yield* chooseM('You lost',[{l:'TAKE THE L'},{l:'FLIP THE TABLE (FIGHT)'}]);
+    if(c===1){Fx.shake=10;sfx.slam();yield* talk(`You flip the whole table. Bones and cards everywhere. ${nm} is ALREADY swinging.`,0);moveFight(n);}
+  })());
+}
+/* inmates ask YOU to play when you talk to them (once a day each) */
+(function(){
+  if(typeof talkInmate!=='function')return;const base=talkInmate;
+  talkInmate=function(n){
+    const key='tgAsk'+WS().day+n.id;
+    if(!G.flags[key]&&Math.random()<.25&&G.mode==='world'){G.flags[key]=1;const game=pick(['dominoes','spades','chess']);
+      say(`${nmOf(n)}: ${pick(['Yo, Popstar. You play','Ay. You know how to play','Sit down. You any good at'])} ${TGAMES[game].n.toLowerCase()}?`,()=>tableGame(n,game));return;}
+    return base(n);
+  };
+})();
+/* regulars at the tables */
+(function(){
+  const reg=(mid,id,x,y,d,look,nm,game,kind)=>{const m=MAPS[mid];if(!m||m.npcs.some(n=>n.id===id))return;m.npcs.push({id,x,y,dir:DIRS[d],look,tr:null,say:['...'],act:'tg_'+game,gname:nm,gamer:kind});};
+  reg('blockA','domdre',14,15,'u','cellie','Domino Dre','dominoes','sore');
+  reg('cafe','spshorty',12,7,'d','yardrat','Spades Shorty','spades','hustler');
+  reg('blockB','chessch',14,15,'u','lifer','Chess Charles','chess','gracious');
+  reg('yard','domgus',30,18,'l','rookie','Big Gus','dominoes','chill');
+  for(const g of Object.keys(TGAMES))LVACT['tg_'+g]=n=>{say(`${n.gname}: ${pick(['You want next?','Sit down. Bring smokes.','Table\'s open, Popstar.'])}`,()=>tableGame(n,g));};
+})();
+/* ===== NINE FLOORS + the freight elevator.
+   9 ROOF (Iron Cage) · 8 ST. DISMAS CHAPEL · 7 LAW LIBRARY · 6 MAX SECURITY · 5 TIER 2 · 4 GROUND
+   3 LAUNDRY & KITCHEN · 2 THE HOLE · 1 BOILER ROOM.  Each new floor has its own twist. ===== */
+const FLOORS=[
+ {f:9,id:'roof',x:15,y:17,n:'IRON CAGE (ROOF)'},{f:8,id:'chapel',x:15,y:19,n:'ST. DISMAS CHAPEL'},{f:7,id:'library',x:16,y:17,n:'LAW LIBRARY'},
+ {f:6,id:'maxsec',x:34,y:10,n:'MAX SECURITY',req:'pBones',why:'Max Security needs clearance. Take Tommy Bones\' patch first.'},
+ {f:5,id:'tier2',x:2,y:11,n:'TIER 2'},{f:4,id:'yard',x:0,y:0,n:'GROUND FLOOR (YARD)'},{f:3,id:'laundry',x:15,y:17,n:'LAUNDRY & KITCHEN'},
+ {f:2,id:'hole',x:33,y:10,n:'THE HOLE',req:'pChuck',why:'The Hole is for Pod D business. Beat Chin Chuck first.'},
+ {f:1,id:'boiler',x:17,y:17,n:'BOILER ROOM',req:'pChuck',why:'Boiler Room is restricted. Beat Chin Chuck first.'}];
+(function(){
+  const nm={roof:'IRON CAGE  -  FLOOR 9 (ROOF)',tier2:'TIER 2  -  FLOOR 5',hole:'THE HOLE  -  FLOOR 2'};for(const k in nm)if(MAPS[k])MAPS[k].name=nm[k];
+  // ---- the elevator car ----
+  let m=newMap('elev','FREIGHT ELEVATOR',7,6,TL.WALL,{song:'calm'});fill(m,1,1,5,4,TL.MAT);set(m,3,5,TL.DOOR);
+  m.npcs.push({id:'panel',x:3,y:1,dir:0,look:'guard',tr:null,say:['...'],act:'elevator'});m.labels.push({x:3,y:0,t:'OPERATOR'});
+  m.glows=[{x:2.6,y:1.0,z:1.02,w:.8,h:.9,d:.04,c:[1,.75,.3]}];m.labels.push({x:3,y:3,t:'FLOOR?'});
+  WP(m,3,5,'yard',0,0,0);   // replaced at runtime by the floor you're on
+  // ---- 8: ST. DISMAS CHAPEL ----
+  m=newMap('chapel','ST. DISMAS CHAPEL  -  FLOOR 8',30,22,TL.WALL,{song:'calm',floor:TL.FLOOR});
+  fill(m,1,1,28,20,TL.FLOOR);fill(m,14,3,2,17,TL.RUG);fill(m,10,2,10,2,TL.RUG);fill(m,11,2,8,1,TL.COUNTER);
+  for(let y=6;y<=17;y+=2){fill(m,4,y,9,1,TL.BENCH);fill(m,17,y,9,1,TL.BENCH);}
+  set(m,15,21,TL.DOOR);m.labels.push({x:15,y:1,t:'ST. DISMAS'},{x:15,y:20,t:'ELEVATOR'});
+  m.torches=[{x:11.3,z:2.4},{x:18.7,z:2.4},{x:12.6,z:2.4},{x:17.4,z:2.4}];
+  m.glows=[];[[5,[.9,.2,.2]],[9,[.25,.45,1]],[21,[.95,.75,.2]],[25,[.3,.85,.4]]].forEach(([x,c])=>m.glows.push({x:x,y:1.0,z:1.02,w:1.6,h:1.6,d:.04,c}));m.glows.push({x:13.6,y:1.2,z:1.02,w:2.8,h:2.2,d:.04,c:[1,.85,.55]});
+  N(m,'chaplain',15,4,'d','trustee',{act:'chaplain'});
+  N(m,'choir1',12,4,'d','cellie',{say:['Choir: Amazing grace... how sweet the sound... You can sing? Ask Father Mike.']});
+  N(m,'choir2',18,4,'d','rookie',{say:['Choir: Every Sunday we sing. Every Monday we fight. Balance.']});
+  N(m,'pewman',7,10,'r','lifer',{say:['Inmate: I come up here for the quiet. Nobody swings in church. Mostly.']});
+  IM(m,'ch_perogi',27,19,'perogi');
+  // ---- 7: LAW LIBRARY ----
+  m=newMap('library','LAW LIBRARY  -  FLOOR 7',32,20,TL.WALL,{song:'calm'});
+  fill(m,1,1,30,18,TL.FLOOR);for(let y=3;y<=9;y+=3){fill(m,3,y,10,1,TL.SHELF);fill(m,19,y,10,1,TL.SHELF);}
+  [[6,13],[7,13],[10,13],[11,13],[20,13],[21,13],[24,13],[25,13]].forEach(([x,y])=>set(m,x,y,TL.TABLE));
+  set(m,16,19,TL.DOOR);m.labels.push({x:16,y:1,t:'LAW LIBRARY'},{x:16,y:18,t:'ELEVATOR'});
+  N(m,'prof',16,6,'d','trustee',{act:'professor'});
+  N(m,'clerk',28,15,'l','rookie',{say:['Law Clerk: Hauncho comes in here and reads the same page of the same book for an hour. Then he leaves. Every week.','Law Clerk: Appeals take 90 days. Your boy Hauncho filed his in crayon.']});
+  N(m,'chesslib',8,15,'u','lifer',{act:'tg_chess',gname:'The Professor\'s Rival',gamer:'sore'});
+  IM(m,'lb_ramen',30,2,'ramen');
+  m.enc=null;
+  // ---- 6: MAX SECURITY ----
+  m=newMap('maxsec','MAX SECURITY  -  FLOOR 6',38,22,TL.WALL,{song:'boss'});
+  fill(m,1,1,36,20,TL.FLOOR);cellsDown(m,2,1,7);cellsUp(m,2,17,7);fill(m,1,10,36,2,TL.DARK);
+  set(m,37,10,TL.DOOR);m.labels.push({x:19,y:8,t:'MAX SECURITY'},{x:35,y:9,t:'ELEVATOR'});
+  N(m,'ink',36,14,'l','yardrat',{act:'ink'});
+  N(m,'ms_co',20,13,'u','guard',{say:['C.O. Brandt: Max is where they send the ones who bite. You bite, Popstar?']});
+  N(m,'ms1',10,12,'r','lifer',{tr:TR('Twenty-to-Life Tony',[['lifer',28],['trustee',29]],{sight:4,win:30,pre:'Tony: Twenty to life. What\'s another assault charge?',post:'Tony: ...You got a future in here.'})});
+  N(m,'ms2',26,9,'d','goon',{tr:TR('The Butcher',[['goon',30],['lifer',31],['goon',31]],{sight:4,win:36,pre:'The Butcher: They call me that for a reason. It\'s not the cooking.',post:'The Butcher: Okay. Okay. Hands up.'})});
+  N(m,'wdog',4,10,'r','blake',{tr:TR('THE WARDEN\'S DOG',[['lifer',33],['goon',34],['blake',36,'THE DOG']],{sight:0,win:70,pre:'The Warden\'s Dog: The warden lets me off the leash once a week. Today\'s the day.',post:'The Warden\'s Dog: ...Good fight. Don\'t tell the warden I lost.',lose:'The Warden\'s Dog: Back in your cage.'})});
+  IM(m,'ms_shank',33,2,'shank');IM(m,'ms_shark',4,19,'shark');
+  m.enc=[['lifer',26,33,50],['trustee',26,33,30],['goon',27,33,20]];fill(m,30,13,4,3,TL.SHOWER);
+  // ---- 3: LAUNDRY & KITCHEN ----
+  m=newMap('laundry','LAUNDRY & KITCHEN  -  FLOOR 3',30,20,TL.WALL,{song:'calm'});
+  fill(m,1,1,28,18,TL.FLOOR);fill(m,2,2,12,1,TL.LAUND);fill(m,2,5,12,1,TL.LAUND);fill(m,17,2,11,1,TL.COUNTER);fill(m,17,6,11,1,TL.COUNTER);
+  fill(m,2,9,8,5,TL.SHOWER);[[18,11],[19,11],[22,11],[23,11]].forEach(([x,y])=>set(m,x,y,TL.TABLE));set(m,26,14,TL.CRATE);set(m,27,14,TL.CRATE);
+  set(m,15,19,TL.DOOR);set(m,0,16,TL.DOOR);m.labels.push({x:8,y:7,t:'LAUNDRY'},{x:22,y:8,t:'KITCHEN'},{x:15,y:18,t:'ELEVATOR'},{x:2,y:15,t:'CAFETERIA'});
+  WP(m,0,16,'cafe',1,9,3);if(MAPS.cafe){set(MAPS.cafe,0,9,TL.DOOR);WP(MAPS.cafe,0,9,'laundry',1,16,3);MAPS.cafe.labels.push({x:2,y:8,t:'KITCHEN STAIRS'});}
+  N(m,'ray',8,7,'d','trustee',{act:'laundryjob'});
+  N(m,'hooch',27,13,'d','kitchen',{act:'hooch'});
+  N(m,'ln1',20,9,'l','kitchen',{tr:TR('Grease Trap Gary',[['kitchen',14],['cellie',15]],{sight:4,win:12,pre:'Gary: This is MY kitchen. Baba only thinks it\'s hers.',post:'Gary: Fine. Don\'t touch the grease trap.'})});
+  m.enc=[['cellie',12,18,40],['kitchen',13,18,35],['yardrat',12,17,25]];
+  // ---- 1: BOILER ROOM ----
+  m=newMap('boiler','BOILER ROOM  -  FLOOR 1',34,20,TL.WALL,{song:'boss',floor:TL.DARK});
+  fill(m,1,1,32,18,TL.DARK);for(let x=4;x<30;x+=6){fill(m,x,4,2,4,TL.WALL);fill(m,x,12,2,4,TL.WALL);}
+  set(m,17,19,TL.DOOR);set(m,0,10,TL.DOOR);m.labels.push({x:17,y:2,t:'BOILER ROOM'},{x:17,y:18,t:'ELEVATOR'},{x:2,y:9,t:'THE HOLE'});
+  m.torches=[{x:5,z:3.6},{x:11,z:3.6},{x:17,z:3.6},{x:23,z:3.6},{x:29,z:3.6}];
+  m.glows=[];for(let x=4;x<30;x+=6)m.glows.push({x:x+.3,y:.5,z:8.02,w:1.4,h:.8,d:.05,c:[1,.45,.12]});
+  m.lamps=[{x:8,z:10,c:[1,.4,.12],r:6,k:1.1},{x:20,z:10,c:[1,.4,.12],r:6,k:1.1},{x:29,z:10,c:[1,.4,.12],r:6,k:1.1}];
+  WP(m,0,10,'hole',34,6,2);if(MAPS.hole){set(MAPS.hole,35,6,TL.DOOR);WP(MAPS.hole,35,6,'boiler',1,10,3);MAPS.hole.labels.push({x:33,y:5,t:'BOILER ROOM'});}
+  N(m,'furnace',30,10,'l','chuck',{tr:TR('THE FURNACE',[['lifer',46],['goon',47],['trustee',47],['chuck',50,'FURNACE']],{sight:0,win:150,pre:'The Furnace: Forty years shoveling coal down here. I am the hottest thing in this building.',post:'The Furnace: ...The fire\'s out. Take what\'s mine. You earned the basement.',lose:'The Furnace: Shovel some coal while you\'re down there.'})});
+  N(m,'b1',12,10,'u','lifer',{tr:TR('Steam Pipe Pete',[['lifer',42],['goon',43]],{sight:4,win:50,pre:'Pete: Down here nobody hears you scream. The pipes are louder.',post:'Pete: Hot in here, huh.'})});
+  IM(m,'bl_shark',32,2,'shark');IM(m,'bl_shark2',2,17,'shark');
+  m.enc=[['lifer',42,50,50],['trustee',42,50,30],['goon',43,50,20]];fill(m,20,16,4,2,TL.SHOWER);fill(m,23,2,3,2,TL.SHOWER);
+  // ---- elevator doors on every floor ----
+  const door=(mid,x,y,ax,ay)=>{const mm=MAPS[mid];if(!mm)return;set(mm,x,y,TL.DOOR);WP(mm,x,y,'elev',3,4,1,{elevFrom:mid,ax,ay});};
+  door('chapel',15,21,15,20);door('library',16,19,16,18);door('maxsec',37,10,36,10);door('laundry',15,19,15,18);door('boiler',17,19,17,18);
+  set(MAPS.tier2,39,15,TL.DOOR);door('tier2',39,15,38,15);door('roof',27,19,26,18);if(MAPS.roof){set(MAPS.roof,27,19,TL.DOOR);MAPS.roof.labels.push({x:27,y:17,t:'ELEVATOR'});}
+  if(MAPS.tier2)MAPS.tier2.labels.push({x:37,y:14,t:'ELEVATOR'});
+  if(MAPS.hole){door('hole',35,13,34,13);MAPS.hole.labels.push({x:33,y:12,t:'ELEVATOR'});}
+  // ground floor: a freight elevator shed in the yard (finds open grass)
+  const Y=MAPS.yard;if(Y){let spot=null;
+    for(let y=23;y<37&&!spot;y++)for(let x=2;x<46&&!spot;x++){let ok=true;for(let j=0;j<3&&ok;j++)for(let i=0;i<3&&ok;i++){const t=Y.t[(y+j)*Y.w+x+i];if(t!==TL.GRASS)ok=false;if(Y.npcs.some(n=>n.x===x+i&&n.y===y+j)||Y.items.some(it=>it.x===x+i&&it.y===y+j))ok=false;}
+      if(ok&&Y.t[(y+3)*Y.w+x+1]===TL.GRASS)spot=[x,y];}
+    if(spot){const [x,y]=spot;fill(Y,x,y,3,2,TL.WALL);set(Y,x+1,y+1,TL.DOOR);WP(Y,x+1,y+1,'elev',3,4,1,{elevFrom:'yard',ax:x+1,ay:y+2});Y.labels.push({x:x+1,y:y-1,t:'ELEVATOR'});FLOORS.find(f=>f.f===4).x=x+1;FLOORS.find(f=>f.f===4).y=y+2;}}
+})();
+/* remember which floor you got in on, so the car door lets you back out there */
+(function(){const bw=doWarp;doWarp=function(w){if(w.to==='elev'&&w.elevFrom){G.flags.elevFrom=w.elevFrom;G.flags.elevAx=w.ax;G.flags.elevAy=w.ay;const W=MAPS.elev.warps[0];W.to=w.elevFrom;W.tx=w.ax;W.ty=w.ay;W.dir=0;}return bw(w);};})();
+LVACT.elevator=n=>{
+  openMenu({x:20,y:16,w:200,title:'FREIGHT ELEVATOR',vis:9,items:FLOORS.map(F=>({l:`${F.f}  ${F.n}`,d:F.req&&!G.flags[F.req],f:()=>{
+    if(F.req&&!G.flags[F.req]){say(F.why);return;}
+    Cs.run((function*(){sfx.blip();Fx.shake=4;yield 30;sfx.ok&&sfx.ok();toast(`FLOOR ${F.f}  -  ${F.n}`,'#ffd23a');fadeTo(null);yield()=>Fx.fade>=1;
+      enterMap(F.id,F.x,F.y,0);G.mode='world';G.flags.elevFrom=F.id;const W=MAPS.elev.warps[0];W.to=F.id;W.tx=F.x;W.ty=F.y;
+      if(!G.flags['seen_'+F.id]){G.flags['seen_'+F.id]=1;yield 20;if(typeof floorIntro==='function')yield* floorIntro(F.id);}})());}}))});
+};
+/* first visit to a new floor: a short establishing moment */
+function* floorIntro(id){
+  const L={chapel:['The elevator opens on candlelight and stained glass. Somebody is humming a hymn.','For a second, Lake County Jail is quiet.'],
+    library:['Shelves of law books nobody reads. A guy in glasses is teaching a chokehold out of a karate manual.'],
+    maxsec:['The air is colder up here. Every cell door has two locks. Every inmate watches you walk.','C.O. Brandt: Welcome to Max. Don\'t make friends.'],
+    laundry:['Steam everywhere. Washers thumping like a heartbeat. Somebody is brewing hooch behind the dryers.'],
+    boiler:['Heat hits you like a wall. Furnaces glowing orange in the dark. Something big is breathing down here.']}[id];
+  if(L)for(const t of L)yield* talk(t,0);
+}
+/* ---- floor activities ---- */
+LVACT.chaplain=n=>{
+  const w=WS(),day=w.day;
+  openMenu({x:4,y:20,w:232,title:'FATHER MIKE',items:[
+    {l:'PRAY',d:!!G.flags['pray'+day],f:()=>{G.flags['pray'+day]=1;const v=vv();v.heat=Math.max(0,v.heat-2);G.gang.forEach(m=>{if(m.hp>0)m.hp=Math.min(m.mhp,m.hp+Math.floor(m.mhp*.25));});sfx.heal();
+      say('You kneel. For once your head is quiet. Heat -2, crew healed a little.');if(typeof tommyChapel==='function')tommyChapel();}},
+    {l:'SING WITH THE CHOIR',d:!!G.flags['choir'+day],f:()=>{G.flags['choir'+day]=1;const v=vv();v.resp=(v.resp||0)+2;v.cheer=(v.cheer||0)+1;sfx.level();
+      say('The Popstar sings lead. Half the chapel tears up. The other half pretends they didn\'t. Respect +2.');}},
+    {l:'CONFESS',f:()=>{say(pick(['Father Mike: You gave up Lukey? ...My son. Everybody knows. The whole building knows.','Father Mike: Thirty Hail Marys and stop throwing tables.','Father Mike: Forgiveness is free. Commissary is not.']));}},
+    {l:'TALK',f:()=>say(pick(['Father Mike: St. Dismas was the thief on the cross. Patron saint of prisoners. Fitting, huh?','Father Mike: Tommy Bones comes up here more than you\'d think.','Father Mike: Every riot ends in this room. Somebody always comes to sit down after.']))},
+    {l:'LEAVE',f:()=>{}}]});
+};
+LVACT.professor=n=>{
+  say('The Professor: Every move ever thrown, I have a book on it. Twelve smokes a lesson. Pick your poison.');
+  const byT={MUS:'MUSCLE',CHM:'CHARM',SNK:'SNEAK'};
+  openMenu({x:4,y:20,w:232,title:'LEARN A MOVE (12 L&M)',items:Object.keys(byT).map(t=>({l:byT[t]+' MOVES',f:()=>{
+    const ids=Object.keys(NEWMOVES).filter(id=>NEWMOVES[id].t===t);
+    openMenu({x:4,y:20,w:232,title:byT[t],vis:8,items:ids.map(id=>({l:M[id].n,r:M[id].p?'PWR '+M[id].p:'FX',d:(G.items.cigs||0)<12,f:()=>{
+      openMenu({x:4,y:20,w:232,title:'WHO LEARNS IT?',items:G.gang.map(m=>({l:m.nm.slice(0,10),r:'LV '+m.l,d:m.moves.some(x=>x.id===id),f:()=>{
+        G.items.cigs-=12;Cs.run((function*(){yield* talk(`The Professor opens a dusty book and walks ${m.nm} through ${M[id].n}.`,0);yield* learnMove(m,id);})());}}))});}}))});}}))});
+};
+const TATS=[{id:'iron',n:'IRON LUNG (chest)',k:'end'},{id:'crown',n:'CROWN (neck)',k:'str'},{id:'cle',n:'CLEVELAND (forearm)',k:'chn'},{id:'web',n:'SPIDERWEB (elbow)',k:'agi'},{id:'seven',n:'LUCKY 7 (knuckles)',k:'hnd'}];
+LVACT.ink=n=>{
+  say('Ink: Guitar string, a motor from a Walkman, and pen ink. Best tattoos in Ohio. Twenty smokes. Each one makes you something permanent.');
+  openMenu({x:4,y:20,w:232,title:'INK\'S CHAIR (20 L&M)',items:TATS.map(t=>({l:t.n,r:'+1 '+t.k.toUpperCase(),d:!!G.flags['tat_'+t.id]||(G.items.cigs||0)<20,f:()=>{
+    G.items.cigs-=20;G.flags['tat_'+t.id]=1;pl().s[t.k]++;restat();sfx.level();Fx.shake=4;
+    say(`Bzzzzzzt. It hurts like hell. ${t.n.split(' (')[0]} is on you forever. +1 ${t.k.toUpperCase()} (permanent).`);}}))});
+};
+LVACT.laundryjob=n=>{
+  const w=WS(),key='job_laundry_'+w.day;
+  if(w.train&&w.train[key]){say('Shift Boss Ray: You already worked today. Come back tomorrow, the socks ain\'t going nowhere.');return;}
+  say('Shift Boss Ray: Fold the sheets on the beat. Six clean folds, you get paid. Mess it up, you get paid less. That\'s the economy.',()=>{
+    w.train=w.train||{};w.train[key]=1;
+    Object.assign(TRN,{on:1,k:.1,rep:0,hits:0,spd:.05,dir:1,msg:'PRESS A IN THE GOLD ZONE',t:0,done:0,zone:[.42,.58],st:{job:'laundry',k:'job'},title:'LAUNDRY SHIFT'});G.mode='train';Menus.length=0;Say.clear();});
+};
+(function(){if(typeof stationFinish!=='function')return;const bs=stationFinish;
+  stationFinish=function(){if(TRN.st&&TRN.st.job){const h=TRN.hits,pay=2+h*2;TRN.st=null;G.items.cigs+=pay;sfx.pick();WS().stats.train++;
+    say(`Shift done. ${h}/6 clean folds. Ray pays you ${pay} L&M. "${h>=5?'You\'re a natural.':h>=3?'Not bad.':'You fold like a lawn chair.'}"`);return;}return bs();};})();
+LVACT.hooch=n=>{
+  const day=WS().day;
+  if(G.flags['hooch'+day]){say('Hooch Hank: Batch ain\'t ready. Fruit needs time to rot right.');return;}
+  G.flags['hooch'+day]=1;const b=ri(1,2);G.items.beer=(G.items.beer||0)+b;sfx.pick();
+  say(`Hooch Hank: Oranges, ketchup packets, bread, and a trash bag. Don't ask. Here. Got ${b} Prison Beer!`);
+};
+Object.assign(ZONE,{chapel:{d:.02,tag:'SANCTUARY',lv:[10,16],sp:['rookie']},library:{d:.05,tag:'QUIET',lv:[12,18],sp:['rookie']},
+  maxsec:{d:.9,tag:'MAXIMUM',lv:[26,34],sp:['lifer','trustee']},laundry:{d:.35,tag:'STEAMY',lv:[12,18],sp:['cellie','yardrat']},
+  boiler:{d:1,tag:'INFERNO',lv:[42,50],sp:['lifer','trustee']},elev:{d:0,tag:'SAFE',lv:[2,4],sp:['rookie']}});
+Object.assign(BENV,{
+  chapel:{n:'THE CHAPEL',line:'Fighting in a church. Somewhere, Father Mike sighs.',acc:1,crit:.0,dmg:.9,slip:0,fumble:0,big:1,tag:'HOLY GROUND: -DMG'},
+  library:{n:'LAW LIBRARY',line:'SHHH. Books fly off the shelves with every hit.',acc:1.02,crit:.03,dmg:1,slip:0,fumble:.1,big:1,tag:'QUIET: FUMBLES'},
+  maxsec:{n:'MAX SECURITY',line:'Cold steel and colder men. Everybody up here has nothing to lose.',acc:1,crit:.08,dmg:1.08,slip:0,fumble:0,big:1,tag:'NOTHING TO LOSE: +DMG'},
+  laundry:{n:'LAUNDRY',line:'Wet floors and flying sheets. Watch your footing.',acc:.95,crit:.02,dmg:1,slip:.08,fumble:.05,big:1,tag:'WET FLOOR'},
+  boiler:{n:'BOILER ROOM',line:'It\'s 120 degrees. Every swing costs you. Every hit burns.',acc:.95,crit:.1,dmg:1.12,slip:0,fumble:0,big:1.1,tag:'INFERNO: +DMG +CRIT'}});
+Object.assign(MAPNODES,{chapel:[36,8,'CHAPEL 8'],library:[96,8,'LIBRARY 7'],maxsec:[156,8,'MAX SEC 6'],laundry:[24,128,'LAUNDRY 3'],boiler:[64,204,'BOILER 1']});
+Object.assign(MAPPARENT,{chapel:'tier2',library:'tier2',maxsec:'tier2',laundry:'cafe',boiler:'hole'});
+if(typeof GJ_ZONES!=='undefined'){['maxsec','laundry','boiler'].forEach(z=>GJ_ZONES.add(z));}
+/* mail call: letters show up in the morning */
+const LETTERS=[
+ {d:2,from:'MOM',t:'Larry. Your father says hi. He does not. I am saying it for him. Eat something green. Love, Mom.',give:{perogi:1}},
+ {d:4,from:'BOGGS\'S MOM',t:'To the boy who got my son arrested: I hope you are eating well. I hope it is not well. -Mrs. Boggs',give:null},
+ {d:6,from:'A FAN',t:'POPSTAR!!! I saw you on the news. I named my cat after you. The cat is also in trouble a lot. XOXO -Jen from Mentor',give:{resp:3}},
+ {d:9,from:'LUKEY',t:'Bandit. I know it was you. Everybody knows it was you. My cousin Tommy knows it was you. Sleep with one eye open. -Lukey',give:null},
+ {d:12,from:'HAUNCHO',t:'Appeal status: pending. Also I need my forty bucks. Also I bought a new suit with your forty bucks. -H',give:{cigs:10}},
+ {d:16,from:'MOM',t:'Your cousin Ricky says jail is good for character. Ricky is in jail too. Please do not run into Ricky. -Mom',give:{ramen:2}}];
+function* mailCall(){
+  const day=WS().day,L=LETTERS.find(l=>l.d<=day&&!G.flags['mail'+l.d]);if(!L)return;G.flags['mail'+L.d]=1;
+  yield* talk(`C.O.: MAIL CALL! ...Larry? Letter for Larry. From: ${L.from}.`,0);yield* talk(L.t,0);
+  if(L.give){const g=L.give;if(g.resp)vv().resp=(vv().resp||0)+g.resp;for(const k of ['perogi','cigs','ramen'])if(g[k])G.items[k]=(G.items[k]||0)+g[k];sfx.pick();
+    yield* talk('Inside the envelope: '+Object.entries(g).map(([k,v])=>k==='resp'?`+${v} Respect`:`${v} ${IT[k].n}`).join(', ')+'.',0);}
+}
+(function(){if(typeof earlNight!=='function')return;const be=earlNight;earlNight=function*(){yield* be();yield* mailCall();};})();
+/* ===== THE TOMMY BONES SAGA + RIOTS.
+   Tommy Bones runs Pod B. Lukey - the guy Bandit gave up at the traffic stop - is Tommy's little cousin.
+   1 The Message  2 Pod B welcome  3 Broken Bones (his vow)  4 Tommy's Riot  5 The Chapel (truce or war)  6 The Boiler Room
+   Riots: alarm, red lights, the whole room brawling, three waves to survive, then lockdown. ===== */
+const WC={on:0,k:0},RIOT={on:0,t:0};
+/* in-world cinema: letterbox + riot lighting drawn over the game */
+(function(){const bw=worldDraw;worldDraw=function(){bw();
+  WC.k+=((WC.on?1:0)-WC.k)*.08;const bh=Math.round(16*WC.k);
+  if(RIOT.on){RIOT.t++;const a=.12+.1*Math.max(0,Math.sin(RIOT.t*.18));g.fillStyle=`rgba(255,20,10,${a})`;g.fillRect(0,0,W,H);if((RIOT.t>>4)%2)tx('! RIOT !',W/2,OFF()+26,'#ff5a4a','center','#000');}
+  if(bh>0){g.fillStyle='#000';g.fillRect(0,0,W,bh);g.fillRect(0,H-bh,W,bh);}
+};})();
+function* cineOn(){WC.on=1;yield 18;}function cineOff(){WC.on=0;}
+function spawnNPC(id,x,y,look,dir){const m=cur();const n={id,x,y,dir:dir||0,look,tr:null,say:['...'],tmp:1,px:x*T,py:y*T};m.npcs.push(n);return n;}
+function* npcWalkTo(n,tx,ty){let g=0;while((n.x!==tx||n.y!==ty)&&g++<40){const dx=Math.sign(tx-n.x),dy=dx?0:Math.sign(ty-n.y),d=dx>0?3:dx<0?2:dy>0?0:1;n.dir=d;
+  for(let k=1;k<=8;k++){n.px=(n.x+DX[d]*k/8)*T;n.py=(n.y+DY[d]*k/8)*T;yield 1;}n.x+=DX[d];n.y+=DY[d];n.px=n.x*T;n.py=n.y*T;}}
+function nearFree(x,y){for(let r=1;r<6;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.abs(dx)+Math.abs(dy)!==r)continue;const a=x+dx,b=y+dy;if(typeof freeTileW==='function'&&freeTileW(a,b,null))return [a,b];}return [x,y];}
+function dropTmp(){const m=cur();m.npcs=m.npcs.filter(n=>!n.tmp);}
+function* waitBattle(o){let res=null;o.done=r=>{res=r;G.mode='world';};fadeTo(()=>startBattle(o));yield()=>res!==null;playSong(cur().song);return res;}
+
+/* ---------- 1. THE MESSAGE ---------- */
+function* tbMessage(){
+  G.flags.tb_msg=1;yield* cineOn();
+  const [sx,sy]=nearFree(G.x+4,G.y),r=spawnNPC('runner',sx,sy,'cellie',2);yield* npcWalkTo(r,G.x+1,G.y);r.dir=2;G.dir=3;
+  yield* talk('Skinny Runner: Popstar. Message from Tommy Bones. Pod B.',0);
+  yield* talk('Skinny Runner: He says: "Congrats on Blake. Come see me. Come alone." ...He also said "tell him Lukey says hi."',0);
+  yield* talk('Bandit: ...Lukey?',0);
+  yield* talk('Skinny Runner: I just deliver, man. I don\'t read.',0);
+  yield* npcWalkTo(r,sx,sy);dropTmp();cineOff();
+}
+/* ---------- 2. POD B WELCOME ---------- */
+function* tbIntro(){
+  G.flags.tb_intro=1;yield* cineOn();
+  const b=cur().npcs.find(n=>n.id==='bones');
+  yield* talk('Pod B goes quiet the second you walk in. Fifty guys stop talking at once.',0);
+  if(b){b.dir=1;b.excl=50;}
+  yield* talk('Tommy Bones: There he is. The Popstar. The famous mouth.',0);
+  yield* talk('Tommy Bones: You know a kid named Lukey? Skinny. Nervous laugh. Loves his mom.',0);
+  yield* talk('Bandit: ...Never heard of him.',0);
+  yield* talk('Tommy Bones: Funny. Because he heard of YOU. He heard you screaming his name to a cop on the side of the road.',0);
+  yield* talk('Tommy Bones: That\'s my little cousin. He\'s sitting in county for a pumper he never touched.',0);
+  Fx.shake=6;sfx.slam();
+  yield* talk('Tommy Bones: Come get my patch when you\'re ready. I want you healthy. I want this to be fair. Then I want it to hurt.',0);
+  cineOff();
+}
+/* ---------- 3. BROKEN BONES ---------- */
+function* tbBeaten(){
+  G.flags.tb_beaten=1;G.flags.tbDay=WS().day;yield* cineOn();
+  yield* talk('Tommy Bones spits blood on the floor and laughs. It is not a nice laugh.',0);
+  yield* talk('Tommy Bones: You won a fight. Congratulations. Lukey gets out in six months. You\'ll still be here.',0);
+  yield* talk('Tommy Bones: I got friends in every pod, Popstar. Every tier. Every kitchen. Watch the yard.',0);
+  yield* talk('Earl\'s voice in your head: "Guys like Tommy don\'t lose. They wait."',0);
+  cineOff();
+}
+/* ---------- 4. RIOTS (Tommy's, and the random ones) ---------- */
+function riotFoes(n,lvAdd){const z=zoneNow(),top=maxLevel(),out=[];for(let i=0;i<n;i++)out.push(mkMon(pick(z.sp),Math.max(4,Math.min(top+1,z.lv[1])+(lvAdd||0)-1+ri(-1,1)),pick(WILDNAMES).slice(0,9)));return out;}
+function* runRiot(story){
+  G.flags.lastRiotDay=WS().day;RIOT.on=1;RIOT.t=0;yield* cineOn();sfx.siren();Fx.shake=14;Fx.flashCol='#f22';Fx.flash=8;
+  yield* talk(story?'Somebody yells "TOMMY SAYS NOW!" A tray flies. Then a chair. Then EVERYBODY.':pick(['Somebody throws a tray. Somebody throws a punch. The alarm starts screaming.','A fight at the phones turns into ten fights. Then fifty. RIOT!','The lights flicker red. The whole room explodes at once.']),0);
+  // the whole room goes at it
+  const ins=npcsHere().filter(n=>n.say&&n.say[0]==='inmate'&&!n.br);for(let i=0;i+1<ins.length;i+=2)brawlStart(ins[i],ins[i+1]);
+  toast('RIOT!  SURVIVE 3 WAVES','#ff5a4a');cineOff();
+  const waves=story?3:3;
+  for(let w=1;w<=waves;w++){
+    const last=story&&w===waves;
+    yield* talk(last?'Through the chaos: Tommy Bones. Shirt off. Two of his boys with him. He points right at you.':pick([`Wave ${w}: three guys come over the tables at you!`,`Wave ${w}: somebody grabs you from behind!`,`Wave ${w}: a pack of rioters spots the Popstar!`]),40);
+    const foes=last?[mkMon('goon',maxLevel()+2,'BONES\' BOY'),mkMon('goon',maxLevel()+2,'BONES\' BOY'),mkMon('bones',maxLevel()+5,'TOMMY')]:riotFoes(w+(w>1?1:0),w);
+    const res=yield* waitBattle({foes,name:last?'TOMMY BONES':'RIOTERS',jump:true,squad:Math.min(4,G.gang.filter(alive).length),card:true,cardName:last?'TOMMY BONES':'RIOT',sub:last?'THE RIOT  -  FINAL WAVE':`RIOT  -  WAVE ${w}/${waves}`,
+      tr:{name:last?'TOMMY BONES':'RIOTERS',win:4+w*3,post:last?'Tommy Bones: ...This ain\'t over.':'They scatter into the chaos.',lose:'Somebody hits you with a chair. Lights out.'},pre2:last?'Tommy Bones: For Lukey.':'Rioter: GET HIM!'});
+    if(res!=='win'){RIOT.on=0;if(story)G.flags.tb_riotGo=0;BRW.slice().forEach(br=>brawlStop(br,true));yield* whiteout();return;}
+    const loot=pick(['cigs','cigs','perogi','beer','shank','ramen']),nn=loot==='cigs'?ri(3,7):1;G.items[loot]=(G.items[loot]||0)+nn;vv().resp=(vv().resp||0)+4;
+    toast(`LOOTED: ${nn} ${IT[loot].n.toUpperCase()}  +4 RESPECT`,'#7dff9a');
+  }
+  // lockdown
+  yield* cineOn();sfx.siren();
+  yield* talk('C.O.s in riot gear flood the room. Shields. Pepper spray. "LOCKDOWN! EVERYBODY ON THE GROUND!"',0);
+  BRW.slice().forEach(br=>brawlStop(br,true));
+  fadeTo(null);yield()=>Fx.fade>=1;RIOT.on=0;
+  const w_=WS(),c=w_.clock%1440;clockAdd(c<6*60?6*60-c:1440-c+6*60);vv().heat=0;
+  enterMap('blockA',9,9,3);G.mode='world';Fx.st=2;yield 20;
+  yield* talk(`LOCKDOWN. 18 hours in your cell. Day ${w_.day}.`,0);
+  if(G.flags.escorted&&!G.flags.earlIn)yield* talk(story?'Old Earl: Tommy\'s riot. Everybody knows. Half the jail saw you put him down. ...He\'ll be in the chapel. He always ends up in the chapel.':'Old Earl: Every couple months, the whole place pops. You alright? You look alright. Kinda proud of you.',0);
+  if(story)G.flags.tb_riotDone=1;
+  cineOff();
+}
+/* ---------- 5. THE CHAPEL ---------- */
+function tommyChapel(){
+  if(!G.flags.tb_riotDone||G.flags.tb_chapel)return;
+  G.flags.tb_chapel=1;
+  Cs.run((function*(){yield 20;yield* cineOn();
+    const [x,y]=nearFree(G.x-2,G.y),t=spawnNPC('tommyc',x,y,'bones',3);
+    yield* talk('Someone is kneeling two pews over. Bruised knuckles. Shaved head. Tommy Bones.',0);
+    yield* talk('Tommy Bones: ...Don\'t. Not in here. Father Mike\'s rules.',0);
+    yield* talk('Tommy Bones: My aunt called. Lukey\'s mom. She\'s sick. Real sick. Lukey can\'t visit her from county.',0);
+    yield* talk('Tommy Bones: I wanted to hurt you so bad. Started a whole riot. And now I\'m sitting here feeling stupid.',0);
+    let ch=null;openMenu({x:20,y:60,w:200,title:'TOMMY BONES',nocancel:true,items:[{l:'APOLOGIZE',f:()=>ch=0},{l:'RUN YOUR MOUTH',f:()=>ch=1}]});yield()=>ch!==null;
+    if(ch===0){
+      yield* talk('Bandit: ...It was a reflex, man. I panicked. Lukey didn\'t deserve it. I\'ll tell Hauncho to call his lawyer. I\'ll say the pumper was mine.',0);
+      yield* talk('Tommy Bones: ...You\'d do that?',0);
+      yield* talk('Bandit: I\'m the Popstar. I can take one more charge.',0);
+      yield* talk('Tommy Bones: ...Alright. Truce. And if you ever need a body in a fight, you call Bones.',0);
+      G.flags.tb_truce=1;vv().resp=(vv().resp||0)+5;
+      if(G.crew&&G.gang.length<crewCap()){const tb=mkMon('bones',Math.max(14,maxLevel()),'TOMMY');tb.hp=tb.mhp;G.gang.push(tb);sfx.level();yield* talk('TOMMY BONES joined your crew!',0);}
+      else yield* talk('(Make room in your crew and Tommy will ride with you.)',0);
+    }else{
+      yield* talk('Bandit: Lukey should\'ve kept his mouth shut. Oh wait. That was me. HA.',0);
+      Fx.shake=8;yield* talk('Tommy Bones stands up very slowly. "Boiler Room. When you\'re ready. No guards go down there."',0);
+      G.flags.tb_war=1;
+    }
+    dropTmp();cineOff();
+  })());
+}
+/* ---------- 6. THE BOILER ROOM ---------- */
+function* tbBoiler(){
+  G.flags.tb_final=1;yield* cineOn();
+  yield* talk('Steam hisses. A furnace door bangs open. Tommy Bones steps out of the orange light with his whole crew.',0);
+  yield* talk('Tommy Bones: No cameras. No guards. No Father Mike. Just me, you, and Lukey\'s name.',0);cineOff();
+  const res=yield* waitBattle({foes:[mkMon('goon',maxLevel()+4,'BONES\' BOY'),mkMon('lifer',maxLevel()+4,'BONES\' BOY'),mkMon('bones',maxLevel()+8,'TOMMY')],name:'TOMMY BONES',jump:true,squad:Math.min(4,G.gang.filter(alive).length),card:true,cardName:'TOMMY BONES',sub:'THE BOILER ROOM',
+    tr:{name:'TOMMY BONES',win:60,post:'Tommy Bones: ...',lose:'Tommy Bones: That one\'s for Lukey.'},pre2:'Tommy Bones: Let\'s finish it.'});
+  if(res!=='win'){yield* whiteout();G.flags.tb_final=0;return;}
+  yield* cineOn();
+  yield* talk('Tommy Bones sits down against a furnace, out of breath. All the anger is gone out of him.',0);
+  yield* talk('Tommy Bones: They\'re transferring me to Mansfield tomorrow. Tell Lukey... tell him I tried.',0);
+  yield* talk('The next morning, Pod B has a new boss. Everybody says it\'s you.',0);
+  vv().resp=(vv().resp||0)+15;G.items.shark=(G.items.shark||0)+2;toast('+15 RESPECT  +2 SHARK CARDS','#7dff9a');
+  cineOff();
+}
+/* ---------- the story director: runs between steps ---------- */
+const RIOTZ=new Set(['yard','blockA','blockB','blockC','blockD','cafe','maxsec']);
+(function(){const bu=worldUpdate;worldUpdate=function(){bu();
+  if(G.mode!=='world'||Cs.g||Say.on||Menus.length||(typeof busy==='function'&&busy())||G.rush)return;
+  if((G._st=(G._st||0)+1)%20)return;
+  const f=G.flags,day=WS().day;
+  if(f.pBlake&&!f.tb_msg&&(G.map==='yard'||G.map==='blockA')){Cs.run(tbMessage());return;}
+  if(G.map==='blockB'&&!f.tb_intro&&!f.pBones){Cs.run(tbIntro());return;}
+  if(f.pBones&&!f.tb_beaten&&G.map==='blockB'){Cs.run(tbBeaten());return;}
+  if(f.tb_beaten&&!f.tb_riotDone&&!f.tb_riotGo&&day>=(f.tbDay||0)+2&&G.map==='yard'){f.tb_riotGo=1;Cs.run(runRiot(true));return;}
+  if(f.tb_war&&!f.tb_final&&G.map==='boiler'){Cs.run(tbBoiler());return;}
+  if(f.gotSuit&&day>=3&&RIOTZ.has(G.map)&&f.lastRiotDay!==day&&Math.random()<.0015){Cs.run(runRiot(false));return;}
+};})();
 /* ===== INTRO, TITLE, ENDING, MAIN LOOP ===== */
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
 const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
