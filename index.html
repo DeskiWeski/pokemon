@@ -153,7 +153,8 @@ if(typeof glResize==='function')glResize(bw,bh,dpr);
 addEventListener('resize',resize);addEventListener('orientationchange',()=>{[60,200,450,900].forEach(t=>setTimeout(resize,t));});
 if(window.visualViewport)visualViewport.addEventListener('resize',resize);
 setInterval(()=>{const vv=window.visualViewport,w=Math.round((vv&&vv.width)||innerWidth),h=Math.round((vv&&vv.height)||innerHeight);if(w+'x'+h!==resize.last){resize.last=w+'x'+h;resize();}},400);
-if(typeof ResizeObserver!=='undefined'){try{new ResizeObserver(()=>resize()).observe(lcdEl);}catch(e){}}
+if(typeof ResizeObserver!=='undefined'){try{let roq=0,rol='';new ResizeObserver(()=>{if(roq)return;roq=1;requestAnimationFrame(()=>{roq=0;const k=lcdEl.clientWidth+'x'+lcdEl.clientHeight;if(k!==rol){rol=k;resize();}});}).observe(lcdEl);}catch(e){}}
+addEventListener('error',e=>{if(e&&e.message&&/ResizeObserver/.test(e.message)){e.stopImmediatePropagation();e.preventDefault&&e.preventDefault();}},true);
 const K={up:0,down:0,left:0,right:0,a:0,b:0,start:0,select:0},Pr={};
 const HOOKS={};function onHook(n,f){(HOOKS[n]||(HOOKS[n]=[])).push(f);}function runHooks(n,a,b){const L=HOOKS[n];if(L)for(let i=0;i<L.length;i++)L[i](a,b);}
 function setKey(k,v){v=v?1:0;if(v&&!K[k]){Pr[k]=1;try{ac();}catch(e){}}K[k]=v;}
@@ -1404,7 +1405,7 @@ cb&&cb(res,mon);
 function drawMon(m,side,x,y,s,flip){
 const o=B.off[side];
 const px=x+o.x+o.vx,py=y+o.y;
-if(o.a<=0)return;
+if(o.a<=0||!m)return;
 tmpG.clearRect(0,0,96,96);
 person(tmpG,0,0,LOOK[m.s]||(B&&B.o&&typeof B.o.look==='object'?B.o.look:LOOK.rookie),side==='p'?1:0,0,s);
 if(o.fl>0){tmpG.globalCompositeOperation='source-atop';tmpG.fillStyle='#fff';tmpG.fillRect(0,0,96,96);tmpG.globalCompositeOperation='source-over';}
@@ -1940,9 +1941,9 @@ void main(){vec4 t=vec4(1.0);if(uUseTex>0.5){t=texture2D(uSamp,vUV);}
 float a=t.a*uColor.a;if(a<uCut)discard;
 vec3 base=t.rgb*vCol*uColor.rgb;vec3 n=normalize(vN);
 #ifdef HAS_DERIV
-if(uBump>0.0&&uUseTex>0.5&&uToon<0.5){  /* surface relief from the HD texture: grout, mortar and cracks catch the light */
-  float lum=dot(texture2D(uSamp,vUV,2.5).rgb,vec3(0.3,0.59,0.11));vec3 dpx=dFdx(vW),dpy=dFdy(vW);vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);
-  vec3 gr=sign(det)*(dFdx(lum)*r1+dFdy(lum)*r2);n=normalize(abs(det)*n-gr*uBump);}
+if(uBump>0.0&&uUseTex>0.5&&(uToon<0.5||(uToon>1.5&&uSss<0.5))){  /* surface relief from the HD texture: grout, mortar and cracks catch the light */
+  float lum=dot(texture2D(uSamp,vUV,uToon>1.5?1.5:2.5).rgb,vec3(0.3,0.59,0.11));vec3 dpx=dFdx(vW),dpy=dFdy(vW);vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);
+  vec3 gr=sign(det)*(dFdx(lum)*r1+dFdy(lum)*r2);n=normalize(abs(det)*n-gr*uBump*(uToon>1.5?0.45:1.0));}
 #endif
 float d=max(dot(n,normalize(uL)),0.0);float h=n.y*0.5+0.5;
 vec3 lit;vec3 spec=vec3(0.0);
@@ -2377,15 +2378,15 @@ function foreArmRings(bf){const f=bf;return [rY(0.020,.04*f,.043*f,0,0),rY(-0.02
 function torsoRings(w,bf,s,y0,y1){
 s=s||1;const R=[
 rY(-.012,.158*w*s,.094*s,0,-.012,2.15,.85),rY(.05,.152*w*s,.1*s,0,-.004,2.15,.95),rY(.14,.13*w*s,.09*s,0,.002,2.05,.93),
-rY(.22,.136*w*s,.094*s,0,.006,2.1,.98),rY(.31,.152*w*bf*s,.103*s,0,.01,2.2,1),rY(.39,.165*w*bf*s,.109*s,0,.012,2.3,1),
-rY(.45,.166*w*bf*s,.106*s,0,.008,2.3,.98),rY(.49,.152*w*bf*s,.096*s,0,.002,2.15,.95),rY(.522,.118*w*bf*s,.084*s,0,-.004,2.05,.9),
+rY(.22,.136*w*s,.097*s,0,.006,2.1,.98),rY(.31,.152*w*bf*s,.11*s,0,.011,2.2,1),rY(.39,.165*w*bf*s,.119*s,0,.013,2.3,1),
+rY(.45,.166*w*bf*s,.116*s,0,.008,2.3,.98),rY(.49,.152*w*bf*s,.102*s,0,.002,2.15,.95),rY(.522,.118*w*bf*s,.084*s,0,-.004,2.05,.9),
 rY(.548,.085*s,.07*s,0,-.006,2,.86),rY(.572,.066*s,.06*s,0,-.004,2,.84)];
 if(y0===undefined)return R;
 return R.filter(r=>r.c[1]>=y0&&r.c[1]<=y1);
 }
-function pantsRings(w,bf){return [rY(-.022,.1*w,.055,0,-.024,2,.6),rY(-.008,.152*w,.084,0,-.018,2.1,.8),rY(-.02,.17*w,.098,0,-.01,2.1,.93),rY(.03,.164*w,.102,0,-.006,2.1,1),rY(.08,.152*w,.1,0,0,2.1,1)];}
-function shoeUpper(){return [rZ(-.088,.04,.05,0,-.335,2,.8),rZ(-.062,.05,.062,0,-.323,2,.95),rZ(0,.052,.062,0,-.323,2.1),rZ(.07,.056,.05,0,-.335,2.2),rZ(.14,.06,.037,0,-.348,2.3),rZ(.19,.056,.029,0,-.356,2.3),rZ(.218,.04,.021,0,-.363,2,.9)];}
-function shoeSole(){return [rZ(-.092,.04,.012,0,-.392,3),rZ(-.07,.053,.013,0,-.392,3),rZ(0,.057,.013,0,-.392,3),rZ(.1,.064,.013,0,-.392,3),rZ(.17,.063,.013,0,-.389,3),rZ(.212,.046,.012,0,-.384,3),rZ(.228,.03,.01,0,-.382,3)];}
+function pantsRings(w,bf){return [rY(-.052,.07*w,.046,0,-.02,2,.56),rY(-.022,.112*w,.064,0,-.024,2,.62),rY(-.008,.152*w,.084,0,-.018,2.1,.8),rY(-.02,.17*w,.098,0,-.01,2.1,.93),rY(.03,.164*w,.102,0,-.006,2.1,1),rY(.08,.152*w,.1,0,0,2.1,1)];}
+function shoeUpper(){return [rZ(-.084,.037,.048,0,-.337,2,.8),rZ(-.06,.046,.059,0,-.326,2,.95),rZ(0,.048,.059,0,-.326,2.1),rZ(.066,.051,.047,0,-.338,2.2),rZ(.13,.054,.035,0,-.35,2.3),rZ(.176,.051,.028,0,-.357,2.3),rZ(.203,.037,.021,0,-.364,2,.9)];}
+function shoeSole(){return [rZ(-.088,.037,.012,0,-.392,3),rZ(-.067,.049,.013,0,-.392,3),rZ(0,.053,.013,0,-.392,3),rZ(.094,.058,.013,0,-.392,3),rZ(.158,.057,.013,0,-.389,3),rZ(.197,.043,.012,0,-.384,3),rZ(.212,.028,.01,0,-.382,3)];}
 function handMesh(sd,bf){
 const m=new MB();
 sweepInto(m,[rY(-.3,.031,.02,0,0),rY(-.335,.04,.023,0,.002),rY(-.372,.046,.025,0,.004),rY(-.396,.048,.026,0,.006,2.4)],{capS:false,N:16});
@@ -2424,7 +2425,7 @@ const _sm=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*
 function hairLim(lon,low){return (lon<30?56+lon*.28:lon<92?64+(lon-30)*.52:lon<180?96+(lon-92)*.34:126)+(low||0);}
 function hairCov(lon,pd,low){return _sm(-5,5,hairLim(lon,low)-pd);}
 function beardCov(lon,pd,full){
-const top=lon<14?117:lon<55?111+lon*.0:lon<86?111-(lon-55)*.5:200;
+const top=lon<14?117:lon<38?117+(lon-14)*.17:lon<58?121-(lon-38)*.5:lon<86?111-(lon-58)*.55:200;
 const bot=lon<40?166:lon<86?166-(lon-40)*.45:120;
 let c=_sm(-3,3,pd-top)*_sm(-4,4,bot-pd)*_sm(-6,6,90-lon);
 if(lon<17&&pd>121&&pd<133)c*=1-_sm(-2,2,17-lon)*_sm(-1.5,1.5,pd-121)*_sm(-1.5,1.5,133-pd)*(full?0.0:1);
@@ -2491,8 +2492,8 @@ else{[-22,22].forEach(l=>{const gg=c.createRadialGradient(fX(l),ey-1,2,fX(l),ey-
 }else{
 eye(eyeL,false);eye(eyeR,true);
 if(!SPK){const bc=hr;c.lineCap='round';
-[[-1],[1]].forEach(([sd])=>{for(let k=0;k<14;k++){const t=k/13,bx=fX(sd*(34-26*t)),by=ey-20-6*Math.sin(t*Math.PI)+(k%2)*1.2;
-c.strokeStyle=bc;c.globalAlpha=.55+.4*Math.sin(t*Math.PI);c.lineWidth=2.2+1.6*Math.sin(t*Math.PI);c.beginPath();c.moveTo(bx,by+3);c.lineTo(bx+sd*2.5,by-4);c.stroke();}c.globalAlpha=1;});}
+[[-1],[1]].forEach(([sd])=>{for(let k=0;k<20;k++){const t=k/19,bx=fX(sd*(36-28*t)),by=ey-13.5-4.5*Math.sin(t*Math.PI*.85)+(1-t)*2.5+(k%2)*.8;
+c.strokeStyle=bc;c.globalAlpha=.6+.38*Math.sin(t*Math.PI);c.lineWidth=1.8+1.9*Math.sin(Math.min(1,t*1.5)*Math.PI*.6);c.beginPath();c.moveTo(bx,by+2.6);c.lineTo(bx+sd*3,by-2.6);c.stroke();}c.globalAlpha=1;});}
 }
 if(ac.includes('glasses')){c.strokeStyle='#1c1c24';c.lineWidth=3.5;[-22,22].forEach(l=>{c.beginPath();c.ellipse(fX(l),ey,19,19,0,0,7);c.stroke();});c.beginPath();c.moveTo(fX(-9),ey-3);c.quadraticCurveTo(fX(0),ey-9,fX(9),ey-3);c.stroke();c.fillStyle='rgba(190,225,255,.22)';[-22,22].forEach(l=>{c.beginPath();c.ellipse(fX(l),ey,18,18,0,0,7);c.fill();});}
 const my=fY(-36);c.lineCap='round';
@@ -2594,6 +2595,81 @@ if(kind==='cloth'){c.strokeStyle='rgba(0,0,0,.07)';c.lineWidth=1;for(let k=0;k<2
 });
 return CLOTH[k]=glTexMip(can);
 }
+const GART={};
+function garTex(col,kind,o){
+o=o||{};const k=col.map(v=>v.toFixed(3)).join(',')+kind+(o.js?'j':'')+(o.denim?'d':'')+(o.txt||'');if(GART[k])return GART[k];
+const S=(kind==='torso'&&R3.gfx!=='low')?512:256,q=S/256,hex=v=>Math.round(Math.max(0,Math.min(1,v))*255),lum=col[0]*.3+col[1]*.59+col[2]*.11,dk=lum<.25;
+const can=mkCan(S,S,c=>{
+c.fillStyle=`rgb(${hex(col[0])},${hex(col[1])},${hex(col[2])})`;c.fillRect(0,0,S,S);
+const id=c.getImageData(0,0,S,S),d=id.data;let seed=kind.length*7+3;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const SKN=kind==='uarm'||kind==='farm';
+for(let y=0;y<S;y++)for(let x=0;x<S;x++){const p=(y*S+x)*4;let g=(rnd()-.5)*(o.denim?9:4);if(SKN){g=(rnd()-.5)*5+(((x*7+y*13)%17===0)?-4:0);d[p]=Math.max(0,Math.min(255,d[p]+g));d[p+1]=Math.max(0,Math.min(255,d[p+1]+g));d[p+2]=Math.max(0,Math.min(255,d[p+2]+g));continue;}
+if(o.denim)g+=((x+y)%4<2?3:-3);else g+=((x+y*2)%4===0?-2:1);
+d[p]=Math.max(0,Math.min(255,d[p]+g));d[p+1]=Math.max(0,Math.min(255,d[p+1]+g));d[p+2]=Math.max(0,Math.min(255,d[p+2]+g));}
+c.putImageData(id,0,0);
+const U=u=>u*S,V=v=>v*S,DA=SKN?(lum<.45?.1:.075):dk?.5:.2,LA=SKN?.05:dk?.16:.1;c.lineCap='round';c.lineJoin='round';
+const fold=(pts,w,a)=>{a=a===undefined?1:a;const path=(dx,dy)=>{c.beginPath();c.moveTo(U(pts[0][0])+dx,V(pts[0][1])+dy);if(pts.length===3)c.quadraticCurveTo(U(pts[1][0])+dx,V(pts[1][1])+dy,U(pts[2][0])+dx,V(pts[2][1])+dy);else c.lineTo(U(pts[1][0])+dx,V(pts[1][1])+dy);};
+for(let i=3;i>=1;i--){c.strokeStyle=`rgba(0,0,0,${DA*a*.42/i})`;c.lineWidth=w*q*i*.9;path(0,0);c.stroke();}
+for(let i=2;i>=1;i--){c.strokeStyle=`rgba(255,255,255,${LA*a/i})`;c.lineWidth=w*q*i*.7;path(w*q*.9,-w*q*1.1);c.stroke();}};
+const wrapFold=(pts,w,a)=>{fold(pts,w,a);fold(pts.map(p=>[p[0]-1,p[1]]),w,a);fold(pts.map(p=>[p[0]+1,p[1]]),w,a);};
+const seam=(u0,v0,u1,v1)=>{c.strokeStyle=`rgba(0,0,0,${dk?.55:.3})`;c.lineWidth=1.3*q;c.beginPath();c.moveTo(U(u0),V(v0));c.lineTo(U(u1),V(v1));c.stroke();
+c.strokeStyle=`rgba(255,255,255,${dk?.12:.14})`;c.lineWidth=1*q;c.beginPath();c.moveTo(U(u0)+1.6*q,V(v0));c.lineTo(U(u1)+1.6*q,V(v1));c.stroke();};
+const stitch=(pts,cl)=>{c.save();c.setLineDash([3.2*q,2.4*q]);c.strokeStyle=cl||(o.denim?'rgba(214,168,92,.75)':dk?'rgba(255,255,255,.3)':'rgba(0,0,0,.36)');c.lineWidth=1*q;c.beginPath();c.moveTo(U(pts[0][0]),V(pts[0][1]));
+if(pts.length===3)c.quadraticCurveTo(U(pts[1][0]),V(pts[1][1]),U(pts[2][0]),V(pts[2][1]));else c.lineTo(U(pts[1][0]),V(pts[1][1]));c.stroke();c.restore();};
+const band=(u,wd,a,v0,v1)=>{const g=c.createLinearGradient(U(u-wd),0,U(u+wd),0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.5,`rgba(0,0,0,${a})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(U(u-wd),V(v0),U(wd*2),V(v1-v0));};
+let sd=17;const r2=()=>(sd=(sd*16807)%2147483647)/2147483647;
+if(kind==='torso'){
+[0,.5,1].forEach(u=>band(u,.09,dk?.3:.14,.18,.7));band(.75,.03,dk?.2:.08,.26,.6);
+[[.25,.52,.11],[.66,.55,.07],[.84,.55,.07]].forEach(([u,v,r])=>{const g=c.createRadialGradient(U(u),V(v),0,U(u),V(v),U(r));g.addColorStop(0,`rgba(255,255,255,${dk?.08:.07})`);g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(U(u-r),V(v-r),U(r*2),U(r*2));});
+for(let i=0;i<11;i++){const v=.285+i*.0115+(r2()-.5)*.006,u0=r2(),len=.16+r2()*.26,sag=(r2()-.5)*.02;wrapFold([[u0,v],[u0+len/2,v+sag],[u0+len,v+(r2()-.5)*.012]],1.5+r2()*1.2,.75);}
+[[.015,.615,.07,.56,.15,.5],[.485,.615,.43,.56,.35,.5],[.515,.615,.57,.56,.65,.5],[.985,.615,.93,.56,.85,.5]].forEach(a=>{fold([[a[0],a[1]],[a[2],a[3]],[a[4],a[5]]],2.2);fold([[a[0],a[1]-.02],[a[2],a[3]-.035],[a[4]*.6+a[0]*.4,a[5]-.05]],1.6,.7);});
+fold([[.13,.47],[.2,.44],[.24,.4]],1.6,.5);fold([[.37,.47],[.3,.44],[.26,.4]],1.6,.5);fold([[.62,.5],[.7,.43],[.73,.36]],1.8,.55);fold([[.88,.5],[.8,.43],[.77,.36]],1.8,.55);
+seam(.001,.2,.001,.63);seam(.5,.2,.5,.63);seam(.999,.2,.999,.63);stitch([[.012,.2],[.012,.62]]);stitch([[.488,.2],[.488,.62]]);
+stitch([[.54,.6],[.75,.575],[.96,.6]]);stitch([[.54,.612],[.75,.587],[.96,.612]]);
+if(o.js!==false){
+c.fillStyle=`rgba(0,0,0,${dk?.25:.07})`;c.fillRect(U(.25-.017),V(.225),U(.034),V(.5));seam(.25+.017,.225,.25+.017,.72);
+stitch([[.25-.014,.225],[.25-.014,.72]]);stitch([[.25+.012,.225],[.25+.012,.72]]);
+for(let v=.27;v<.71;v+=.058){c.fillStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(U(.25)+.6*q,V(v)+.8*q,3.3*q,0,7);c.fill();c.fillStyle='rgba(214,216,222,.95)';c.beginPath();c.arc(U(.25),V(v),2.9*q,0,7);c.fill();c.fillStyle='rgba(255,255,255,.9)';c.beginPath();c.arc(U(.25)-.9*q,V(v)-.9*q,1*q,0,7);c.fill();}
+stitch([[0,.262],[1,.262]]);stitch([[0,.274],[1,.274]]);
+}
+if(o.txt){c.save();c.translate(U(.765),V(.5));c.scale(-1,-1);c.fillStyle=dk?'rgba(240,236,226,.72)':'rgba(24,14,10,.74)';c.textAlign='center';c.textBaseline='middle';
+c.scale(1,.62);c.font=`900 ${Math.round(14*q)}px Impact, "Arial Black", sans-serif`;c.fillText(o.txt[0],0,-9*q);c.font=`900 ${Math.round(8.5*q)}px Impact, "Arial Black", sans-serif`;c.fillText(o.txt[1]||'',0,5*q);c.restore();}
+{const g=c.createLinearGradient(0,V(.2),0,V(.28));g.addColorStop(0,`rgba(0,0,0,${dk?.3:.16})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,V(.2),S,V(.08));}
+}else if(kind==='thigh'){
+[0,.5,1].forEach(u=>band(u,.1,dk?.3:.13,.25,.72));
+seam(.001,.28,.001,.7);seam(.5,.28,.5,.7);seam(.999,.28,.999,.7);stitch([[.016,.28],[.016,.7]]);stitch([[.484,.28],[.484,.7]]);
+stitch([[.04,.325],[.11,.33],[.19,.365]]);stitch([[.46,.325],[.39,.33],[.31,.365]]);stitch([[.045,.337],[.11,.342],[.18,.376]]);stitch([[.455,.337],[.39,.342],[.32,.376]]);
+for(let i=0;i<3;i++){fold([[.2-i*.03,.315+i*.014],[.15-i*.03,.33+i*.014],[.09-i*.02,.335+i*.018]],1.3,.45);fold([[.3+i*.03,.315+i*.014],[.35+i*.03,.33+i*.014],[.41+i*.02,.335+i*.018]],1.3,.45);}
+for(let i=0;i<4;i++)fold([[.07+r2()*.04,.6+i*.022],[.25,.59+i*.022+(r2()-.5)*.012],[.43-r2()*.04,.6+i*.022]],1.7+r2(),.8);
+for(let i=0;i<5;i++)fold([[.58,.61+i*.017],[.75,.625+i*.017],[.92,.61+i*.017]],1.3,.9);
+fold([[.25,.4],[.25,.6]],1.2,.35);fold([[.7,.36],[.73,.46],[.75,.56]],1.6,.4);
+}else if(kind==='shin'){
+[0,.5,1].forEach(u=>band(u,.1,dk?.3:.13,.25,.72));
+seam(.001,.28,.001,.7);seam(.5,.28,.5,.7);seam(.999,.28,.999,.7);
+for(let i=0;i<3;i++)fold([[.08,.315+i*.02],[.25,.33+i*.02],[.42,.315+i*.02]],1.7,.8);
+fold([[.2,.4],[.23,.47],[.21,.55]],1.3,.4);fold([[.32,.4],[.29,.48],[.31,.56]],1.3,.4);fold([[.72,.38],[.76,.47],[.74,.56]],1.4,.4);
+for(let i=0;i<4;i++){const v=.565+i*.02;wrapFold([[0,v+(r2()-.5)*.01],[.25,v+.012*(i%2?1:-1)],[.5,v+(r2()-.5)*.01]],1.8,.9);wrapFold([[.5,v],[.75,v-.012*(i%2?1:-1)],[1,v+(r2()-.5)*.01]],1.8,.9);}
+stitch([[0,.655],[1,.655]]);stitch([[0,.668],[1,.668]]);{const g=c.createLinearGradient(0,V(.668),0,V(.72));g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${dk?.4:.2})`);c.fillStyle=g;c.fillRect(0,V(.668),S,V(.06));}
+}else if(kind==='uarm'){
+const hi=(u,v,ru,rv,al)=>{const g=c.createRadialGradient(U(u),V(v),0,U(u),V(v),U(ru));g.addColorStop(0,`rgba(255,240,225,${al})`);g.addColorStop(1,'rgba(255,240,225,0)');c.fillStyle=g;c.save();c.translate(U(u),V(v));c.scale(1,rv/ru);c.translate(-U(u),-V(v));c.fillRect(U(u-ru),V(v)-U(ru),U(ru*2),U(ru*2));c.restore();};
+[0,.5,1].forEach(u=>{fold([[u-.11,.42],[u,.5],[u+.11,.42]],1.6,.5);hi(u,.38,.14,.07,.1);});
+hi(.25,.53,.11,.09,.13);hi(.75,.5,.1,.1,.08);fold([[.13,.47],[.12,.55],[.15,.63]],1.4,.4);fold([[.37,.47],[.38,.55],[.35,.63]],1.4,.4);
+fold([[.66,.55],[.75,.6],[.84,.55]],1.5,.45);fold([[.14,.665],[.25,.68],[.36,.665]],1.5,.55);band(.75,.1,.1,.6,.72);
+}else if(kind==='farm'){
+const hi=(u,v,ru,rv,al)=>{const g=c.createRadialGradient(U(u),V(v),0,U(u),V(v),U(ru));g.addColorStop(0,`rgba(255,240,225,${al})`);g.addColorStop(1,'rgba(255,240,225,0)');c.fillStyle=g;c.save();c.translate(U(u),V(v));c.scale(1,rv/ru);c.translate(-U(u),-V(v));c.fillRect(U(u-ru),V(v)-U(ru),U(ru*2),U(ru*2));c.restore();};
+fold([[.14,.325],[.25,.34],[.36,.325]],1.5,.5);[0,.5,1].forEach(u=>hi(u,.44,.13,.1,.12));hi(.75,.42,.1,.09,.07);
+fold([[.05,.4],[.09,.5],[.16,.6]],1.2,.3);fold([[.45,.4],[.41,.5],[.34,.6]],1.2,.3);
+fold([[.225,.56],[.228,.62],[.23,.69]],1,.5);fold([[.275,.56],[.272,.62],[.27,.69]],1,.5);hi(.6,.655,.035,.03,.16);hi(.9,.655,.035,.03,.12);
+c.strokeStyle='rgba(70,90,150,.1)';c.lineWidth=1.2*q;c.beginPath();c.moveTo(U(.2),V(.4));c.quadraticCurveTo(U(.26),V(.5),U(.22),V(.62));c.stroke();c.beginPath();c.moveTo(U(.24),V(.47));c.quadraticCurveTo(U(.3),V(.52),U(.3),V(.6));c.stroke();
+}else if(kind==='sleeve'){
+[0,.5,1].forEach(u=>band(u,.1,dk?.28:.12,.4,1));
+for(let i=0;i<4;i++)fold([[.05+r2()*.5,.66+i*.05],[.3+r2()*.4,.69+i*.05],[.6+r2()*.35,.66+i*.05]],1.6,.7);
+fold([[.2,.6],[.24,.75],[.22,.9]],1.3,.45);fold([[.7,.6],[.74,.75],[.72,.9]],1.3,.45);
+stitch([[0,.925],[1,.925]]);stitch([[0,.945],[1,.945]]);{const g=c.createLinearGradient(0,V(.95),0,S);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${dk?.4:.22})`);c.fillStyle=g;c.fillRect(0,V(.95),S,V(.05));}
+}
+});
+return GART[k]=glTexMip(can);
+}
 const HAIRT={};
 function hairTex(col,kind){
 const k=col.join(',')+kind;if(HAIRT[k])return HAIRT[k];
@@ -2616,6 +2692,8 @@ const SK=hx(L.sk||'#e8b48a'),HR=hx(L.hr||'#3a2414'),SH=hx(L.sh||'#e8731c'),PN=hx
 const HC=hx(L.hc||'#333');const parts=[];
 const P=(role,piv,off,size,col,o)=>parts.push(Object.assign({role,piv,off,size,col,shape:'sph',mat:'cloth'},o||{}));
 const SKT=clothTex(SK,'skin'),SHT=clothTex(SH,'cloth'),PNT=clothTex(PN,L.pn==='#16161a'?'denim':'cloth');
+const DEN=L.pn==='#16161a',JS0=!L.sleeve&&(!L.sh||L.sh==='#e8731c');
+const TOT=garTex(SH,'torso',{js:JS0||!!L.short||!L.sleeve,txt:JS0?['LAKE CO.','INMATE']:null}),THT=garTex(PN,'thigh',{denim:DEN}),SNT=garTex(PN,'shin',{denim:DEN});
 const SKIN={mat:'skin',tex:SKT},CL={tex:SHT},PA={tex:PNT};
 const SHOE=L.nike?[.07,.07,.09]:(L.sh&&!L.sleeve?[.62,.62,.66]:[.12,.1,.14]),JS=!L.sleeve&&(!L.sh||L.sh==='#e8731c');
 const HIP=RIG.hip,SHY=RIG.sh,HDY=RIG.hd;
@@ -2626,8 +2704,8 @@ const toeM=L.nike?sweep(shoeUpper().filter(r=>r.c[2]>=.07).map(r=>Object.assign(
 const heelM=L.nike?sweep(shoeUpper().filter(r=>r.c[2]<=-.06).map(r=>Object.assign({},r,{ra:r.ra*1.04,rb:r.rb*1.04})),{capE:false}):null;
 [['legL',-1],['legR',1]].forEach(([r,sd])=>{
 const pv=[sd*.095*w,HIP,0],kn=[0,-.44,0];
-mesh(r,pv,thighM,PN,{tex:null});
-mesh(r+'s',pv,shinM,PN,{sub:kn,sr:r,tex:null});
+mesh(r,pv,thighM,PN,{tex:THT});
+mesh(r+'s',pv,shinM,PN,{sub:kn,sr:r,tex:SNT});
 mesh(r+'s',pv,shoeM,SHOE,{sub:kn,sr:r,mat:'leather'});
 mesh(r+'s',pv,soleM,SOLE,{sub:kn,sr:r,mat:'leather'});
 if(L.nike){mesh(r+'s',pv,toeM,OR,{sub:kn,sr:r,mat:'leather'});
@@ -2635,11 +2713,11 @@ P(r+'s',pv,[sd*.054,-.335,.035],[.012,.034,.12],OR,{sub:kn,sr:r,mat:'leather'});
 P(r+'s',pv,[0,-.275,.045],[.07,.03,.06],shade(SHOE,1.6),{sub:kn,sr:r,mat:'leather'});
 });
 const B=[0,HIP,0];
-mesh('body',B,sweep(pantsRings(w,bf)),PN,{tex:null});
-mesh('body',B,sweep(torsoRings(w,bf),{N:28,sh:(p,n)=>1-.18*Math.max(0,-n[1])*(n[2]<0?1:.25)}),SH,CL);
+mesh('body',B,sweep(pantsRings(w,bf),{capK:.45}),PN,{tex:null});
+mesh('body',B,sweep(torsoRings(w,bf),{N:36,capK:.08,sh:(p,n)=>1-.18*Math.max(0,-n[1])*(n[2]<0?1:.25)}),SH,{tex:TOT});
 if(L.vest)mesh('body',B,sweep(torsoRings(w,bf,1.08,.06,.5),{capS:false,capE:false}),hx(L.vest),{tex:clothTex(hx(L.vest),'cloth')});
 if(JS){
-mesh('body',B,sweep([rY(.53,.098,.082),rY(.56,.086,.072),rY(.592,.074,.064)],{capS:false,capE:false}),shade(SH,.82),{tex:null});
+mesh('body',B,sweep([rY(.53,.098,.082),rY(.56,.086,.072),rY(.592,.074,.064)],{capS:false,capE:false}),shade(SH,.82),{tex:SHT});
 P('body',B,[.085,.36,.116],[.1,.1,.02],shade(SH,.93),CL);
 P('body',B,[.085,.395,.128],[.095,.04,.008],[1,1,1],{shape:'cube',tex:numTex('#'+SH.map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''),L.num||String(10000+((L.sk||'').charCodeAt(2)||5)*137%89999))});
 }
@@ -2647,15 +2725,15 @@ if(L.stripe)mesh('body',B,sweep(torsoRings(w,bf,1.012,.2,.3),{capS:false,capE:fa
 if(!JS)mesh('body',B,sweep([rY(.045,.168*w,.104,0,-.004),rY(.085,.158*w,.102,0,-.002)],{capS:false,capE:false,N:28}),[.1,.08,.12],{mat:'leather',tex:null});
 [-1,1].forEach(sd=>mesh('body',B,sweep([rX(sd*.035,.045,.058,.552,-.012),rX(sd*.09,.05,.066,.535,-.01),rX(sd*.15*w,.045,.066,.505,-.006),rX(sd*.19*w,.036,.058,.478,-.004)],{N:18}),L.sleeve&&!JS?SH:SH,CL));
 mesh('head',[0,HDY,0],sweep([rY(-.13,.058,.058),rY(-.05,.05,.053),rY(.04,.047,.05,0,.004),rY(.1,.045,.047,0,.006)]),SK,{mat:'skin',tex:SKT});
-const sl=L.sleeve?hx(L.sleeve):SH,SLT=L.sleeve?clothTex(sl,'cloth'):SHT,WRAP=hx(L.wrap||'#e8e4da'),SHRT=JS||L.short;
+const sl=L.sleeve?hx(L.sleeve):SH,SLT=L.sleeve?clothTex(sl,'cloth'):SHT,SLV=garTex(sl,'sleeve'),WRAP=hx(L.wrap||'#e8e4da'),SHRT=JS||L.short;
 [['armL',-1],['armR',1]].forEach(([r,sd])=>{
 const pv=[sd*.205*w,SHY,0],el=[0,-.30,0];
 if(SHRT){
-mesh(r,pv,sweep(upperArmRings(bf,sd)),SK,{mat:'skin',tex:SKT});
-mesh(r,pv,sweep(upperArmRings(bf,sd,1.11).filter(q=>q.c[1]>=-.11),{capE:false}),sl,{tex:SLT});
+mesh(r,pv,sweep(upperArmRings(bf,sd)),SK,{mat:'skin',tex:garTex(SK,'uarm')});
+mesh(r,pv,sweep(upperArmRings(bf,sd,1.075).filter(q=>q.c[1]>=-.17).map((q,i,A)=>i===A.length-1?Object.assign({},q,{ra:q.ra*1.1,rb:q.rb*1.1}):q),{capE:false}),sl,{tex:SLV});
 }else mesh(r,pv,sweep(upperArmRings(bf,sd,1.1)),sl,{tex:SLT});
 const fore=SHRT?sweep(foreArmRings(bf)):sweep(foreArmRings(bf).map(q=>Object.assign({},q,{ra:q.ra*1.12,rb:q.rb*1.12})));
-mesh(r+'f',pv,fore,SHRT?SK:sl,SHRT?{sub:el,sr:r,mat:'skin',tex:L.tat?tatTex(L.sk||'#e8b48a',r==='armL'?L.tat[0]:L.tat[1]):SKT}:{sub:el,sr:r,tex:SLT});
+mesh(r+'f',pv,fore,SHRT?SK:sl,SHRT?{sub:el,sr:r,mat:'skin',tex:L.tat?tatTex(L.sk||'#e8b48a',r==='armL'?L.tat[0]:L.tat[1]):garTex(SK,'farm')}:{sub:el,sr:r,tex:SLT});
 mesh(r+'f',pv,sweep([rY(-.215,.036,.033),rY(-.255,.036,.033)],{capS:false,capE:false}),WRAP,{sub:el,sr:r,tex:null});
 mesh(r+'f',pv,handMesh(sd,bf),SK,{sub:el,sr:r,mat:'skin',tex:SKT,hand:1,off:[0,.052,0]});
 });
@@ -4000,7 +4078,10 @@ S.sp=S.sp||{};S.spm=S.spm||{};const prv=S.sp[s],fresh=a.rec>0&&a.rec>=(a.hitk&&H
 const OA=B.an[s==='p'?'e':'p'],hard=dying[s]||lnO!==null||(OA&&OA.kind&&OA.k>0&&OA.k<1&&['slam','choke','gpound','stomp','cline','lariat','upper','knee'].includes(OA.kind))||S.spm[s]!==mon;
 const grab=lnO!==null||(OA&&OA.kind&&OA.k>0&&OA.k<1&&['slam','choke','gpound','stomp','cline','lariat'].includes(OA.kind));
 const mode=!prv||S.spm[s]!==mon?'reset':grab?'hard':(hard||fresh)?'react':(a.kind&&a.k>.02&&a.k<.98)?'strike':'idle';
-const fp=MF('b3'+s,pose,mode);S.sp[s]=fp;S.spm[s]=mon;
+if(!(a.rec>0))a._hs=0;
+const freeze=prv&&mode==='react'&&fresh&&!dying[s]&&S.slow>0&&(a._hs||0)<3;
+if(freeze)a._hs=(a._hs||0)+1;
+const fp=freeze?prv:MF('b3'+s,pose,mode);S.sp[s]=fp;S.spm[s]=mon;
 drawRig(b3Look(s),P[0],yy,P[2],yaw,fp,{scale:sc*wsc,flash:fl,alpha,dmg:dl,ex:typeof fightFace==='function'?fightFace(s,a,mon):''});}
 if(ap.prop&&a.kind&&!(typeof drawHandProp==='function'&&drawHandProp(ap.prop,a.k))){
 const fwd=[face[0],face[1]],hx=P[0]+fwd[0]*.55-fwd[1]*(-.25),hz=P[2]+fwd[1]*.55+fwd[0]*(-.25);
@@ -6182,7 +6263,7 @@ s_booty:{t:'LIGHTS OUT',d:'Something stalks the pods at night. Get a crew of 3 a
 QUESTS.s_tunnel.steps=[{t:'Search the Pod D showers at NIGHT',ok:()=>!!G.flags.spoon,at:{map:'blockD',x:26,y:20}},{t:'Open the loose tile and get through the tunnel',ok:()=>!!G.flags.escaped}];
 Object.assign(ACH,{spoon:{n:'THE SPOON IS REAL',d:'Find the golden spoon',ok:()=>!!G.flags.spoon},escape:{n:'OUT THE BACK',d:'Escape through the tunnel',ok:()=>!!G.flags.escaped,fit:'ghost'},booty:{n:'NOT TONIGHT',d:'Run off the Booty Bandit for good',ok:()=>!!G.flags.bbGone}});
 tunnelBuild();guardPatrols();
-const GAME_VERSION='2.4';
+const GAME_VERSION='2.7';
 const SAVE_SCHEMA=2;
 const SLOTKEYS={1:SAVEKEY,2:SAVEKEY+'_s2',3:SAVEKEY+'_s3',auto:SAVEKEY+'_auto'};
 const SLOTS=[1,2,3,'auto'];
@@ -7701,7 +7782,11 @@ P('head',HP,[c[0],c[1]-r*.98,c[2]+r*.02],[r*1.1,r*.34,r*1.08],SK,{mat:'skin',tex
 const HX=.84,HZ=.89,PH=(off,size,col,o)=>P('head',HP,[off[0]*HX,(off[1]-.135)*.94+.13,off[2]*HZ],[size[0]*HX,size[1],size[2]*HZ],col,o);
 if(ac.includes('glasses')){const K=hx('#1c1c24');[-1,1].forEach(sd=>PH([sd*.103,.137,.03],[.006,.008,.15],K,{mat:'leather'}));}
 if(ac.includes('collar')){P('body',B,[0,.556,.072],[.03,.022,.01],[1,1,1],{shape:'cube',mat:'leather'});}
-if(JS){rig._sway=1;P('body',B,[0,0,0],[1,1,1],SH,{mesh:sweep([rY(.07,.153*w*1.015,.101),rY(.02,.157*w*1.02,.103),rY(-.015,.16*w*1.025,.104)],{capS:false,capE:false,N:28}),tex:clothTex(SH,'cloth'),tint:[.93,.93,.93],sway:1});}
+const TWO=JS&&L.pn&&L.pn!=='#e8731c'&&L.pn!==L.sh;
+if(TWO){   // shirt tucked into different pants: a belt and a buckle instead of a loose hem
+P('body',B,[0,0,0],[1,1,1],[.07,.06,.07],{mesh:sweep([rY(.062,.156*w,.103,0,-.001),rY(.074,.158*w,.105,0,-.001),rY(.098,.157*w,.105,0,0),rY(.108,.154*w,.103,0,0)],{capS:false,capE:false,N:28}),mat:'leather',tint:[.93,.93,.93]});
+P('body',B,[0,.085,.106],[.034,.03,.008],[.78,.74,.6],{shape:'cube',mat:'leather'});}
+if(JS&&!TWO){rig._sway=1;P('body',B,[0,0,0],[1,1,1],SH,{mesh:sweep([rY(.09,.155*w,.1015,0,-.001),rY(.04,.166*w,.1045,0,-.005),rY(-.012,.174*w,.105,0,-.009),rY(-.022,.168*w,.1,0,-.01)],{capS:false,capE:false,N:28}),tex:clothTex(SH,'cloth'),tint:[.93,.93,.93],sway:1});}
 for(const p of rig.parts.slice()){if(!p.hand||p.handV)continue;p.handV='fist';const sd=(p.sr||p.role)==='armL'?-1:1;
 rig.parts.push(Object.assign({},p,{mesh:openHandMesh(sd),handV:'open',tint:[.86,.76,.72]}));}
 if(L.sweat){const a=clothTex(SH,'cloth'),b=clothTex(SH,'sweat');for(const p of rig.parts)if(p.tex===a)p.tex=b;}
@@ -9607,6 +9692,633 @@ const mt_=n=>metOf(n.say[1]);
 onHook('pause',function(){const m=Menus[Menus.length-1];if(!m||!m.items||m.items.some(i=>i.l==='CREW ORDERS'))return;
 if(G.crew&&G.gang.length>1){const ix=m.items.findIndex(i=>i.l==='CREW');m.items.splice(ix>=0?ix+1:2,0,{l:'CREW ORDERS',f:crewOrders},{l:'BIRD CALL',f:birdCall});}});
 onHook('world',function(){if(CALL.on&&!Cs.g)CALL.on=0;});
+const SKYS={};
+(function(){
+const put=(k,map,x,y)=>{const m=MAPS[map];if(!m)return;const b=spotNear(m,x,y);if(b&&!(typeof HIDDEN!=='undefined'&&HIDDEN[map]&&HIDDEN[map].x===b[0]&&HIDDEN[map].y===b[1]))SKYS[k]={map,x:b[0],y:b[1]};
+else{const c=spotNear(m,x+3,y+2);if(c)SKYS[k]={map,x:c[0],y:c[1]};}};
+put('pad','roof',20,11);put('chart','library',24,7);put('sheets','laundry',6,10);
+})();
+const skyBosses=()=>typeof LADDER!=='undefined'?LADDER.filter(L=>G.flags['d_'+L.boss]).length:0;
+const skyNight=()=>{const h=gameHour();return h>=21||h<5;};
+function skyParts(){const f=G.flags;return [['CHART',!!f.skyChart,'The Law Library keeps the old county charts. Look around the shelves.'],
+['PILOT',f.skyPilot===2,f.skyPilot===1?(f.skyChart?'Call Lukey back with '+(f.skyPrice||80)+' L&M on your books.':'The pilot needs coordinates. Find the chart, then call Lukey back.'):'Lukey knows everybody. Get his trust up and call him. Careful what you say on a recorded line.'],
+['RADIO',!!f.skyRadio,'Fences get C.O. gear sometimes. Ask one.'],
+['SIGNAL',!!f.skySheets,'Orange shows up from the air. The laundry has plenty.'],
+['RIDE',!!f.skyStock,'Stockdale runs the car. Ask him what a night ride costs.']];}
+const skyReady=()=>(G.flags.sky||0)>=2&&skyParts().every(p=>p[1]);
+function skyTick(){
+const f=G.flags,k=(worldUpdate.k||0),here=(s)=>s&&s.map===G.map,glint=s=>{if(k%30===0&&R3.ok&&Math.abs(s.x-G.x)+Math.abs(s.y-G.y)<=8)pSpawn({x:s.x+.5,y:.25,z:s.y+.5,vy:.007,life:34,max:34,size:.1,col:[1,.8,.3],a:.95,emit:1,fade:1});};
+const on=s=>s.x===G.x&&s.y===G.y,free=!Cs.g&&!Say.on&&!Menus.length;
+const P=SKYS.pad,C=SKYS.chart,S=SKYS.sheets;
+if(here(P)){
+const open=!f.sky&&skyBosses()>=4&&WS().day>=5;
+if(open||f.sky>=1)glint(P);
+const st=on(P);
+if(st&&!skyTick.was&&free){
+if(open){f.sky=1;sfx.level();Cs.run((function*(){
+yield* talk('Your shoe scrapes something under the gravel. Yellow paint. Old.',0);
+yield* talk('You kick more gravel away. A circle. And in the middle of it, a letter.',0);
+yield* talk('H.',0);
+yield* talk('Why is there a helipad on top of a jail? ...Somebody who\'s been here a long time would know.',0);})());}
+else if(f.sky>=2&&skyReady()){if(skyNight())Cs.run(skyLaunch());else say('The H. Everything\'s ready. But not in daylight. After lockdown.');}
+else if(f.sky>=2)say('The H. Not yet. You\'re missing pieces. Check STORY.');
+else if(f.sky===1)say('The H. Somebody who\'s been here a long time would know why it\'s here.');
+}
+skyTick.was=st&&(free||skyTick.was);
+}else skyTick.was=false;
+if(f.sky>=2&&!f.skyChart&&here(C)){glint(C);if(on(C)&&free){f.skyChart=1;sfx.pick();Cs.run((function*(){
+yield* talk('Behind the tax code: a map drawer. CUYAHOGA / LAKE COUNTY SECTIONAL, 1987.',0);
+yield* talk('There it is. A little circle with an H. "ST. DISMAS HOSP - PVT - ROOFTOP." Nobody ever took it off the chart.',0);
+yield* talk('You tear out the corner with the coordinates. The Jailhouse Lawyer would call that destruction of county property.',0);skyNote('CHART');})());}}
+if(f.sky>=2&&!f.skySheets&&here(S)){glint(S);if(on(S)&&free){f.skySheets=1;sfx.pick();Cs.run((function*(){
+yield* talk('A cart of sheets, fresh off the press. County orange. The brightest thing in the building.',0);
+yield* talk('You take four and wrap them around your waist under the jumpsuit. You look pregnant. Nobody asks.',0);skyNote('SIGNAL');})());}}
+}
+function skyNote(part){const n=skyParts().filter(p=>p[1]).length;toast(`SKYHOOK: ${part}  ${n}/5`,'#ffb347');if(skyReady())tipLate();}
+function tipLate(){toast('EVERYTHING\'S READY. THE ROOF. AFTER LOCKDOWN.','#ffd23a');}
+onHook('world',function(){if(G.mode==='world'&&G.flags)skyTick();});
+(function(){
+const el=LVACT.elevator;
+LVACT.elevator=n=>{el(n);const f=G.flags,m=Menus[Menus.length-1];if(!m||!m.items)return;
+if(f.sky===1)m.items.unshift({l:'THE H ON THE ROOF',r:'?',f:()=>{f.sky=2;Cs.run((function*(){
+yield* talk('Stockdale stops polishing the gate. He doesn\'t look at you for a second.',0);
+yield* talk('Stockdale: ...This building was St. Dismas Hospital till \'91. County bought it cheap and put bars on it. Life Flight used to land up there.',0);
+yield* talk('Stockdale: Old pad\'s probably still on the charts. Law Library keeps county maps. Not that a chart\'s any good without a pilot crazy enough.',0);
+yield* talk('Stockdale: And a radio. And something he can see from the air. And somebody to run this car after lockdown.',0);
+yield* talk('Stockdale: ...I\'m just talking. Old man talking. Mind the gate.',0);toast('SKYHOOK ADDED TO STORY','#ffb347');})());}});
+if(f.sky>=2&&!f.skyStock)m.items.unshift({l:'A RIDE AFTER LOCKDOWN',r:'?',f:()=>{Cs.run((function*(){
+if(!f.skyAsk){f.skyAsk=1;
+yield* talk('Stockdale: After lockdown. To the roof. With whatever you got stuffed in that jumpsuit.',0);
+yield* talk('Stockdale: Three of Baba\'s perogi. The potato ones. I haven\'t had real food since Bush. The first one.',0);
+yield* talk('Stockdale: And a seat. Fourteen years I\'ve been going up and down. I\'d like to go OUT once.',0);}
+if((G.items.perogi||0)>=3){G.items.perogi-=3;f.skyStock=1;sfx.ok();
+yield* talk('He eats the first one right there. Closes his eyes. Doesn\'t say anything for a while.',0);
+yield* talk('Stockdale: After lockdown. I\'ll hold the car at 9. Don\'t be late. I\'ll be the one whistling.',0);skyNote('RIDE');}
+else yield* talk(`Stockdale: Three. You got ${G.items.perogi||0}. Call your grandmother.`,0);})());}});
+};
+const fe=LVACT.fence;LVACT.fence=n=>{fe(n);const f=G.flags,m=Menus[Menus.length-1];if(!m||!m.items)return;
+if(f.sky>=2&&!f.skyRadio)m.items.splice(2,0,{l:'C.O. RADIO (HOT)',r:'45 L&M',d:(G.items.cigs||0)<45,f:()=>{G.items.cigs-=45;f.skyRadio=1;sfx.pick();
+say('A Motorola with "DUFFY" on masking tape. "Fell off a belt," the fence says. "Channel 9 is the one nobody listens to."');skyNote('RADIO');}});};
+const cm=callMenu;callMenu=function(c){cm(c);const f=G.flags,m=Menus[Menus.length-1];if(!m||!m.items||c.id!=='lukey'||!(f.sky>=2)||f.skyPilot===2)return;
+m.items.unshift({l:'A RIDE TO THE LAKE',r:'10 MIN',d:PH().min<10,f:()=>{PH().min-=10;Menus.length=0;Cs.run(skyCall());}});};
+const sm=storyMenu;storyMenu=function(){sm();const f=G.flags,m=Menus[Menus.length-1];if(!m||!m.items||!f.sky)return;
+const ps=skyParts(),n=ps.filter(p=>p[1]).length,miss=ps.filter(p=>!p[1]);
+m.items.splice(m.items.length-1,0,{l:f.sky>=2?'SKYHOOK':'???',r:f.sky>=2?n+'/5':'THE ROOF',f:()=>say(f.sky<2?'There\'s an H painted on the roof. Somebody who\'s been here a long time would know why.':
+miss.length?`Still need: ${miss.map(p=>p[0]).join(', ')}. ${miss[0][2]}`:'Everything\'s ready. Stand on the H after lockdown. There\'s no coming back from it.')});};
+})();
+function* skyCall(){
+const f=G.flags,v=vv();
+if(!f.skyPilot){
+if(trust('lukey')<5){yield* talk('Lukey: Cousin, I love you. But that sounds like a favor-favor, and you only call when you need something. Call me more.',0);return;}
+yield* talk('Dialtone (whispering): Recorded line, Popstar. Recorded. Line.',0);
+const c=yield* chooseM('HOW DO YOU SAY IT?',[{l:'"I need a helicopter."'},{l:'"A ride to the lake. A high one."'},{l:'"The guy from the dice game."'}]);
+if(c===0){v.heat=Math.min(6,(v.heat||0)+2);PH().day.lukey=WS().day;sfx.siren();
+yield* talk('Lukey: A WHAT? Larry, you can\'t say—  *click*',0);yield* talk('The line goes dead. Across the pod a C.O. looks up from his clipboard. Heat +2.',0);return;}
+f.skyPilot=1;f.skyPrice=80;
+yield* talk('Lukey: ...Ohhh. A HIGH one. Okay. Okay okay okay. I know a guy. Sky Mike. Flies traffic for WPOP.',0);
+yield* talk('Lukey: He owes me four hundred from a dice game and he hates his boss. He\'ll want 80 on the books for gas and "emotional damages."',0);
+yield* talk('Lukey: And he needs to know where to put it down. He\'s not gonna circle looking for "a jail." Get me numbers.',0);return;}
+const price=f.skyPrice||80;
+if(!f.skyChart){yield* talk('Lukey: Numbers, cousin. Coordinates. He flies traffic, he\'s not a pigeon.',0);return;}
+if((G.items.cigs||0)<price){yield* talk(`Lukey: ${price}. He doesn\'t do layaway. I asked.`,0);return;}
+G.items.cigs-=price;f.skyPilot=2;sfx.caught();
+yield* talk('You read him the numbers off the chart corner like it\'s a lottery ticket.',0);
+yield* talk('Lukey: He says channel 9. He says light the H. He says after lockdown, and he says he will NOT wait, because of last time.',0);
+yield* talk('Lukey: ...I don\'t know what last time is. I didn\'t ask. Love you. Bye.',0);skyNote('PILOT');
+}
+function* skyLaunch(){
+const f=G.flags,v=vv();
+yield* talk('The roof at night. Wind off the lake. The tower light sweeps past and keeps going.',0);
+const c=yield* chooseM('KEY THE RADIO?',[{l:'LIGHT THE H',r:'no way back'},{l:'NOT YET'}]);
+if(c!==0){yield* talk('You stand on the H a second longer. Then you go back inside.',0);return;}
+yield* talk('You lay the sheets down along the old paint. Four orange lines. From up here it looks like nothing. From up there it\'s a letter.',0);
+yield* talk('Bandit (radio): Sky Mike, Sky Mike. This is Popstar. The H is lit.',0);
+yield* talk('Static. Then the roof door bangs open behind you.',0);
+const top=maxLevel(),foes=[mkMon('co',Math.max(8,top+1),'C.O. DUFFY'),mkMon('co',Math.max(9,top+3),'SGT. MARSH')];
+let res=null;
+fadeTo(()=>startBattle({foes,name:'THE ROOF TEAM',card:true,cardName:'THE ROOF TEAM',sub:'HOLD THE ROOF',
+tr:{name:'THE ROOF TEAM',win:0,post:'Sgt. Marsh (into his shoulder): Roof... we need... everybody.',lose:'The last thing you see is orange sheets blowing off the roof.'},
+pre2:'C.O. Duffy: THAT\'S MY RADIO!',done:r=>{res=r;G.mode='world';}}));
+yield()=>res!==null;
+if(res==='win'){yield* heliOut();return;}
+f.skyRadio=0;f.skySheets=0;f.skyPilot=1;f.skyPrice=40;v.heat=6;v.resp=Math.max(-10,(v.resp||0)-5);f.holeTrips=(f.holeTrips||0)+1;
+if(typeof clockAdd==='function')clockAdd(1440);G.gang.forEach(m=>{m.hp=Math.max(1,Math.floor(m.mhp*.3));});
+fadeTo(null);yield()=>Fx.fade>=1;enterMap(MAPS.hole?'hole':'blockA',MAPS.hole?4:9,MAPS.hole?3:9,0);G.mode='world';Fx.st=2;yield 20;
+playSong(cur().song);
+yield* talk('24 HOURS IN THE HOLE. They took the radio and the sheets. Nobody can figure out what you were doing up there.',0);
+yield* talk('Somewhere over the lake, a traffic helicopter circles once and goes home. Sky Mike wants another 40 to try again.',0);
+}
+let _nb=null;
+function gunSnd(v){if(muted||!AC)return;try{if(!_nb){_nb=AC.createBuffer(1,Math.floor(AC.sampleRate*.22),AC.sampleRate);const a=_nb.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/a.length,2.4);}
+const s=AC.createBufferSource(),gn=AC.createGain();s.buffer=_nb;s.playbackRate.value=.6+Math.random()*.7;gn.gain.value=(v||.07)*SET.svol;s.connect(gn);gn.connect(AC.destination);s.start();}catch(e){}}
+const HC={};
+function hcShot(n){HC.sh=n;HC.st=0;HC.tr=[];HC.sp=[];HC.mf=[];}
+function* heliOut(){
+const f=G.flags;f.endKind='heli';CRD.y=0;CRD.done=0;CRD.fast=0;CRD.lines=null;f.freed=1;f.heliOut=1;
+try{localStorage.setItem('rbl_freed','1');}catch(e){}try{if(typeof saveGame==='function')saveGame('auto',true);}catch(e){}
+if(typeof noteEnding==='function')noteEnding('heli');
+if(Fx.fade<1){fadeTo(null);yield()=>Fx.fade>=1;}
+Fx.st=0;G.mode='end';Menus.length=0;Say.clear();
+Object.assign(HC,{t:0,hx:290,hy:.12,hs:.1,hv:0,tilt:0,face:-1,lad:0,bx:118,climb:0,dust:0,cos:0,cox:-40,fire:0,alarm:0,sl:0,hit:0,crack:0,shk:0,flash:0,qte:null,in:0,rot:0,smk:[],
+up:0,crew:G.gang.slice(1,3).map(m=>LOOK[m.s]||LOOK.rookie),stock:!!f.skyStock,c1:-90,c2:330,sun:0,far:0});
+hcShot('roof');ES.t=0;ES.kind='heli';ES.credits=0;playSong('jail');Fx.st=2;yield 50;
+yield* talk('Static. Wind. Then, far out over the lake, one white light that isn\'t a star.',0);
+HC.hv=1;HC.rot=1;
+yield* talk('Sky Mike (radio): Popstar, Sky-1. I got the lake. I got the stacks. I got... yep. That is a whole jail. Ninety seconds.',0);
+for(let i=0;i<150;i++){HC.hx-=.5;HC.hy+=.0006;HC.hs+=.0016;yield 1;}
+HC.sl=1;HC.alarm=1;sfx.siren();playSong('boss');HC.shk=6;
+yield* talk('TOWER (loudspeaker): AIRCRAFT OVER THE ROOF! ALL UNITS, ROOF! ROOF! ROOF!',0);
+for(let i=0;i<130;i++){HC.hx+=(138-HC.hx)*.035;HC.hy+=(.30-HC.hy)*.03;HC.hs+=(1-HC.hs)*.03;HC.dust=Math.min(1,HC.dust+.012);if(i%34===0)sfx.siren();yield 1;}
+yield* talk('Sky Mike: LADDER\'S DOWN! I am NOT landing on a jail! I am HOVERING near a jail! Legally different!',0);
+for(let i=0;i<40;i++){HC.lad=i/39;yield 1;}
+if(HC.stock)yield* talk('Stockdale: Fourteen years. Don\'t you DARE leave without me. ...After you. Age before beauty is a lie.',0);
+for(let i=0;i<46;i++){HC.bx+=(142-HC.bx)*.09;yield 1;}
+if(HC.crew.length||HC.stock){yield* talk(HC.stock?'Your people go up first. Stockdale takes the rungs two at a time. For a man his age.':'Your people go up the ladder first. You hold the bottom.',0);HC.up=1;}
+sfx.slam();HC.shk=12;HC.cos=1;HC.flash=3;
+yield* talk('The roof door comes off its hinges.',0);
+yield* talk('SGT. MARSH: POPSTAR! OFF THE LADDER! ...Fine. OPEN FIRE!',0);
+HC.fire=1;HC.qte={n:0,need:14,t:0};
+while(HC.qte.n<HC.qte.need){if(Pr.a){HC.qte.n++;sfx.tick();}HC.qte.t++;HC.cox=Math.min(22,HC.cox+.5);HC.hy-=.00022;
+if(HC.qte.t%110===109){sfx.ow();HC.shk=9;HC.flash=2;HC.qte.n=Math.max(0,HC.qte.n-2);}
+HC.climb=HC.qte.n/HC.qte.need;yield 1;}
+HC.qte=null;HC.in=1;sfx.caught();
+yield* talk('Bandit: GO! GO GO GO GO GO!',0);
+for(let i=0;i<100;i++){HC.hy-=.0034;HC.hx+=.9+i*.012;HC.tilt=Math.min(.22,HC.tilt+.004);HC.face=1;HC.lad=Math.max(0,HC.lad-.012);yield 1;}
+HC.flash=4;hcShot('street');Object.assign(HC,{hx:-30,hy:.26,hs:.62,tilt:.16,face:1,fire:0,lad:.35});
+for(let i=0;i<60;i++){HC.c1+=(54-HC.c1)*.09;HC.c2+=(168-HC.c2)*.08;HC.hx+=.5;if(i===20||i===34)sfx.bump();yield 1;}
+yield* talk('Dispatch: All units, Lake County Jail. We have a... helicopter. Yes. A helicopter. No, Gary, I am not kidding.',0);
+HC.fire=1;
+for(let i=0;i<200;i++){HC.hx+=.62;HC.hy-=.0003;HC.c1+=(54-HC.c1)*.09;HC.c2+=(168-HC.c2)*.08;
+if(i===120){HC.hit=1;HC.shk=16;HC.flash=4;sfx.crit();HC.tilt=-.2;}if(i>120)HC.tilt+=(.2-HC.tilt)*.04;yield 1;}
+HC.flash=3;hcShot('cockpit');HC.fire=1;HC.shk=8;
+yield* talk('Sky Mike: WE\'RE HIT! That\'s the oil! That is ALL of the oil!',0);
+HC.crack=1;gunSnd(.1);HC.shk=14;HC.flash=3;
+yield* talk('Bandit: Can it still fly?!',0);
+yield* talk('Sky Mike: It can FALL in a direction I choose!',0);
+const c=yield* chooseM('THE CHOPPER IS SINKING',[{l:'DUMP THE WEIGHT'},{l:'TALK HIM THROUGH IT'},{l:'SING'}]);
+if(c===0)yield* talk('The radio. The sheets. Sky Mike\'s lunch. All of it goes out the door. The nose comes up a foot. Sky Mike mourns the sandwich.',0);
+else if(c===1){yield* talk('Bandit: You\'ve landed worse. Lukey told me about the Applebee\'s.',0);yield* talk('Sky Mike: THAT WAS A CONTROLLED ARRIVAL. ...Okay. Okay. I got it. I got it.',0);}
+else yield* talk('Bandit sings the hook. Badly, over a dying engine. Sky Mike\'s hands stop shaking. Nobody will ever believe this part.',0);
+HC.fire=0;sfx.level();
+hcShot('moon');Object.assign(HC,{hx:-40,hy:.40,hs:.8,tilt:.1,face:1,lad:0,alarm:0,shk:0});playSong('piano');
+for(let i=0;i<150;i++){HC.hx+=.75;HC.hy-=.0004;yield 1;}
+yield* talk('The shooting gets smaller. Then the sirens. Then it\'s just the rotor, and the lake, and the moon.',0);
+for(let i=0;i<150;i++){HC.hx+=.75;HC.hy-=.0004;yield 1;}
+hcShot('dawn');Object.assign(HC,{hx:60,hy:.36,hs:.7,tilt:.06,face:1,sun:0,far:0});playSong('title');
+for(let i=0;i<90;i++){HC.sun=i/89*.5;HC.hx+=.12;yield 1;}
+if(HC.stock)yield* talk('Stockdale (looking down at the water): Fourteen years going up and down. First time I ever went OUT.',0);
+if(G.gang.length>1)yield* talk(`${G.gang[1].nm}: We are SO wanted.`,0);
+yield* talk('Sky Mike: Where to, Popstar?',0);
+yield* talk('Bandit: ...Baba\'s. She\'s making perogi.',0);
+yield* talk('Sky Mike: I can\'t land a helicopter at your grandma\'s.',0);
+yield* talk('Bandit: You hovered near a jail.',0);
+yield* talk('Sky Mike: ...Legally different. Fine. Buckle up.',0);
+for(let i=0;i<170;i++){HC.sun=.5+i/169*.5;HC.far=i/169;HC.hx+=.5;HC.hy-=.0005;HC.hs=.7-.5*HC.far;yield 1;}
+yield 30;ES.credits=1;
+yield()=>CRD.done&&Pr.a;
+Fx.st=1;Fx.cb=null;yield()=>Fx.fade>=1;Fx.st=0;ES.kind=null;
+openTitle();
+}
+function hcHeli(x,y,s,tilt,face,dark){
+const t=HC.t;g.save();g.translate(Math.round(x),Math.round(y));g.rotate(tilt*face);g.scale(s*face,s);
+const body=dark?'#07080e':'#e9edf2',trim=dark?'#07080e':'#2b63c9',glass=dark?'#10131c':'#9fd0ff';
+g.fillStyle=body;g.beginPath();g.moveTo(-10,-4);g.lineTo(-44,-3);g.lineTo(-44,0);g.lineTo(-10,3);g.closePath();g.fill();
+g.beginPath();g.moveTo(-40,-3);g.lineTo(-48,-13);g.lineTo(-44,-13);g.lineTo(-36,-3);g.closePath();g.fill();
+g.strokeStyle=dark?'#07080e':'rgba(220,225,235,.8)';g.lineWidth=1.2;const a=t*.9;g.beginPath();g.moveTo(-46-Math.cos(a)*6,-9-Math.sin(a)*6);g.lineTo(-46+Math.cos(a)*6,-9+Math.sin(a)*6);g.stroke();
+g.fillStyle=body;g.beginPath();g.ellipse(0,0,17,10,0,0,7);g.fill();
+g.fillStyle=trim;g.fillRect(-15,1,26,3);
+g.fillStyle=glass;g.beginPath();g.moveTo(4,-8);g.quadraticCurveTo(17,-7,16,2);g.lineTo(5,2);g.closePath();g.fill();
+if(!dark){g.fillStyle='rgba(255,255,255,.5)';g.fillRect(7,-6,2,5);g.fillStyle='#0c1220';g.font='bold 5px monospace';g.textAlign='center';g.fillText('SKY-1',-4,0);}
+if(HC.in&&!dark&&s>.5){g.fillStyle='#0c0f18';g.fillRect(-8,-6,9,8);g.fillStyle='#e8731c';g.fillRect(-6,-3,4,5);g.fillStyle='#c98e5f';g.fillRect(-5,-6,3,3);}
+g.fillStyle=body;g.fillRect(-2,-14,4,5);
+g.strokeStyle=dark?'#07080e':'#9aa4b4';g.lineWidth=1.4;g.beginPath();g.moveTo(-12,13);g.lineTo(13,13);g.moveTo(-8,8);g.lineTo(-9,13);g.moveTo(8,8);g.lineTo(9,13);g.stroke();
+g.fillStyle=dark?'rgba(7,8,14,.55)':'rgba(215,225,240,.22)';g.beginPath();g.ellipse(0,-15,36,3,0,0,7);g.fill();
+const b=Math.cos(t*1.3)*36;g.strokeStyle=dark?'#07080e':'rgba(240,244,250,.85)';g.lineWidth=1.5;g.beginPath();g.moveTo(-b,-15);g.lineTo(b,-15);g.stroke();
+if(!dark||1){if((t>>3)%4===0){g.fillStyle='#ff3030';g.fillRect(-49,-14,3,3);}if((t>>3)%4===2){g.fillStyle='#40ff70';g.fillRect(15,-2,3,3);}
+if(t%46<4){g.fillStyle='#fff';g.beginPath();g.arc(0,11,3,0,7);g.fill();g.fillStyle='rgba(255,255,255,.25)';g.beginPath();g.arc(0,11,9,0,7);g.fill();}}
+g.restore();
+}
+function hcSkyline(base,col,seed,lit){
+for(let i=0;i<16;i++){const x=i*16-6+((seed*i*13)%7),h=18+((i*37+seed*11)%46),w=13+((i*7+seed)%5);R(x,base-h,w,h,col);
+if(lit)for(let wy=base-h+3;wy<base-2;wy+=5)for(let wx=x+2;wx<x+w-2;wx+=4)if(((wx*7+wy*13+seed)%11)<3)R(wx,wy,1,2,(HC.t+wx*wy)%400<6?'#fff':'#f2c860');}
+const tx0=150+seed*9;R(tx0,base-74,14,74,col);R(tx0+3,base-90,8,16,col);R(tx0+6,base-104,2,14,col);if(lit&&(HC.t>>4)%2)R(tx0+6,base-106,2,2,'#ff4040');
+}
+function hcStars(n,maxY){for(let i=0;i<n;i++){const x=(i*97+13)%W,y=(i*53+29)%maxY;if((HC.t+i*31)%190>8)R(x,y,1,1,i%5?'#b8c4e8':'#fff');}}
+function hcTracers(guns,txx,tyy,rate,spread){
+const t=HC.t;
+if(HC.fire)for(const gn of guns)if(Math.random()<rate){const dx=txx-gn[0]+(Math.random()-.5)*spread,dy=tyy-gn[1]+(Math.random()-.5)*spread,d=Math.hypot(dx,dy)||1,sp=7.5;
+HC.tr.push({x:gn[0],y:gn[1],vx:dx/d*sp,vy:dy/d*sp,l:60});HC.mf.push({x:gn[0],y:gn[1],l:3});if(t%2===0)gunSnd(.05);}
+for(const m of HC.mf){m.l--;g.fillStyle='rgba(255,236,150,.95)';g.beginPath();g.arc(m.x,m.y,3.5,0,7);g.fill();g.fillStyle='rgba(255,170,60,.35)';g.beginPath();g.arc(m.x,m.y,8,0,7);g.fill();}
+HC.mf=HC.mf.filter(m=>m.l>0);
+for(const p of HC.tr){p.x+=p.vx;p.y+=p.vy;p.l--;
+g.strokeStyle='rgba(255,140,50,.35)';g.lineWidth=3;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*2.2,p.y-p.vy*2.2);g.stroke();
+g.strokeStyle='#fff2b8';g.lineWidth=1;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*1.6,p.y-p.vy*1.6);g.stroke();
+if(Math.hypot(p.x-txx,p.y-tyy)<13&&Math.random()<.16){p.l=0;for(let k=0;k<5;k++)HC.sp.push({x:p.x,y:p.y,vx:(Math.random()-.5)*4,vy:(Math.random()-.7)*4,l:12});beep(1700+Math.random()*900,.03,'square',.03);HC.shk=Math.max(HC.shk,3);}}
+HC.tr=HC.tr.filter(p=>p.l>0&&p.x>-20&&p.x<W+20&&p.y>-20);
+for(const s of HC.sp){s.x+=s.vx;s.y+=s.vy;s.vy+=.3;s.l--;R(s.x,s.y,1,1,s.l>6?'#fff':'#ffb040');}
+HC.sp=HC.sp.filter(s=>s.l>0);
+}
+function hcSmoke(x,y){if(HC.hit&&HC.t%3===0)HC.smk.push({x,y,l:60,r:2});for(const s of HC.smk){s.l--;s.r+=.12;s.y-=.15;g.fillStyle=`rgba(40,40,48,${s.l/90})`;g.beginPath();g.arc(s.x,s.y,s.r,0,7);g.fill();}HC.smk=HC.smk.filter(s=>s.l>0);}
+function hcBeam(x0,y0,x1,y1,wd){const dx=x1-x0,dy=y1-y0,d=Math.hypot(dx,dy)||1,nx=-dy/d*wd,ny=dx/d*wd;
+const gr=g.createLinearGradient(x0,y0,x1,y1);gr.addColorStop(0,'rgba(235,240,255,.34)');gr.addColorStop(1,'rgba(235,240,255,.04)');g.fillStyle=gr;
+g.beginPath();g.moveTo(x0,y0);g.lineTo(x1+nx,y1+ny);g.lineTo(x1-nx,y1-ny);g.closePath();g.fill();}
+function heliDraw(){
+HC.t++;HC.st++;const t=HC.t;
+if(HC.card){g.fillStyle='#000';g.fillRect(0,0,W,H);tx(HC.card,120,Math.round(H/2)-6,'#ffb347','center');return;}
+if(HC.rot&&t%(HC.sh==='cockpit'?5:Math.max(5,Math.round(13-HC.hs*8)))===0)beep(62,.05,'triangle',.035+.03*Math.min(1,HC.hs));
+if(HC.alarm&&t%70===0)sfx.siren();
+g.save();if(HC.shk>0){g.translate((Math.random()-.5)*HC.shk,(Math.random()-.5)*HC.shk);HC.shk*=.9;if(HC.shk<.4)HC.shk=0;}
+const hy=HC.hy*H,hx=HC.hx;
+if(HC.sh==='roof'){
+const gy=Math.round(H*.66);
+const gr=g.createLinearGradient(0,0,0,gy);gr.addColorStop(0,'#04050d');gr.addColorStop(.7,'#121838');gr.addColorStop(1,'#2a2444');g.fillStyle=gr;g.fillRect(-10,-10,W+20,H+20);
+hcStars(46,gy-40);g.fillStyle='#f2efe0';g.beginPath();g.arc(40,Math.round(H*.14),11,0,7);g.fill();g.fillStyle='rgba(242,239,224,.14)';g.beginPath();g.arc(40,Math.round(H*.14),20,0,7);g.fill();
+hcSkyline(gy,'#0b0e1c',1,true);
+R(214,gy-58,16,58,'#151a26');R(208,gy-72,28,16,'#1c2230');R(210,gy-68,24,6,'#3a4a5c');
+if(HC.sl){const a=Math.sin(t*.05)*.5;hcBeam(222,gy-66,hx+Math.sin(t*.07)*26,hy+a*20,26);g.fillStyle='#fff';g.fillRect(220,gy-68,4,4);}
+R(-10,gy,W+20,H,'#1b1d24');R(-10,gy,W+20,3,'#3a3d48');for(let i=0;i<70;i++)R((i*47)%W,gy+6+((i*29)%(H-gy-8)),1,1,'#2a2d36');
+R(8,gy-38,40,38,'#262a34');R(8,gy-40,40,3,'#3a3f4c');R(20,gy-28,16,28,HC.cos?'#f6e7a8':'#12141a');R(24,gy-45,8,5,HC.alarm&&(t>>3)%2?'#ff3a3a':'#5a1a1a');
+if(HC.cos){g.fillStyle='rgba(246,231,168,.16)';g.beginPath();g.moveTo(20,gy);g.lineTo(36,gy);g.lineTo(84,H);g.lineTo(-10,H);g.closePath();g.fill();}
+R(176,gy-14,24,14,'#232730');R(180,gy-18,6,4,'#2e333e');R(150,gy-9,14,9,'#232730');
+const hxp=104,hyp=gy+Math.round((H-gy)*.34),bl=HC.dust>.5?(HC.dust-.5)*2:0;
+[[0,0,7,30],[29,0,7,30],[7,12,22,6],[36,-2,0,0]].forEach((q,i)=>{if(!q[2])return;const fl=Math.sin(t*.2+i)*1.2*(.3+HC.dust),ox=bl*(40+i*26)*(i%2?1:-1),oy=-bl*(18+i*9);
+g.globalAlpha=1-bl*.85;R(hxp+q[0]+ox,hyp+q[1]+oy+fl,q[2],q[3],'#e8731c');R(hxp+q[0]+ox,hyp+q[1]+oy+fl,q[2],1,'#ffa050');g.globalAlpha=1;});
+if(HC.dust>0)for(let i=0;i<26;i++){const a=(i/26)*6.28+t*.05,r=((t*2+i*17)%70)*HC.dust;R(hx+Math.cos(a)*r*1.5,gy+18+Math.sin(a)*r*.32,2,1,`rgba(190,190,200,${.5*(1-r/70)})`);}
+const lx=hx-3,ly0=hy+12*HC.hs,ly1=ly0+(gy-4-ly0)*HC.lad;
+if(!HC.in&&!HC.up){HC.crew.forEach((L,i)=>dp(L,HC.bx-30-i*16,gy-6,3,(t>>3)%2,1.5));if(HC.stock)dp(LOOK.oper,HC.bx-64,gy-6,3,(t>>3)%2,1.5);}
+if(HC.lad>0&&HC.hv){const sw=Math.sin(t*.09)*5*HC.lad;g.strokeStyle='#c9b98a';g.lineWidth=1;g.beginPath();g.moveTo(lx-3,ly0);g.lineTo(lx-3+sw,ly1);g.moveTo(lx+3,ly0);g.lineTo(lx+3+sw,ly1);g.stroke();
+for(let r=0;r<10;r++){const k=r/9,yy=ly0+(ly1-ly0)*k;if(yy>ly1)break;R(lx-3+sw*k,yy,7,1,'#c9b98a');}
+if(HC.climb>0&&!HC.in){const k=1-HC.climb*.9;dp(LOOK.bandit,lx-14+sw*k,ly0+(ly1-ly0)*k-34,1,(t>>2)%2,1.5);}}
+if(!HC.in&&!(HC.climb>0))dp(LOOK.bandit,HC.bx-14,gy-6,HC.lad>0?3:1,(t>>3)%2,1.5);
+if(HC.cos){for(let i=0;i<3;i++)dp(LOOK.guard,HC.cox+i*15,gy-4+i*3,3,HC.fire?1:(t>>3)%2,1.5);}
+if(HC.hv){hcSmoke(hx-20*HC.hs,hy);hcHeli(hx,hy,HC.hs,HC.tilt,HC.face,false);}
+if(HC.cos)hcTracers([[HC.cox+22,gy+14],[HC.cox+37,gy+17],[HC.cox+52,gy+20]],hx,hy+4,.16,54);
+}else if(HC.sh==='street'){
+const gy=Math.round(H*.76);
+const gr=g.createLinearGradient(0,0,0,gy);gr.addColorStop(0,'#04050d');gr.addColorStop(1,'#1c1a34');g.fillStyle=gr;g.fillRect(-10,-10,W+20,H+20);
+hcStars(50,gy-60);g.fillStyle='#f2efe0';g.beginPath();g.arc(196,Math.round(H*.13),10,0,7);g.fill();
+hcSkyline(gy,'#0a0c18',2,true);
+R(-10,gy-96,112,96,'#2c2a2a');for(let y=gy-92;y<gy;y+=8)R(-10,y,112,1,'#232121');for(let x=-6;x<102;x+=6)R(x,gy-100,3,3,'#8a9098');
+R(6,gy-84,84,13,'#141212');tx('LAKE COUNTY JAIL',48,gy-81,'#c9c4b0','center');
+R(84,gy-128,18,34,'#1a1f2b');R(80,gy-134,26,8,'#242a38');
+hcBeam(93,gy-128,hx,hy,22);hcBeam(40,gy-98,hx+Math.sin(t*.1)*30,hy+10,16);
+if((t>>3)%2){g.fillStyle='rgba(255,40,40,.10)';g.fillRect(-10,-10,W+20,H+20);}
+R(-10,gy,W+20,H,'#17181d');R(-10,gy,W+20,2,'#34363e');for(let x=(t*0)%1;x<W;x+=26)R(x,gy+Math.round((H-gy)*.5),14,2,'#5a5840');
+const car=(x,fl)=>{g.save();g.translate(Math.round(x),gy+8);if(fl)g.scale(-1,1);R(-26,-6,52,12,'#0e1016');R(-14,-15,28,10,'#12151c');R(-11,-13,10,7,'#34465c');R(2,-13,10,7,'#34465c');R(-26,-1,52,3,'#e6e8ee');
+R(-7,-19,7,4,(t>>2)%2?'#ff2a2a':'#5a0c0c');R(0,-19,7,4,(t>>2)%2?'#0c1a5a':'#2a6aff');
+g.fillStyle='#000';g.beginPath();g.arc(-15,7,5,0,7);g.arc(15,7,5,0,7);g.fill();R(24,-3,3,3,'#fff6c0');g.restore();
+const c=(t>>2)%2?'rgba(255,40,40,.13)':'rgba(40,100,255,.13)';g.fillStyle=c;g.beginPath();g.arc(x,gy-10,46,0,7);g.fill();};
+car(HC.c1,0);car(HC.c2,1);
+const cop=(x)=>{R(x,gy-12,5,14,'#10203c');R(x+1,gy-17,4,5,'#c9966a');R(x,gy-19,6,2,'#0a1226');g.strokeStyle='#10203c';g.lineWidth=2;g.beginPath();g.moveTo(x+3,gy-9);g.lineTo(x+9,gy-17);g.stroke();return [x+10,gy-19];};
+const guns=[cop(HC.c1+30),cop(HC.c1-40),cop(HC.c2-38),cop(HC.c2+28)];
+hcSmoke(hx-22*HC.hs,hy);hcHeli(hx,hy,HC.hs,HC.tilt,HC.face,false);
+if(HC.lad>0){const sw=Math.sin(t*.12)*4-8;g.strokeStyle='#c9b98a';g.lineWidth=1;g.beginPath();g.moveTo(hx-2,hy+8);g.lineTo(hx-2+sw,hy+26);g.stroke();}
+hcTracers(guns,hx,hy,.2,46);
+}else if(HC.sh==='cockpit'){
+g.fillStyle='#04050d';g.fillRect(-10,-10,W+20,H+20);
+const wy=Math.round(H*.12),wh=Math.round(H*.5);
+g.save();g.beginPath();g.moveTo(14,wy+wh);g.lineTo(30,wy);g.lineTo(210,wy);g.lineTo(226,wy+wh);g.closePath();g.clip();
+const gr=g.createLinearGradient(0,wy,0,wy+wh);gr.addColorStop(0,'#070a18');gr.addColorStop(1,'#22264a');g.fillStyle=gr;g.fillRect(0,wy,W,wh);
+for(let i=0;i<30;i++){const x=(i*71+t*.6)%W,y=wy+(i*37)%wh;R(x,y,1,1,'#aab6e0');}
+g.fillStyle='#f2efe0';g.beginPath();g.arc(170+Math.sin(t*.03)*8,wy+wh*.3,13,0,7);g.fill();
+const tl=Math.sin(t*.05)*.12;g.save();g.translate(120,wy+wh);g.rotate(tl);for(let i=0;i<12;i++){const h=10+((i*37)%28);R(-130+i*22,-h+4,16,h+30,'#0a0c18');}g.restore();
+if(HC.fire&&Math.random()<.35){HC.tr.push({x:Math.random()*W,y:wy+wh+4,vx:(Math.random()-.5)*3,vy:-9-Math.random()*4,l:40});if(t%3===0)gunSnd(.035);}
+for(const p of HC.tr){p.x+=p.vx;p.y+=p.vy;p.l--;g.strokeStyle='rgba(255,140,50,.4)';g.lineWidth=4;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*3,p.y-p.vy*3);g.stroke();g.strokeStyle='#fff2b8';g.lineWidth=1.5;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*2,p.y-p.vy*2);g.stroke();}
+HC.tr=HC.tr.filter(p=>p.l>0&&p.y>wy-20);
+g.restore();
+g.strokeStyle='#1a1e2a';g.lineWidth=5;g.beginPath();g.moveTo(14,wy+wh);g.lineTo(30,wy);g.lineTo(210,wy);g.lineTo(226,wy+wh);g.stroke();g.beginPath();g.moveTo(120,wy);g.lineTo(120,wy+wh);g.stroke();
+if(HC.crack){g.strokeStyle='rgba(235,240,255,.85)';g.lineWidth=1;[[78,wy+wh*.42],[156,wy+wh*.62]].forEach(([cx,cy],j)=>{for(let i=0;i<9;i++){const a=i*.7+j,r=7+((i*13+j*5)%14);g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);g.stroke();}g.fillStyle='#000';g.beginPath();g.arc(cx,cy,1.6,0,7);g.fill();});}
+const dy=wy+wh;
+R(-10,dy,W+20,H,'#0e1118');R(-10,dy,W+20,3,'#232838');
+for(let i=0;i<5;i++){const cx=38+i*41,cy=dy+22;g.fillStyle='#05070c';g.beginPath();g.arc(cx,cy,13,0,7);g.fill();g.strokeStyle='#3a4458';g.lineWidth=1;g.stroke();
+const a=-2.4+((i*1.3)%2)+(i===2?-Math.min(1.6,HC.st*.01):Math.sin(t*.2+i)*.25);g.strokeStyle=i===2?'#ff5050':'#9fe0a8';g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*10,cy+Math.sin(a)*10);g.stroke();}
+const wl=(t>>3)%2;R(96,dy+42,48,12,wl?'#ff2a2a':'#4a0c0c');tx('OIL PRESS',120,dy+44,wl?'#fff':'#a05050','center');
+if(wl){g.fillStyle='rgba(255,30,30,.08)';g.fillRect(-10,-10,W+20,H+20);}
+g.fillStyle='#1a2230';g.beginPath();g.arc(62,dy-2,22,0,7);g.fill();g.fillStyle='#243044';g.fillRect(30,dy+16,66,H);g.fillStyle='#1a2230';g.fillRect(52,dy+12,20,8);g.strokeStyle='#2a3040';g.lineWidth=4;g.beginPath();g.arc(62,dy-2,24,3.5,5.9);g.stroke();R(36,dy-6,7,13,'#2a3040');R(81,dy-6,7,13,'#2a3040');
+{const bx=180,by=dy+2+Math.sin(t*.3)*1.5,wl2=(t>>3)%2;g.fillStyle=wl2?'#c8601a':'#a04c12';g.beginPath();g.moveTo(bx-30,H);g.lineTo(bx-26,by+22);g.quadraticCurveTo(bx,by+8,bx+26,by+22);g.lineTo(bx+30,H);g.closePath();g.fill();
+g.fillStyle='#8a5a38';g.fillRect(bx-6,by+6,12,10);g.fillStyle='#17110c';g.beginPath();g.arc(bx,by-4,15,0,7);g.fill();g.fillStyle='#b9815a';g.fillRect(bx-17,by-4,4,7);g.fillRect(bx+13,by-4,4,7);
+g.fillStyle='rgba(255,255,255,.10)';g.fillRect(bx-24,by+24,3,H);tx('LAKE CO.',bx,by+34,'#3a1c08','center','rgba(0,0,0,0)');}
+}else if(HC.sh==='moon'){
+const gy=Math.round(H*.86);
+const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#03040b');gr.addColorStop(1,'#141a3c');g.fillStyle=gr;g.fillRect(-10,-10,W+20,H+20);
+hcStars(70,gy);
+const mr=Math.round(Math.min(W,H)*.3),mx=128,my=Math.round(H*.4);
+g.fillStyle='rgba(244,240,222,.10)';g.beginPath();g.arc(mx,my,mr+16,0,7);g.fill();g.fillStyle='#f4f0de';g.beginPath();g.arc(mx,my,mr,0,7);g.fill();
+g.fillStyle='rgba(190,186,168,.5)';[[-.3,-.2,.16],[.25,.1,.2],[-.1,.4,.12],[.4,-.35,.1]].forEach(([a,b,c])=>{g.beginPath();g.arc(mx+a*mr,my+b*mr,c*mr,0,7);g.fill();});
+hcSkyline(gy+6,'#05060c',3,true);R(-10,gy+6,W+20,H,'#05060c');
+hcBeam(30,gy,hx-40+Math.sin(t*.04)*50,hy+50,16);hcBeam(200,gy,hx+30+Math.sin(t*.05+2)*60,hy+70,14);
+if(HC.st<170&&t%7===0)HC.tr.push({x:20+Math.random()*200,y:gy,vx:(Math.random()-.3)*2,vy:-5-Math.random()*2,l:34});
+for(const p of HC.tr){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.l--;g.strokeStyle=`rgba(255,220,150,${p.l/40})`;g.lineWidth=1;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*2,p.y-p.vy*2);g.stroke();}
+HC.tr=HC.tr.filter(p=>p.l>0);
+hcSmoke(hx-22*HC.hs,hy);hcHeli(hx,hy,HC.hs,HC.tilt,HC.face,true);
+}else{ // dawn
+const hz=Math.round(H*.6),s=HC.sun;
+const gr=g.createLinearGradient(0,0,0,hz);gr.addColorStop(0,`rgb(${20+60*s|0},${22+70*s|0},${60+90*s|0})`);gr.addColorStop(.65,`rgb(${120+110*s|0},${70+90*s|0},${110+10*s|0})`);gr.addColorStop(1,`rgb(${240},${150+60*s|0},${90+40*s|0})`);
+g.fillStyle=gr;g.fillRect(-10,-10,W+20,hz+10);
+const sy=hz+14-s*44;g.fillStyle='rgba(255,236,170,.25)';g.beginPath();g.arc(176,sy,34,0,7);g.fill();g.fillStyle='#ffe9a8';g.beginPath();g.arc(176,sy,18,0,7);g.fill();
+g.save();g.translate(-HC.far*70,0);g.globalAlpha=1-HC.far*.5;hcSkyline(hz,'#2a2438',4,false);g.restore();
+const lg=g.createLinearGradient(0,hz,0,H);lg.addColorStop(0,`rgb(${200},${130+50*s|0},${110})`);lg.addColorStop(1,'#1c2a52');g.fillStyle=lg;g.fillRect(-10,hz,W+20,H);
+for(let i=0;i<60;i++){const y=hz+3+((i*i*3)%(H-hz)),x=(i*53+t*(.3+(y-hz)*.01))%W;R(x,y,6+((i*7)%10),1,`rgba(255,236,190,${.12+.3*s*((i%3)/3)})`);}
+for(let y=hz+2;y<hz+40;y+=3)R(176-10-((y-hz)*.4)+Math.sin(t*.1+y)*3,y,20+(y-hz)*.8,1,`rgba(255,236,170,${.5*s})`);
+for(let i=0;i<4;i++){const bx=(40+i*46+t*.2)%W,by=hz-50-i*9+Math.sin(t*.05+i)*3,f=(t>>3)%2?2:-1;g.strokeStyle='#1a1422';g.lineWidth=1;g.beginPath();g.moveTo(bx-3,by+f);g.lineTo(bx,by);g.lineTo(bx+3,by+f);g.stroke();}
+hcSmoke(hx-22*HC.hs,hy);hcHeli(hx,hy,HC.hs,HC.tilt,HC.face,s<.35);
+}
+g.restore();
+const lb=HC.sh==='moon'?22:14;g.fillStyle='#000';g.fillRect(0,0,W,lb);g.fillRect(0,H-lb,W,lb);
+if(HC.flash>0){g.fillStyle=`rgba(255,255,255,${Math.min(1,HC.flash/3)})`;g.fillRect(0,0,W,H);HC.flash--;}
+if(HC.qte){const k=HC.qte.n/HC.qte.need,y=H-lb-34;panel(50,y,140,26);tx((HC.t>>3)%2?'TAP A!  CLIMB!':'TAP A!',120,y+4,'#ffd23a','center');R(58,y+16,124,5,'#1a1a22');R(58,y+16,Math.round(124*k),5,'#7dff9a');}
+}
+(function(){
+const ed=endDraw;endDraw=function(){
+if(ES.kind!=='heli'){ed();return;}
+if(ES.credits&&!endDraw.cs){endDraw.cs=1;playSong('credits');}if(!ES.credits)endDraw.cs=0;
+heliDraw();if(ES.credits)credDraw();};
+const cl=credLines;credLines=function(kind){const L=cl(kind);if(kind!=='heli')return L;
+L[2]=['ESCAPED BY HELICOPTER  -  DAY '+WS().day,1,'#ffb347'];
+const i=L.findIndex(l=>l[0]==='- STARRING -');const ex=[['LARRY  .......  WANTED IN THREE COUNTIES',0],['SKY MIKE  ....  LOST HIS LICENSE. GAINED A PODCAST.',0]];
+if(G.flags.skyStock)ex.push(['STOCKDALE  ...  FIRST TIME OUT IN 14 YEARS',0]);ex.push(['THE H  .......  REPAINTED. BY THE COUNTY. IN RED.',0],['',0]);
+if(i>0)L.splice(i-1,0,...ex);const j=L.findIndex(l=>l[0]==='HAUNCHO, ESQ.');if(j>0)L.splice(j+1,0,['SKY MIKE',0],['STOCKDALE',0]);
+L.splice(L.length-1,0,['THE SEVENTH WAY OUT',1,'#ffb347'],['',0]);return L;};
+const ep=epilogue;epilogue=function*(){
+if(G.flags.endKind!=='heli'){yield* ep();return;}
+const f=G.flags;ES.kind='heli';ES.t=0;ES.credits=0;Fx.fade=1;Fx.st=2;playSong('piano');
+hcShot('dawn');Object.assign(HC,{hx:-80,hy:.3,hs:.3,sun:1,far:1,hit:0,smk:[],rot:0,alarm:0,fire:0,qte:null,shk:0,card:null});yield 60;
+HC.card='ONE YEAR LATER';yield 120;HC.card=null;
+yield* talk('Somewhere on the Canadian side of Lake Erie. A bait shop with a recording booth in the back.',0);
+yield* talk('The wanted poster in the Eastlake post office has a mustache drawn on it. Nobody knows who did it. (Baba did it.)',0);
+yield* talk('Sky Mike has a podcast now. He says he can\'t talk about that night. He talks about that night for three hours a week.',0);
+if(f.skyStock)yield* talk('Stockdale runs the bait shop\'s one elevator. It\'s a dumbwaiter. He takes it very seriously.',0);
+yield* talk('A package comes once a month. No return address. Potato perogi, still warm somehow.',0);
+yield* talk('Bandit presses record. There\'s a verse about a letter H.',0);
+HC.card='THE END';yield 150;HC.card=null;
+Fx.st=1;Fx.cb=null;yield()=>Fx.fade>=1;Fx.st=0;ES.kind=null;ES.reunion=0;openTitle();};
+})();
+const h32=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+const hpick=(a,h)=>a[h%a.length];
+const GRAF=['"D.W. WAS HERE 2009" and under it, in different handwriting, "NOBODY CARES D.W."','A tally. Four lines and a slash, forty-one times. Then it just stops.',
+'"BROWNS SUPER BOWL 20__" The year has been scratched out and rewritten eleven times.','"IF YOU CAN READ THIS YOU ARE TOO CLOSE TO MY BUNK"','A pretty good drawing of Lake Erie. Somebody added a shark.',
+'"TELL MY MOM I DIDNT DO IT. I DID BUT TELL HER"','"C.O. DUFFY CRIES AT COMMERCIALS" Underlined twice.','A phone number. Under it: "DO NOT CALL. IT IS A TRAP. IT IS MY EX."',
+'"THE PEROGI LADY IS THE REAL WARDEN"','A chess problem scratched into the paint. White to move and win. Somebody wrote "CHEAT" as the solution.',
+'"EASTLAKE BOYS" crossed out. "MENTOR MOB" crossed out. "CAN WE ALL JUST" and then nothing.','"DAY 1: this is fine. DAY 40: this is fine. DAY 200: I am the wall now."',
+'A list titled FOODS I MISS. It is three feet long. It starts with "gas station taquitos."','"JESUS SAVES" and under it "AT HUNTINGTON BANK, 0.02% APY"',
+'"WHOEVER TOOK MY SHOWER SHOES: I KNOW. I KNOW AND I AM PATIENT."','A heart with "T + R" in it. The R has been changed to a B. Then back to an R.',
+'"LAWYER SAID 6 MONTHS. LAWYER LIED. LAWYER DROVE A KIA."','"POPSTAR SUCKS" in fresh marker. That one\'s new.','"POPSTAR RULES" right next to it. Same marker. Same handwriting.',
+'A surprisingly accurate map of the yard with an X on it. The X is where you\'re standing.','"THE HOLE AINT THAT BAD" signed, "A LIAR"','"COUNT TIME IS A SOCIAL CONSTRUCT"',
+'"I HAVE BEEN IN 14 JAILS. THIS ONE HAS THE WORST TOAST."','Sixteen bars of a rap verse. It\'s not good. The last line rhymes "prison" with "prison."',
+'"EARL OWES ME A HONEYBUN (1997)"','A drawing of a C.O. with devil horns. A second artist added a very flattering jawline.','"WIFI PASSWORD: THERE IS NO WIFI. STOP ASKING."',
+'"STOCKDALE KNOWS" Knows what? It doesn\'t say.','"MY PUBLIC DEFENDER FELL ASLEEP. DURING MY TESTIMONY. I WAS TESTIFYING ABOUT HIM FALLING ASLEEP."',
+'Somebody\'s whole grocery list. Eggs, milk, bail.','"THIS WALL IS LOAD BEARING. SO AM I."','"1 STAR. WOULD NOT GET ARRESTED AGAIN."','"KOWALSKI FIGHTS DIRTY" and under it, smaller: "so fight dirtier"',
+'A calendar drawn by hand, every day crossed off. The month is "SMARCH."','"IF FOUND PLEASE RETURN TO: OUTSIDE"','"THE VENDING MACHINE IN INTAKE TAKES CANADIAN QUARTERS. PASS IT ON."',
+'"I MISS MY DOG. I DON\'T MISS DARLENE. I MISS DARLENE\'S DOG."','A long equation. At the end: "= 8 MORE MONTHS." It has been checked by a second person. "CORRECT."',
+'"WHO KEEPS WRITING ON THIS WALL" "ME" "ALSO ME" "STOP"','"ST. DISMAS, PATRON SAINT OF THIEVES, PRAY FOR US. WE NEED IT. SPECIFICALLY ME."','"THE THIRD STALL DOES NOT LOCK. THIS IS A WARNING AND A CONFESSION."',
+'"BLAKE CHEATS AT SPADES" and a reply: "BLAKE CAN READ"','"RAMEN + HOT CHEETOS + ONE (1) PICKLE = THE SPREAD. DO NOT CHANGE THE RECIPE."','A name and two dates. The second date is last week. Somebody left a honeybun wrapper under it.',
+'"I AM INNOCENT" and then, lower: "OF THIS ONE"','"TO THE GUY WHO SNORES IN POD B: WE VOTED."','"SKY MIKE OWES LUKEY $400" Small world.','"YOU ARE NOW READING THIS IN MY VOICE. YOU DON\'T KNOW MY VOICE. SPOOKY."',
+'"TOMMY BONES COUNTS HIS PUSHUPS OUT LOUD AND SKIPS NUMBERS"','"CHOW HALL RULE 1: NEVER ASK WHAT THE MEAT IS. RULE 2: IT ISN\'T."','"CLEVELAND AGAINST THE WORLD" with a little skyline. The Terminal Tower is drawn very carefully.',
+'"I LEARNED TO READ IN HERE. THIS IS THE FIRST THING I EVER WROTE. HI."','"THE H ON THE ROOF" That\'s it. That\'s the whole message.','"HOBBS WEARS LIFTS"','"PAROLE BOARD HATES: EXCUSES. PAROLE BOARD LOVES: ALSO NOT EXCUSES. GOOD LUCK."',
+'"FREE BOGGS" in block letters. Under it: "FROM WHAT, HIS OWN DECISIONS?"','"I BENCHED 315 HERE 6/12" "NO YOU DIDN\'T" "I BENCHED 225" "NO" "135" "...OKAY"','A tiny door drawn at floor level, with a tiny doorknob. For the mice, probably.',
+'"NOBODY IN HERE IS NAMED STEVE. THINK ABOUT THAT."','"BABA HALINA\'S PEROGI: 10/10. POTATO. ALWAYS POTATO."','"THEY TOOK MY SHOELACES. JOKE\'S ON THEM. VELCRO."','"IF THE LIGHTS FLICKER TWICE, THE BOILER\'S ACTING UP. IF THREE TIMES, RUN."',
+'"KRU DANNY ONCE KNEED A VENDING MACHINE AND IT GAVE HIM EVERYTHING"','"THIS IS THE LAST THING I WRITE ON THIS WALL." Under it, same hand: "OKAY ONE MORE."','"MAKE YOUR BUNK. IT\'S THE ONLY THING IN HERE THAT\'S YOURS."'];
+const WALLPLAIN=['Cinder block. County beige. Painted over so many times the corners are round.','Bare wall. Somebody scrubbed this one clean. You can still see the ghost of the letters.','Concrete. Cold. Sweating a little.',
+'Wall. Painted that particular green that only exists in institutions.','A wall. There\'s a boot scuff at head height. You decide not to think about it.','Cinder block. Somebody counted them once. It says "214" in pencil in the corner.'];
+const TLN=TL;
+const BANK={
+[TLN.BUNK]:['A bunk. The mattress is two inches of regret.','Bottom bunk. Somebody tucked a photo into the springs above. A kid on a bike.','This bunk is made with hospital corners. Ex-military, or just scared of his cellie.',
+'A bunk with a paperback under the pillow. Louis L\'Amour. Every bunk in America has this exact book.','The frame is bolted down with four bolts. One is loose. Everybody knows which one.','A bunk. The blanket is the texture of a welcome mat.',
+'Top bunk. The ceiling above it has a constellation of chewed-gum stars.','Somebody carved a tiny shelf into the bunk post. It holds one (1) toothbrush, proudly.'],
+[TLN.TOILET]:['No. Just no.','Stainless steel. No seat. No lid. No dignity.','It flushes like a jet engine. Everybody in the pod knows your business.','Somebody keeps a magazine behind this one. It\'s Field & Stream, 2011. It\'s been read to pieces.','A toilet-sink combo. One unit. A triumph of design and a defeat of everything else.'],
+[TLN.TABLE]:['A steel table bolted to the floor. A chessboard is scratched into the top. Two squares are missing.','A table with four stools welded to it. Nobody has ever been comfortable here.','Dominoes left mid-game. Somebody was losing badly.',
+'The table has a dent the exact shape of a forehead.','Sticky. Don\'t ask. Never ask.','A half-finished letter. "Dear Ma, it\'s not as bad as—" and then a coffee ring.','Cards dealt for spades. One hand has both jokers. Suspicious.'],
+[TLN.LOCKER]:['A locker. Smells like feet and Irish Spring.','Inside the door: a magazine cutout of a pickup truck. Just the truck. He really misses that truck.','Locked with a combination lock made out of a different, worse lock.','Empty, except for one sock. There is always one sock.','A locker with a mirror the size of a playing card. Shaving in it is an act of faith.'],
+[TLN.SINK]:['A steel sink. The water is brown-ish for the first four seconds.','Hot and cold are both cold. One is slightly more cold.','Somebody is soaking ramen in this sink. It is not unattended. A guy across the room is watching you.','The mirror above it is polished steel. You look like a rumor of yourself.'],
+[TLN.SHOWER]:['The shower has two settings: off, and betrayal.','Tile. Mildew. A bar of soap worn down to a guitar pick.','Somebody wrote "5 MIN MAX" on the wall. Somebody else wrote "OR WHAT."','The drain makes a noise like it\'s thinking about something.'],
+[TLN.CRATE]:['Crates of mystery food. The label says "MEAT (TYPE: YES)".','A crate stamped PROPERTY OF LAKE COUNTY. So is everything. So are you.','Canned peaches. Expiry date is a suggestion from another decade.','A crate somebody pried open and nailed shut again. Badly.','Industrial beans. 40 pounds. The can is the size of a tire.'],
+[TLN.SHELF]:['Shelves of overpriced snacks. A bag of chips is 4 packs of L&M.','Honeybuns. The currency behind the currency.','Instant coffee in a clear bag. In here that\'s a controlled substance, socially.','Ramen in four flavors. Three of them are chicken.','A shelf of paperbacks with no covers. You have to guess the genre from the first page.'],
+[TLN.LAUND]:['A washing machine. Orange in, orange out.','This one\'s been on spin cycle since Tuesday. Nobody will make eye contact with it.','A dryer. The lint trap is a geological record.','Folded sheets, stacked square. Somebody takes pride in this. Respect that.'],
+[TLN.BED]:['A hospital bed. Clean sheets. A luxury.','The rails still have the old hospital\'s name stamped in them: ST. DISMAS.','A bed with restraints tucked under the mattress. For "safety." Whose, they don\'t say.'],
+[TLN.WEIGHT]:['A rusty bench. Somebody loaded way too much and left it as a threat.','The dumbbells go 10, 15, 20, 45. Somebody is holding the 25s and 35s hostage.','A pull-up bar polished silver in two places, hand-width apart.','Chalk handprints on the wall. One of them has six fingers. You count again. Six.'],
+[TLN.BENCH]:['A bench. Initials carved in it going back to the nineties.','Warm. Somebody just got up. In here that means something.','A bench bolted to the floor so nobody can swing it. Somebody tried anyway. You can see where.'],
+[TLN.COUNTER]:['A steel counter worn smooth by forty thousand elbows.','There\'s a bell on the counter. A sign under it says DO NOT RING BELL.','The counter has a slot just big enough for a tray and not one inch more.'],
+[TLN.GATE]:['A steel gate. Locked. The lock is newer than the gate.','Bars thick as your wrist. Paint chipped at exactly hand height.'],
+[TLN.BARS]:['Bars. Cold. Somebody polished one of them with years of leaning.','You put your hand through the bars. Now your hand is out. The rest of you has notes.','Cell bars. A shoelace is tied to one. A clothesline, or a signal.'],
+[TLN.FENCE]:['Chain-link. Razor wire on top. Not today.','A plastic bag is caught in the fence, flapping. It\'s the freest thing in the yard.','Somebody wove a cross into the chain-link out of bread ties.','Through the fence: a parking lot. A red Corolla. It\'s been there every day. Whose is it?'],
+[TLN.WIRE]:['Razor wire. Hard pass.','There\'s a single sneaker hanging from the wire. The story changes depending on who you ask.','Razor wire, three coils deep. A bird is nesting in it like it\'s nothing.'],
+[TLN.TOWER]:['A guard tower. The guard waves. You do not wave back.','The tower window has a tiny Browns flag in it.','Guard tower. You can hear a radio up there. Classic rock, and one man singing every guitar solo.']};
+const MAPX={   // things only this room has
+med:{[TLN.BED]:['Bed 3. The chart on the end just says "AGAIN?"'],[TLN.SHELF]:['Ibuprofen. The answer to every question asked in this room.','A jar of tongue depressors and one lollipop. The lollipop is for the C.O.s.']},
+cafe:{[TLN.TABLE]:['Table 6. Blake\'s table. Nobody sits here. You\'re standing very close to it.','A tray somebody didn\'t bus. Green beans arranged to spell "HELP".'],[TLN.COUNTER]:['The tray line. Baba Halina\'s ladle is behind the glass like a museum piece.']},
+gym:{[TLN.WEIGHT]:['Kru Danny\'s heavy bag. It has a face drawn on it. The face looks tired.','The squat rack. A sign: "NO CURLING IN THE SQUAT RACK. THIS MEANS YOU, DARNELL."']},
+chapel:{[TLN.BENCH]:['A pew. Someone carved "FORGIVE ME" on the back of the one in front. Someone answered: "WORKING ON IT."','Hymnal 14. Half the pages are gone. They burn slow, apparently.'],[TLN.TABLE]:['The altar is a folding table with a very nice cloth on it.']},
+library:{[TLN.SHELF]:['Ohio Revised Code, 1994. Somebody has highlighted nearly all of it.','A shelf marked FICTION. It contains eleven copies of the same Tom Clancy.','Black\'s Law Dictionary. The page for "exonerate" is worn soft.','"So You\'ve Been Indicted." A pamphlet. There are hundreds.'],[TLN.TABLE]:['A table of men writing their own appeals in pencil. Nobody talks. It\'s the quietest room in the building.']},
+boiler:{[TLN.CRATE]:['A crate stenciled ST. DISMAS HOSPITAL - LINENS. It\'s been down here since \'91.','Coal dust on everything. The boiler went gas in 1974. The dust never left.']},
+laundry:{[TLN.LAUND]:['Machine 4. The one that eats socks. There\'s a memorial.','A press that could flatten a man. There\'s a sign: "IT HAS."']},
+hole:{[TLN.BUNK]:['A slab with a blanket. The blanket is doing its best.'],[TLN.TOILET]:['The only furniture in here with moving parts.']},
+roof:{[TLN.WIRE]:['From up here the wire looks like handwriting. You can see the lake past it. You can see the stacks. You can almost see Baba\'s.'],[TLN.FENCE]:['Roof cage. Nine floors up. The wind comes straight off the lake and goes straight through you.']},
+intake:{[TLN.BENCH]:['The intake bench. You sat here on day one. It\'s still warm from somebody else\'s worst day.'],[TLN.COUNTER]:['Property desk. Somewhere back there is a bag with your chain, your phone, and the last text you didn\'t answer.']},
+comm:{[TLN.SHELF]:['Commissary. Honeybuns behind glass like jewelry.','A price list. Everything has gone up except wages, which are eleven cents.']},
+yard:{[TLN.BENCH]:['The bleachers. Third row is the Eastlake Boys. Fourth row is people who want to be asked to sit in the third row.'],[TLN.WEIGHT]:['The yard pile. Iron left in the weather. It gives you tetanus and deltoids.']},
+tier2:{[TLN.BARS]:['Tier 2. You can see the whole pod from up here. That\'s why The Landlord likes it.']},
+maxsec:{[TLN.BARS]:['Max. These bars have a second set of bars behind them. They mean it up here.']}};
+function bulletin(){
+const d=WS().day,MENU=['Salisbury "steak," instant potatoes, a roll you could skip across the lake','Chicken patty (provenance unknown), corn, pudding skin','Chili mac. The good day. Everybody\'s nicer on chili mac day',
+'Bologna, two slices, room temperature. A lesson in humility','Fish square. It is square. That is all anyone can confirm','Baba\'s perogi day. Line starts forty minutes early. Do not cut','Breakfast for dinner. The eggs bounce'];
+const MOVIE=['Shawshank (banned, then un-banned, then banned)','Paul Blart: Mall Cop. Again','A nature documentary with the sound off','Rocky IV. The whole pod does the montage','The Fugitive. C.O.s watch the room, not the screen','Cool Runnings. Third week running'];
+const NOTE=['LOST: one (1) shower shoe, left. REWARD: the right one.','REMINDER: count is at 10 and 4. "I was asleep" is not a location.','CHESS CLUB meets Thursday. Bring your own missing pieces.','WHOEVER IS FEEDING THE YARD CAT: keep doing it. Signed, nobody.',
+'BARBER SIGN-UP is full until the heat death of the universe.','GED CLASS: Tuesdays. The Professor says "no dumb questions," then sighs.','TALENT SHOW every 10 days in the cafeteria. Popstar has "retired" twice.','LAW LIBRARY hours cut again. The irony has been noted and filed.'];
+return `BULLETIN, DAY ${d}.  CHOW: ${MENU[d%7]}.  MOVIE NIGHT: ${MOVIE[d%6]}.  ${NOTE[(d*3)%NOTE.length]}`;
+}
+function tvNow(){const h=gameHour(),d=WS().day;
+if(h<6)return 'Static, and an infomercial for a knife that cuts through a shoe. Why would you need that. In here they know why.';
+if(h<9)return pick(['Morning news. Traffic on Route 2. A helicopter shot of the lake. Everybody watches the lake.','A weatherman points at Lake County and says "more of this." He gestures at grey.']);
+if(h<12)return pick(['A court show. The whole pod rules on the case before the judge does. They\'re usually right.','Game show. A man in Pod A has answered every question correctly for six years and no one has ever seen him read.']);
+if(h<17)return pick(['Daytime TV. Somebody is yelling about a paternity test. The pod is INVESTED.','A soap opera. Do not change the channel. A man got stabbed over this in 2016.','The Browns are on. It\'s a replay. They still lose. Everybody watches anyway.']);
+if(h<21)return pick([`Local news. "${pick(['A Mentor man was arrested for','Police in Willoughby are seeking a man who was','Eastlake authorities responded to a man'])} ${pick(CRIME).replace(/\.$/,'')}." Somebody in the pod says "that\'s my cousin."`,'Jeopardy. The category is "Things You Can\'t Have In Here." The pod sweeps it.']);
+return 'The TV\'s off for lockdown. In the dark screen you can see the whole pod reflected, small and blue.';}
+const LORE=[
+{id:'dismas',n:'ST. DISMAS',at:(m,t)=>(m==='med'&&t===TLN.BED)||(m==='boiler'&&t===TLN.CRATE)||m==='chapel',x:'This building was St. Dismas Hospital from 1923 to 1991. The county bought it for a dollar and a promise. The chapel, the laundry, the boiler and the freight elevator are original. So is the smell.'},
+{id:'tower',n:'THE TOWER',at:(m,t)=>t===TLN.TOWER,x:'The yard tower was the hospital\'s water tower. They cut windows in it in \'92. The guard up there has the best view of Lake Erie in the county and has never once looked at it.'},
+{id:'wire',n:'THE SNEAKER',at:(m,t)=>t===TLN.WIRE,x:'The sneaker on the wire belonged to a man called Fast Eddie, who went over in 2003. Or it belonged to a man who tried and didn\'t. Or a C.O. put it there as a joke. Earl knows. Earl won\'t say.'},
+{id:'pit',n:'THE PIT',at:(m,t)=>m==='pit'||(m==='blockD'&&t===TLN.GATE),x:'Under D block is the old morgue. Tile floor, a drain in the middle, good acoustics. Kowalski found it in 2011 and saw a business opportunity. The warden saw a way to keep the pods quiet. That\'s the Pit.'},
+{id:'tunnel',n:'THE TUNNEL',at:(m,t)=>m==='tunnel',x:'The steam tunnel ran from the hospital to the nurses\' dormitory across the road. The dormitory is a parking lot now. The tunnel doesn\'t know that.'},
+{id:'count',n:'THE COUNT',at:(m,t)=>t===TLN.POSTER,x:'Count is at 10 and 4 because in 1996 a man named Lyle walked out the front door in a delivery uniform at 9:50. The sign-in sheet still has his signature. He drew a smiley face.'},
+{id:'perogi',n:'BABA HALINA',at:(m,t)=>m==='cafe'&&(t===TLN.COUNTER||t===TLN.TRAY),x:'Baba Halina has run the kitchen line for twenty-two years. She is not an employee. Nobody can find her paperwork. Three wardens have decided not to look. The perogi are potato. They are always potato.'},
+{id:'library',n:'THE LAW LIBRARY',at:(m,t)=>m==='library'&&t===TLN.SHELF,x:'The Law Library exists because of a 1977 lawsuit filed by an inmate, in pencil, on the back of commissary receipts. He won. He\'s the reason there are pencils. They named nothing after him.'},
+{id:'elev',n:'THE FREIGHT CAR',at:(m,t)=>m==='elev',x:'The freight elevator is an Otis from 1923, hand-operated. It carried gurneys, then laundry, then everything. Stockdale has run it since his second year. He says it has moods. He is right.'},
+{id:'hole',n:'THE HOLE',at:(m,t)=>m==='hole',x:'Floor 2 was the hospital\'s isolation ward. The doors were already solid steel with a slot. The county changed nothing but the sign.'},
+{id:'gym',n:'THE IRON',at:(m,t)=>(m==='gym'||m==='yard')&&t===TLN.WEIGHT,x:'The weights were donated in 1989 by a Cleveland Browns lineman who did four months here for something he has never discussed. Every plate has "74" painted on it. That was his number. Nobody has ever repainted one.'},
+{id:'laundry',n:'MACHINE 4',at:(m,t)=>m==='laundry'&&t===TLN.LAUND,x:'Machine 4 has eaten an estimated nine thousand socks since installation. In 2015 a man took it apart looking for them. There was nothing inside. Nothing. The men who were there don\'t talk about it.'},
+{id:'roof',n:'THE CAGE',at:(m,t)=>m==='roof',x:'The roof was the hospital\'s sun deck for TB patients. Fresh air, lake wind. The cage went up in \'92. On a clear day you can see Canada, which several men have described as "rude."'},
+{id:'maxsec',n:'FLOOR 6',at:(m,t)=>m==='maxsec',x:'Floor 6 was surgery. The big cells at the end were operating theatres, which is why they have drains, and why the lights are so bright, and why nobody likes the end cells.'}];
+const EXC={k:null,v:null};
+function examineLine(t){
+const m=G.map,fx=G.x+DX[G.dir],fy=G.y+DY[G.dir],h=h32(m+':'+fx+':'+fy),f=G.flags;
+f.looks=(f.looks||0)+1;
+for(const L of LORE)if(!f['lore_'+L.id]&&L.at(m,t)&&(h%3===0||t===TLN.TOWER||m==='elev'||m==='tunnel'||m==='pit')){f['lore_'+L.id]=1;sfx.pick&&sfx.pick();toast('CODEX: '+L.n,'#c9a6ff');return L.x;}
+if(t===TLN.POSTER)return h%3===0?'A faded poster: "SNITCHES GET STITCHES. ALSO PAROLE."':bulletin();
+if(t===TLN.TV)return tvNow();
+if(t===TLN.WALL){
+if(h%100<46){const i=h%GRAF.length,g=f.graf||(f.graf={});if(!g[i]){g[i]=1;const n=Object.keys(g).length;if(n%8===0||n===GRAF.length)toast(`WALLS READ  ${n}/${GRAF.length}`,'#c9a6ff');}
+return 'Scratched into the paint: '+GRAF[i];}
+return hpick(WALLPLAIN,h);}
+const mx=MAPX[m]&&MAPX[m][t];if(mx&&h%2===0)return hpick(mx,h>>3);
+const b=BANK[t];return b?hpick(b,h>>2):null;
+}
+(function(){
+const ids=new Set([...Object.keys(FLAVOR).map(Number),...Object.keys(BANK).map(Number),TLN.WALL,TLN.BARS,TLN.POSTER,TLN.TV]);
+for(const t of ids){const old=FLAVOR[t];Object.defineProperty(FLAVOR,t,{configurable:true,enumerable:true,get(){const k=G.map+':'+G.x+':'+G.y+':'+G.dir+':'+t+':'+(worldUpdate.k||0);if(EXC.k!==k){EXC.k=k;const l=examineLine(t);EXC.v=l?[l]:old;}return EXC.v;}});}
+})();
+const TOWNS=['Eastlake','Willoughby','Mentor','Painesville','Euclid','Wickliffe','Parma','Lorain','Ashtabula','Geneva','Chardon','Fairport Harbor','Collinwood','Garfield Heights','Elyria','Akron','Youngstown','Sandusky','Conneaut','Madison','Willowick','Kirtland'];
+const JOBS=['drove a forklift at the salt mine under the lake','sold gutters door to door','was a line cook at a Bob Evans','roofed houses nine months a year','detailed cars in his mom\'s driveway','was between things for about eleven years','ran a bait shop that sold very little bait',
+'drove a Zamboni, and misses it more than freedom','was assistant manager of a Dollar General, and will tell you','hung drywall','tended bar at a place with no sign','was a substitute gym teacher','fixed lawnmowers out of a garage','delivered pizzas in a car with no reverse',
+'worked the fryer at the Lake County Fair every August','sold phones at a mall kiosk','cut hair, unlicensed, quite well','was a wedding DJ ("DJ Verdict," now)','worked third shift at the Lubrizol plant','installed car stereos that were mostly bass'];
+const FAM=['a daughter who sends drawings. He has every one','a mother who visits every Sunday and brings up his brother','a twin on the outside who is, annoyingly, a dentist','nobody, he says, and then talks about his sister for ten minutes','an ex-wife who still does his taxes','three kids by one very patient woman',
+'a grandfather who did time in this same building when it was a hospital, as a patient','a dog named Chief staying with a neighbor he doesn\'t trust','a brother in Pod C he hasn\'t spoken to since intake','a wife who writes every single day, numbered, so he knows if one goes missing','a son who thinks he\'s working on an oil rig','a mom who put money on his books and a note that said "this is the last time" eleven times'];
+const HABIT=['counts ceiling tiles when he\'s nervous. There are 214','does 100 pushups before chow and announces it','hums the same four bars of a song he can\'t name','folds his blanket into a perfect square, twice a day','reads the same Western over and over and gets tense at the same part','talks to the yard cat like it\'s his parole officer',
+'sleeps with his shoes on, "in case"','keeps a calendar in his sock','saves the jelly packets. Has over two hundred. Has plans','narrates his own workouts in the third person','writes letters he never sends, and numbers them','has not stepped on a crack in the floor since 2019'];
+const LIKES=[['perogi','Baba\'s perogi. He\'d trade his bunk'],['ramen','ramen, chicken, extra packet'],['cigs','L&Ms, soft pack'],['joke','a good joke, told straight'],['listen','being listened to, for once'],['compliment','hearing something nice about himself. Anything']];
+const HATES=['being called "buddy"','people who chew loud','the phrase "it is what it is"','anybody touching his tray','cardio','whistling','being asked what he\'s in for by people who already know','slow walkers on the tier','the Steelers, with a purity that is almost religious','small talk before coffee','guys who say "trust me"','losing at spades'];
+const TELL=['drops his right hand before he throws it','blinks twice before he kicks','always opens with the same jab, every time','holds his breath when he\'s about to swing big','looks at where he\'s going to hit','backs up one step before he rushes','gets wild when he\'s hurt. Wait for it','talks right before he swings. When he goes quiet, move'];
+function bioOf(c){
+if(c._bio)return c._bio;const h=h32('bio'+c.id),r=k=>(h32(c.id+k)>>>3);
+const age=19+r('a')%46,lk=LIKES[r('l')%LIKES.length];
+return c._bio={age,town:hpick(TOWNS,r('t')),job:hpick(JOBS,r('j')),fam:hpick(FAM,r('f')),habit:hpick(HABIT,r('h')),like:lk,hate:hpick(HATES,r('x')),tell:hpick(TELL,r('k')),
+paper:(()=>{const hh=_h32(c.id);return [CHARGES[(hh>>>12)%CHARGES.length],STAYS[(hh>>>4)%STAYS.length].replace('{d}',1+(hh>>>8)%60)];})()};
+}
+function bioFacts(c){const b=bioOf(c),n=c.nm;return [
+`${n} is ${b.age}, from ${b.town}. Before this he ${b.job}.`,
+`On paper: ${b.paper[0]}. ${b.paper[1]}.`+(c.crime?` What he tells people: ${c.crime.replace(/\.$/,'')}.`:''),
+`Family: ${b.fam}.`,
+`He ${b.habit}.`,
+`What gets to him: ${b.like[1]}. What he can't stand: ${b.hate}.`,
+`In a fight, he ${b.tell}.`];}
+const KNOW_MAX=6;
+(function(){
+const ch=choice;choice=function(c,n){ch(c,n);const m=Menus[Menus.length-1],mt=metOf(c.id);if(!m||!m.items)return;
+const k=mt.know||0,ix=Math.max(0,m.items.findIndex(i=>i.l==='ASK TO JOIN'));
+m.items.splice(ix,0,{l:k>=KNOW_MAX?'YOU KNOW HIM':'GET TO KNOW HIM',r:k+'/'+KNOW_MAX,d:k>=KNOW_MAX||(mt.knowDay===WS().day&&k>0),f:()=>{
+const facts=bioFacts(c),need=k>=4?(mt.bond||0)>=3:true;
+if(!need){say(`${c.nm}: I don't know you like that yet.`);return;}
+mt.know=k+1;mt.knowDay=WS().day;mt.bond=(mt.bond||0)+1;
+say(pick([`You sit with ${c.nm} a while.`,`${c.nm} talks. You let him.`,`It takes a minute, but ${c.nm} opens up.`]));say(facts[k]);
+if(mt.know===KNOW_MAX){vv().resp+=1;toast(`YOU KNOW ${c.nm.toUpperCase()}. RESPECT +1`,'#c9a6ff');}}});
+m.y=Math.max(24,H-68-(m.items.length*13+20));};
+const ac=act;act=function(c,k){const mt=metOf(c.id),b=bioOf(c);ac(c,k);
+const key=k==='trade'?'perogi':k==='bribe'?'cigs':k;if((mt.know||0)>=5&&b.like[0]===key){mt.bond=(mt.bond||0)+2;say(`That's the one thing ${c.nm} can't resist. Bond +2.`);}};
+const du=duel;duel=function(n,c,pre,post){DUELK=c&&(metOf(c.id).know||0)>=KNOW_MAX?c:null;return du(n,c,pre,post);};
+const sb=startBattle;startBattle=function(o){const r=sb(o);if(DUELK&&B&&B.em){B.em.sg.acc=Math.max(-3,B.em.sg.acc-1);toast('YOU KNOW HIS TELL','#c9a6ff');}DUELK=null;return r;};
+})();
+let DUELK=null;
+const PLACES={intake:'Where everybody\'s worst day starts. One bench, one camera, one property desk. The floor tile is original hospital: this was Admitting.',
+yard:'The old hospital lawn, fenced in \'92. Bleachers, the iron pile, half a basketball court. Wind off the lake nine months a year. Everything important gets decided here.',
+blockA:'Pod A. Fresh fish and short-timers. Loud, nervous, and the TV never goes off. It was the maternity ward. Nobody mentions that.',
+blockB:'Pod B. Big Blake\'s pod. Cleaner than A, because Blake likes it clean, and because of what happens otherwise.',
+blockC:'Pod C. Tommy Bones and the Eastlake Boys. The quiet in here isn\'t peace. It\'s people listening.',
+blockD:'Pod D. Old heads and lifers waiting on transfer. Two-Phones runs his business from the corner. Under the floor is the Pit.',
+cafe:'The chow hall. Seats two hundred, feeds four hundred, in three shifts. Baba Halina\'s line is on the left. Table 6 is not available.',
+comm:'Commissary. A window, a price list, and a man who has heard every sob story. Honeybuns are money. Ramen is money. Money is not money.',
+med:'Medical. Nurse Rhonda, six beds, and ibuprofen for everything from a cold to a stab wound. The only room in the jail that smells clean.',
+gym:'The indoor gym. Kru Danny\'s corner, a ring with ropes that sag, and iron that\'s been lifted since \'89.',
+pit:'The old morgue under D block. Tile, a drain, and bleachers made of pallets. Kowalski\'s. What happens here stays off the paperwork.',
+tunnel:'The steam tunnel. Runs under the road to a building that isn\'t there anymore. Warm, dark, and it drips.',
+roof:'Floor 9. The cage. Nine floors of wind, a view of the lake, and the hardest pickup games in the county.',
+tier2:'Floor 5. The upper tier. The Landlord rents what isn\'t his to rent, and collects.',
+hole:'Floor 2. Isolation. Solid doors, a slot, and time that doesn\'t move right.',
+elev:'The 1923 Otis freight car. Stockdale\'s. It goes where you\'ve earned.',
+chapel:'Floor 8. St. Dismas Chapel, original to the hospital. Stained glass on one side. The patron saint of thieves. Somebody had a sense of humor.',
+library:'Floor 7. The Law Library. Men writing their own way out in pencil. The quietest room in the building, and the most dangerous to the county.',
+maxsec:'Floor 6. Maximum security. It used to be surgery. Bright lights, drains in the floor, two sets of bars.',
+laundry:'Floor 3. Laundry and the prep kitchen. Steam, bleach, and Machine 4.',
+boiler:'Floor 1. The boiler room. The Furnace lives down here, and so does everything the building wants to forget.'};
+function codexMenu(){
+const f=G.flags,met=ROSTER.filter(c=>G.met&&G.met[c.id]&&G.met[c.id].n>0),vis=Object.keys(PLACES).filter(k=>f['vis_'+k]),lore=LORE.filter(L=>f['lore_'+L.id]),gr=Object.keys(f.graf||{}).length;
+openMenu({x:8,y:18,w:224,title:'CODEX',items:[
+{l:'PEOPLE',r:met.length+'/'+ROSTER.length,d:!met.length,f:()=>codexPeople(met)},
+{l:'PLACES',r:vis.length+'/'+Object.keys(PLACES).length,d:!vis.length,f:()=>openMenu({x:4,y:14,w:232,title:'PLACES',vis:9,items:vis.map(k=>({l:(MAPS[k].name||k).split('  -  ')[0].slice(0,26),f:()=>say(PLACES[k])})).concat([{l:'BACK',f:()=>{}}])})},
+{l:'LORE',r:lore.length+'/'+LORE.length,d:!lore.length,f:()=>openMenu({x:4,y:14,w:232,title:'LORE  -  LOOK AT THINGS TO FIND MORE',vis:9,items:lore.map(L=>({l:L.n,f:()=>say(L.x)})).concat([{l:'BACK',f:()=>{}}])})},
+{l:'THE WALLS',r:gr+'/'+GRAF.length,d:!gr,f:()=>openMenu({x:4,y:14,w:232,title:'WALLS READ  '+gr+'/'+GRAF.length,vis:9,items:Object.keys(f.graf||{}).map(i=>({l:GRAF[i].replace(/^"/,'').slice(0,30),f:()=>say(GRAF[i])})).concat([{l:'BACK',f:()=>{}}])})},
+{l:'BACK',f:()=>{}}]});
+}
+function codexPeople(met){
+met=met.slice().sort((a,b)=>(metOf(b.id).know||0)-(metOf(a.id).know||0)||(metOf(b.id).bond||0)-(metOf(a.id).bond||0)).slice(0,60);
+openMenu({x:4,y:14,w:232,title:'PEOPLE  -  KNOWN BEST FIRST',vis:9,items:met.map(c=>{const mt=metOf(c.id),k=mt.know||0;
+return {l:c.nm.slice(0,20),r:k?k+'/'+KNOW_MAX:'MET',f:()=>{const fs=bioFacts(c).slice(0,k);if(!fs.length)say(`${c.nm}. You've talked. You don't really know him. Sit with him a while.`);else fs.forEach(x=>say(x));
+say(`Bond ${mt.bond||0}. Found in ${(MAPS[c.map]&&MAPS[c.map].name||c.map).split('  -  ')[0]}.`);}};}).concat([{l:'BACK',f:()=>{}}])});
+}
+onHook('pause',function(){const m=Menus[Menus.length-1];if(m&&m.items&&!m.items.some(i=>i.l==='CODEX')){const ix=m.items.findIndex(i=>i.l==='STORY');m.items.splice(ix>=0?ix+1:1,0,{l:'CODEX',f:codexMenu});}});
+onHook('world',function(){const f=G.flags;if(!f||G.mode!=='world')return;
+if(!f['vis_'+G.map]){f['vis_'+G.map]=1;if(PLACES[G.map]&&f.escorted&&WS().day>1)toast('CODEX: '+((MAPS[G.map].name||G.map).split('  -  ')[0]),'#c9a6ff');}
+if(f.looks>=5)tip('look','A = LOOK AT ANYTHING. WALLS, BUNKS, TVS. CODEX KEEPS IT.');});
+(function(){const pi=plateInfo;plateInfo=function(n){const r=pi(n);if(r&&n&&n.say&&n.say[0]==='inmate'&&ROSTER_BY[n.say[1]]){const c=ROSTER_BY[n.say[1]],k=metOf(c.id).know||0;if(k>=1&&r.l2){const b=bioOf(c);r.l2=`Age ${b.age} · `+r.l2;}}return r;};})();
+onHook('title',function(){const m=Menus[Menus.length-1];if(!m||!m.items||G.mode!=='title')return;const rh=m.rh||12,room=H-12-(150+OFF());
+if(m.items.length*rh>H-12-m.y){m.vis=Math.max(3,Math.min(m.items.length,Math.floor(Math.max(room,3*rh)/rh)));m.y=Math.max(118,H-12-m.vis*rh);}});
+(function(){
+const ap=actPose,sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},lp=(a,b,t)=>a+(b-a)*t;
+const mix=(P,Q,w)=>{for(const k in Q){const b=Q[k],a=P[k];if(Array.isArray(b)){const A=Array.isArray(a)?a:[0,0];P[k]=[lp(A[0],b[0],w),lp(A[1],b[1],w)];}else P[k]=lp(a||0,b,w);}};
+actPose=function(an,tt,s){
+const o=ap(an,tt,s);
+if(typeof B==='undefined'||!B||!an||!B.an||an!==B.an[s])return o;
+const m=s==='p'?B.pm:B.em,oth=s==='p'?B.em:B.pm;if(!m)return o;
+const P=o.pose,busy=an.kind||an.rec>0||an.down>0||an.stag>0||an.dodge>0||an.block>0,alive_=m.hp>0;
+const hp=m.mhp?Math.max(0,m.hp/m.mhp):1,st=m.sta===undefined?1:Math.max(0,Math.min(1,m.sta/100));
+const tired=Math.max(sm((.5-hp)/.45)*.85,sm((.3-st)/.3)*.6);
+an._tired=(an._tired||0)+(tired-(an._tired||0))*.04;const T=an._tired;
+const rate=2.1+3.4*T,br=Math.sin(tt*rate+(s==='p'?0:1.3)),amp=.5+T*1.6;
+if(alive_&&!an.down){P.bob=(P.bob||0)+br*.006*amp;P.headX=(P.headX||0)+br*.018*amp;o.lean=(o.lean||0)-br*.012*amp;
+if(P.armL)P.armL=[P.armL[0]-br*.02*amp,P.armL[1]+br*.012*amp];if(P.armR)P.armR=[P.armR[0]-br*.02*amp,P.armR[1]-br*.012*amp];}
+if(!alive_)return o;
+const wd=m.wd||[],has=k=>wd.some(w=>w.k===k);
+if(!busy){
+if(T>.02){if(P.armL)P.armL=[P.armL[0]+.34*T,P.armL[1]+.05*T];if(P.armR)P.armR=[P.armR[0]+.38*T,P.armR[1]-.05*T];
+P.elbL=(P.elbL||0)-.3*T;P.elbR=(P.elbR||0)-.34*T;P.headX=(P.headX||0)+.26*T;o.lean=(o.lean||0)+.15*T;P.bob=(P.bob||0)-.03*T;}
+if(has('ribs')){P.armR=[-.2,-.02];P.elbR=2.65;o.roll=(o.roll||0)+.09;P.twist=(P.twist||0)+.12;}
+if(has('gut')||has('artery')){P.armL=[-.15,-.12];P.elbL=1.75;o.lean=(o.lean||0)+.2;P.headX=(P.headX||0)+.15;}
+if(has('concuss')){const w=Math.sin(tt*1.7);o.roll=(o.roll||0)+.07*w;P.headY=(P.headY||0)+.18*Math.sin(tt*1.1);P.headX=(P.headX||0)+.1;}
+if(has('hand')||has('tendon')){if(P.armL)P.armL=[P.armL[0]+.5,P.armL[1]+.1];P.elbL=1.2;}
+if(has('knee')){o.roll=(o.roll||0)-.06;P.bob=(P.bob||0)-.02+Math.abs(Math.sin(tt*3.5))*-.012;}
+}
+const S=B.s3;
+if(S&&S.t<92&&!busy){const u=S.t/92,w=1-sm((u-.55)/.45),hop=Math.abs(Math.sin(S.t*.24+(s==='p'?0:.9)))*.05*w,sh=Math.sin(S.t*.9+(s==='p'?0:1.7));
+mix(P,{armL:[.05+sh*.1,.2+sh*.06],armR:[.05-sh*.1,-.2+sh*.06],elbL:.35+.25*Math.max(0,sh),elbR:.35+.25*Math.max(0,-sh),headX:-.05,twist:.05},w);
+P.bob=(P.bob||0)+hop;P.headY=(P.headY||0)+Math.sin(S.t*.11)*.3*w;o.lean=lp(o.lean||0,0,w);}
+const won=oth&&oth.hp<=0&&(s==='p'?B.foes.every(f=>f.hp<=0):(G.gang||[]).every(g=>g.hp<=0));
+an._v=won&&!busy?(an._v||0)+1:0;
+if(an._v>14){const t=an._v-14,w=sm(t/22),pump=Math.sin(t*.2),bandit=m.s==='bandit';
+if(s==='e'){   // he stands over you, hands down, looking at the floor where you are. Then the fist goes up
+if(t<60)mix(P,{armL:[.06,.16],armR:[.06,-.16],elbL:.22,elbR:.22,headX:.38,twist:0,headY:0},w);
+else mix(P,{armR:[-2.75-.12*Math.max(0,pump),-.26],elbR:.5-.3*Math.max(0,pump),armL:[.06,.16],elbL:.22,headX:-.15,twist:-.08,headY:0},w);
+o.lean=lp(o.lean||0,t<60?.03:-.05,w);
+}else if(bandit){   // one finger to the sky, other hand on the hip, a slow nod to the crowd
+mix(P,{armR:[-2.95+.05*pump,-.28],elbR:.12,armL:[.06,.14],elbL:.3,headX:-.28+.08*Math.sin(t*.13),headY:.25*Math.sin(t*.05),twist:-.12},w);
+o.lean=lp(o.lean||0,-.07,w);P.bob=(P.bob||0)+Math.abs(Math.sin(t*.15))*.022*w;
+}else if(t<70){   // a fist pump
+mix(P,{armR:[-2.6-.3*Math.max(0,pump),-.2],elbR:.9-.7*Math.max(0,pump),armL:[-.3,.3],elbL:1.9,headX:-.2,twist:-.1},w);P.bob=(P.bob||0)+Math.max(0,pump)*.035*w;o.lean=lp(o.lean||0,-.05,w);
+}else{   // both arms up
+mix(P,{armL:[-2.85,.42+.05*pump],armR:[-2.85,-.42-.05*pump],elbL:.2,elbR:.2,headX:-.3,twist:0},w);P.bob=(P.bob||0)+Math.abs(pump)*.03*w;o.lean=lp(o.lean||0,-.08,w);}
+}
+return o;
+};
+IDLEMV.push('neck','shake','beckon');
+const im=idleMoves;
+idleMoves=function(a,s){
+const I=a.idl;const r=im(a,s);
+const M=a.idl&&a.idl.m;
+if(M&&(M.type==='neck'||M.type==='shake'||M.type==='beckon')){
+if(!M.len||isNaN(M.len))M.len={neck:40,shake:30,beckon:44}[M.type];
+if(M.type==='beckon'){const me=s==='p'?B.pm:B.em,ot=s==='p'?B.em:B.pm;if(!(me&&ot&&me.hp/me.mhp>ot.hp/ot.mhp+.15)){M.type='neck';M.len=40;}}
+M.t=(M.t||0);const u=Math.min(1,M.t/M.len),e=Math.sin(u*Math.PI),q={};
+if(M.type==='neck'){q.headY=M.d*.55*Math.sin(u*Math.PI*2);q.roll=M.d*.05*Math.sin(u*Math.PI*2);q.headX=-.1*e;}
+else if(M.type==='shake'){q.shake=e;q.sd=M.d;q.ph=M.t;}
+else{q.beck=e;q.ph=M.t;}
+if(u>=1)a.idl.m=null;
+return q;}
+return r;
+};
+const ap2=actPose;
+actPose=function(an,tt,s){const o=ap2(an,tt,s);const M=an&&an.idl&&an.idl.m;
+if(M&&!an.kind&&!an.rec&&!an.down&&o.pose){const u=Math.min(1,(M.t||0)/(M.len||30)),e=Math.sin(u*Math.PI),P=o.pose;
+if(M.type==='shake'){const k=M.d>0?'R':'L',sg=M.d>0?-1:1,w=Math.sin((M.t||0)*1.3)*.16*e;P['arm'+k]=[lp(P['arm'+k][0],.1+w,e),lp(P['arm'+k][1],sg*.28,e)];P['elb'+k]=lp(P['elb'+k],.45+w,e);}
+if(M.type==='beckon'){const w=Math.sin((M.t||0)*.5);P.armL=[lp(P.armL[0],-1.25,e),lp(P.armL[1],.12,e)];P.elbL=lp(P.elbL,1.0+.5*Math.max(0,w),e);P.headX=(P.headX||0)-.1*e;P.open=e>.3?1:P.open;}}
+return o;};
+})();
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
 const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
 const BOGGS_ST=Object.assign({},LOOK.boggs,{sh:'#3a6a4a',pn:'#2a2a3a'});
