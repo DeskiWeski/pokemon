@@ -2721,7 +2721,7 @@ P(r+'s',pv,[sd*.054,-.335,.035],[.012,.034,.12],OR,{sub:kn,sr:r,mat:'leather'});
 P(r+'s',pv,[0,-.275,.045],[.07,.03,.06],shade(SHOE,1.6),{sub:kn,sr:r,mat:'leather'});
 });
 const B=[0,HIP,0];
-mesh('body',B,sweep(pantsRings(w,bf),{capK:.45}),PN,{tex:SNT});
+mesh('body',B,sweep(pantsRings(w,bf),{capK:.45}),PN,{tex:(PN[0]+PN[1]+PN[2]>1.1)?null:SNT});
 mesh('body',B,sweep(torsoRings(w,bf),{N:36,capK:.08,sh:(p,n)=>1-.18*Math.max(0,-n[1])*(n[2]<0?1:.25)}),SH,{tex:TOT});
 if(L.vest)mesh('body',B,sweep(torsoRings(w,bf,1.08,.06,.5),{capS:false,capE:false}),hx(L.vest),{tex:clothTex(hx(L.vest),'cloth')});
 if(JS){
@@ -3813,14 +3813,15 @@ const S=B.s3,u=S.u,sgn=s==='p'?-1:1,an=B.an[s]||{},ds=s==='p'?'e':'p';
 const base=b3Base(s),toward=[-sgn*u[0],-sgn*u[1]];
 let adv=an.hold||0;
 if(an.kind&&an.k>0&&an.k<1){
-const f=Math.max(extK(an.k),-.2);
+const clk=typeof CLK!=='undefined'&&CLK.has(an.kind);
+const f=clk?(an.k<.5?Math.max(extK(an.k),-.2):an.k<.86?1:1-(an.k-.86)/.14):Math.max(extK(an.k),-.2);
 const sc=((s==='e'&&B.boss)?1.28:1.12),dsc=((ds==='e'&&B.boss)?1.28:1.12);
 const D=b3Base(ds),gap=Math.hypot(D[0]-base[0],D[2]-base[2]);
-const need=Math.max(0,gap-(an.hold||0)-(REACH[an.kind]||.9)*sc-.3*dsc);
+const need=Math.max(0,gap-(an.hold||0)-(clk?.44*sc:(REACH[an.kind]||.9)*sc+.3*dsc));
 an.need=need+(an.hold||0);adv=(an.hold||0)+f*need;
 if(an.kind==='parry'||an.kind==='voice'||an.kind==='taunt'||an.kind==='throw')adv=f*Math.min(need,.25);
 }
-{const D=b3Base(ds),gap=Math.hypot(D[0]-base[0],D[2]-base[2]),sc2=(B.boss?1.28:1.12);adv=Math.min(adv,Math.max(0,gap-.66*sc2));}
+{const D=b3Base(ds),gap=Math.hypot(D[0]-base[0],D[2]-base[2]),sc2=(B.boss?1.28:1.12);adv=Math.min(adv,Math.max(0,gap-((typeof CLK!=='undefined'&&an.kind&&CLK.has(an.kind))?.36:.66)*sc2));}
 return [base[0]+toward[0]*adv,0,base[2]+toward[1]*adv];
 }
 function wcol(an){const w=an&&an.mid&&WPN[(''+an.mid).slice(2)];return w?w.col:[.8,.82,.9];}
@@ -6309,7 +6310,7 @@ s_booty:{t:'LIGHTS OUT',d:'Something stalks the pods at night. Get a crew of 3 a
 QUESTS.s_tunnel.steps=[{t:'Search the Pod D showers at NIGHT',ok:()=>!!G.flags.spoon,at:{map:'blockD',x:26,y:20}},{t:'Open the loose tile and get through the tunnel',ok:()=>!!G.flags.escaped}];
 Object.assign(ACH,{spoon:{n:'THE SPOON IS REAL',d:'Find the golden spoon',ok:()=>!!G.flags.spoon},escape:{n:'OUT THE BACK',d:'Escape through the tunnel',ok:()=>!!G.flags.escaped,fit:'ghost'},booty:{n:'NOT TONIGHT',d:'Run off the Booty Bandit for good',ok:()=>!!G.flags.bbGone}});
 tunnelBuild();guardPatrols();
-const GAME_VERSION='3.2';
+const GAME_VERSION='3.3';
 const SAVE_SCHEMA=2;
 const SLOTKEYS={1:SAVEKEY,2:SAVEKEY+'_s2',3:SAVEKEY+'_s3',auto:SAVEKEY+'_auto'};
 const SLOTS=[1,2,3,'auto'];
@@ -10706,6 +10707,7 @@ if(HC.flash>0){g.fillStyle=`rgba(255,255,255,${Math.min(1,HC.flash/3)})`;g.fillR
 if(HC.qte){const k=HC.qte.n/HC.qte.need,y=H-lb-34;panel(50,y,140,26);tx((HC.t>>3)%2?'TAP A!  CLIMB!':'TAP A!',120,y+4,'#ffd23a','center');R(58,y+16,124,5,'#1a1a22');R(58,y+16,Math.round(124*k),5,'#7dff9a');}
 };
 })();
+const SHOOTK=new Set(['tackle','g_spear','g_doubleleg','g_anklepick']);
 const TDK=new Set(['tackle','g_spear','g_doubleleg','g_anklepick','g_sweep','g_dropkick']);
 const CLK=new Set(['g_kneecombo','g_headlockpunch','g_bearhug','g_hairpull','lock','g_pressure']);
 const LEGH=new Set(['g_legkick','g_sweep','g_kneestomp','g_anklepick']);
@@ -10725,6 +10727,8 @@ const SIGFIN={corey:'THE BAPE ESCAPE',cellie:'LIGHTS OUT, CELLIE',rookie:'FRESH 
 const BOSSSIG={'SERGIO':'THE YARD SALE','GREASE TRAP GARY':'SPIN CYCLE','DEADLIFT DARNELL':'ONE REP MAX','THE LANDLORD':'THE EVICTION','BROTHER CAIN':'LAST RITES','THE WARDEN\'S DOG':'OFF THE LEASH',
 'THE LAWYER':'CONTEMPT OF COURT','THE GHOST':'CELL 9','THE FURNACE':'MELTDOWN','BIG BLAKE':'TABLE SIX','TOMMY BONES':'THE BONE YARD','KOWALSKI':'PIT STOP','SGT. MARSH':'ROOF ACCESS'};
 (function(){
+for(const k of ['g_doubleleg','g_spear','g_anklepick'])if(ANIM[k]){ANIM[k].fwd=Math.min(ANIM[k].fwd,1.2);if(!ANIM[k].hits)ANIM[k].hits=[.5];ANIM[k].len=Math.max(ANIM[k].len,44);}
+for(const k of CLK)if(REACH[k])REACH[k]=Math.min(REACH[k],.42);
 const sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},lp=(a,b,t)=>a+(b-a)*t;
 const mixA=(P,k,v,w)=>{const a=P[k]||[0,0];P[k]=[lp(a[0],v[0],w),lp(a[1],v[1],w)];},mixN=(P,k,v,w)=>{P[k]=lp(P[k]||0,v,w);};
 const bi=b3Impact;b3Impact=function(s,kind){
@@ -10733,6 +10737,8 @@ bi(s,kind);if(!an||!(an.rec>0))return;
 an.legh=0;an.side=0;
 if(LEGH.has(kind)){an.hitk='jab';an.legh=1;an.rec=18;}
 else if(BODH.has(kind)){an.hitk='body';an.side=1;an.rec=HEAVYK.has('body')?26:18;}
+if(SHOOTK.has(kind)){an.kb=Math.min(an.kb||0,.3);if(B.off&&B.off[s])B.off[s].vx*=.3;}
+if(CLK.has(kind)){an.kb=Math.min(an.kb||0,.04);if(B.off&&B.off[s])B.off[s].vx*=.15;}
 else if(/^g_/.test(kind)&&typeof GENA!=='undefined'&&GENA[kind]){const f=GENA[kind].fam;if(f&&FAMOK.has(f)){an.hitk=f;an.rec=HEAVYK.has(f)?26:18;}}
 };
 const be=b3Evade;b3Evade=function(s,kind){be(s,kind);const an=B.an[s];if(!an)return;an.bk=kind;an.dv=HIGHK.has(kind)?'duck':KICKK.has(kind)?'hop':'slip';};
@@ -10759,7 +10765,18 @@ if(an.legh){P.headX=.15*q;P.headY=0;P.twist=0;P.legL=-.45*q-.15;P.kneeL=.4+1.25*
 else if(an.side){const k=d>0?'R':'L',sg=d>0?-1:1;P['arm'+k]=[-.18,sg*.02];P['elb'+k]=2.6;o.roll=(o.roll||0)+.2*q*d;P.headX=(P.headX||0)+.15*q;}}
 if(CLK.has(oa.kind)&&oa.run&&!oa.miss&&oa.k>.1&&oa.k<.92&&!an.down&&m.hp>0){const e=sm((oa.k-.1)/.12)*sm((.92-oa.k)/.1),w=Math.sin(oa.k*40)*.06;
 mixN(P,'headX',.62,e);mixA(P,'armL',[-1.0+w,.55],e);mixA(P,'armR',[-1.0-w,-.55],e);mixN(P,'elbL',1.1,e);mixN(P,'elbR',1.1,e);mixN(P,'kneeL',.7,e);mixN(P,'kneeR',.6,e);P.bob=(P.bob||0)-.08*e;
-o.lean=lp(o.lean||0,.52+w,e);o.roll=lp(o.roll||0,w*.8,e);}
+o.lean=lp(o.lean||0,.52+w,e);o.roll=lp(o.roll||0,w*.8,e);
+if(oa.kind==='g_bearhug'){   // lifted off his feet, squeezed, kicking
+o.lean=lp(o.lean,-.2,e);o.y=(o.y||0)+.2*e;mixA(P,'armL',[-2.5+w*3,.7],e);mixA(P,'armR',[-2.5-w*3,-.7],e);mixN(P,'elbL',.6,e);mixN(P,'elbR',.6,e);mixN(P,'headX',-.45,e);
+mixN(P,'legL',.25+w*4,e);mixN(P,'legR',.1-w*4,e);mixN(P,'kneeL',.6,e);mixN(P,'kneeR',.8,e);an.air=e>.3?1:0;}}
+if(SHOOTK.has(an.kind)&&an.run&&!an.miss){const hit=(ANIM[an.kind]&&ANIM[an.kind].hits?ANIM[an.kind].hits[0]:.52),k=an.k,dip=sm(k/(hit*.75)),drive=sm((k-hit)/.14),up=sm((k-.84)/.14),e=dip*(1-up);
+mixN(P,'legL',-1.15,e);mixN(P,'kneeL',1.55+.3*drive,e);mixN(P,'legR',.45-.75*drive,e);mixN(P,'kneeR',.55+1.2*drive,e);
+mixA(P,'armL',[-1.2-.15*drive,.3-.2*drive],e);mixA(P,'armR',[-1.2-.15*drive,-.3+.2*drive],e);mixN(P,'elbL',.45+1.0*drive,e);mixN(P,'elbR',.45+1.0*drive,e);
+mixN(P,'headX',-.45,e);mixN(P,'headY',.25*drive,e);mixN(P,'twist',0,e);mixN(P,'bob',0,e);
+o.lean=lp(o.lean||0,.7+.17*drive,e);o.roll=lp(o.roll||0,0,e);o.y=lp(o.y||0,0,e);if(e>.3)o.prop=null;}
+if(an.kind==='g_bearhug'&&an.run&&!an.miss){const e=sm((an.k-.12)/.12)*sm((.92-an.k)/.1),w=Math.sin(an.k*40)*.04;
+mixA(P,'armL',[-1.38,-.5],e);mixA(P,'armR',[-1.38,.5],e);mixN(P,'elbL',.85,e);mixN(P,'elbR',.85,e);mixN(P,'kneeL',.45,e);mixN(P,'kneeR',.45,e);mixN(P,'legLz',-.2,e);mixN(P,'legRz',.2,e);mixN(P,'headX',-.2,e);
+o.lean=lp(o.lean||0,-.14+w,e);o.roll=lp(o.roll||0,w,e);o.y=lp(o.y||0,0,e);}
 if(TDK.has(oa.kind)&&oa.run&&!oa.miss&&m.hp>0){const hit=(typeof ANIM!=='undefined'&&ANIM[oa.kind]&&ANIM[oa.kind].hits?ANIM[oa.kind].hits[0]:.52);
 if(oa.k>hit){const u=sm((oa.k-hit)/.16),sc=(s==='e'&&B.boss)?1.28:1.12;an._td=1;
 o.lean=lp(o.lean||0,-1.5,u);o.roll=lp(o.roll||0,0,u);o.y=(o.y||0)+.13*sc*u+Math.sin(Math.min(1,(oa.k-hit)/.1)*Math.PI)*.12*(1-u);
@@ -11095,7 +11112,7 @@ b3();
 };
 onHook('battleDraw',function(){
 if(!SHOW.cam||!B||!B.boss||B._stOff)return;const who=SHOW.who,a=Math.min(1,SHOW.k*6,(1-SHOW.k)*8+.2);
-g.fillStyle='#000';g.fillRect(0,0,W,30);g.fillRect(0,H-34,W,34);
+g.clearRect(0,0,W,64);g.fillStyle='#000';g.fillRect(0,0,W,30);g.fillRect(0,H-34,W,34);
 g.globalAlpha=Math.max(0,a);
 if(who==='e'){tx('FLOOR BOSS',120,H-29,'#ff7a5a','center');tx(String(B.em.nm||'').toUpperCase().slice(0,26),120,H-17,'#fff','center');}
 else{tx(String((G.gang[0]&&G.gang[0].nm)||'BANDIT').toUpperCase(),120,H-29,'#ffd23a','center');tx(String(typeof rank==='function'?rank():'').toUpperCase().slice(0,26),120,H-17,'#fff','center');}
@@ -11165,7 +11182,10 @@ const im=document.createElement('img');im.src=url;im.alt='PodBoss photo';im.styl
 const t=document.createElement('div');t.textContent='Hold the photo to save it';t.style.cssText='opacity:.8';
 const row=document.createElement('div');row.style.cssText='display:flex;gap:10px';
 const btn=(s,f)=>{const b=document.createElement('button');b.textContent=s;b.style.cssText='font:inherit;padding:12px 22px;border-radius:10px;border:0;background:#ffd23a;color:#111';b.addEventListener('click',f);row.appendChild(b);return b;};
-btn('Download',()=>{const a=document.createElement('a');a.href=url;a.download='podboss-day'+WS().day+'.jpg';document.body.appendChild(a);a.click();a.remove();});
+const fname='podboss-day'+WS().day+'.jpg',plain=()=>{const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();};
+btn('Download',()=>{   // inside the Claude viewer the page has to ask the viewer to save; anywhere else a plain download works
+const cl=globalThis.claude;if(!cl||typeof cl.use!=='function'){plain();return;}
+c.toBlob(bl=>{Promise.resolve(cl.use('downloads')).then(d=>{if(!d){t.textContent='Hold the photo to save it';return;}return d.save({filename:fname,data:bl}).then(()=>{t.textContent='Saved';},e=>{t.textContent=e&&e.code==='declined'?'Not saved':'Hold the photo to save it';});}).catch(()=>{t.textContent='Hold the photo to save it';});},'image/jpeg',.92);});
 if(navigator.canShare&&typeof File!=='undefined')btn('Share',()=>{c.toBlob(bl=>{try{const f=new File([bl],'podboss.jpg',{type:'image/jpeg'});if(navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});}catch(e){}},'image/jpeg',.92);});
 btn('Back',()=>{o.remove();}).style.background='#444';row.lastChild.style.color='#fff';
 o.appendChild(im);o.appendChild(t);o.appendChild(row);document.body.appendChild(o);
@@ -11254,6 +11274,7 @@ recipe:w=>[`You made the ${w}?`,'Heard you build things.','Make me one of them.'
 busted:w=>['Heard they tossed your cell.','They found your stuff, huh.','Hide it better, Popstar.'],
 clean:w=>['They tossed you and found nothing?','How you hiding it?','Clean cell. Dirty hands.'],
 peace:w=>[`You squashed it with the ${w}?`,'Diplomat over here.'],
+collect:w=>['Warden\'s errand boy.','Here comes the envelope man.','You collecting today?'],
 ledger:w=>['Is it true about the book?','Heard you got pages.','Careful with that book.']};
 (function(){
 const hs=s=>{let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
@@ -11355,22 +11376,19 @@ s.connect(fl);fl.connect(gn);gn.connect(a.destination);s.start(t,Math.random()*.
 globalThis.sfxNoise=nz;
 let foot=0;
 const METAL={tier:1,roof:1,boiler:1,maxsec:1},ECHO={hole:1,tunnel:1};
+const STEP={s_grass:p=>{nz(.07,700*p,.6,.035,'bandpass',0,-300);},s_wet:p=>{nz(.09,2600*p,.8,.03,'highpass',0,-1200);nz(.05,400,.7,.03,'lowpass');},s_mat:p=>{nz(.05,260*p,.7,.035,'lowpass');},
+s_metal:p=>{nz(.04,1900*p,3,.03);beep(520*p,.05,'square',.012,-60);nz(.05,240,.7,.03,'lowpass');},s_court:p=>{nz(.035,1500*p,1.2,.025);nz(.05,300*p,.7,.035,'lowpass');},s_con:p=>{nz(.045,330*p,.8,.045,'lowpass');nz(.02,2200,1,.012);}};
 sfx.step=function(){
 foot^=1;const p=foot?1:.88;let t=-1;try{t=tileAt(cur(),Math.round(Wd.px/T),Math.round(Wd.py/T));}catch(e){}
 const env=(typeof MENVMAP!=='undefined'&&MENVMAP[G.map])||'';
-if(t===TL.GRASS||t===TL.DIRT){nz(.07,700*p,.6,.035,'bandpass',0,-300);}
-else if(t===TL.SHOWER||G.map==='laundry'&&t===TL.FLOOR&&foot){nz(.09,2600*p,.8,.03,'highpass',0,-1200);nz(.05,400,.7,.03,'lowpass');}
-else if(t===TL.MAT||t===TL.RUG){nz(.05,260*p,.7,.035,'lowpass');}
-else if(METAL[env]){nz(.04,1900*p,3,.03);beep(520*p,.05,'square',.012,-60);nz(.05,240,.7,.03,'lowpass');}
-else if(t===TL.COURT||t===TL.PATH){nz(.035,1500*p,1.2,.025);nz(.05,300*p,.7,.035,'lowpass');}
-else{nz(.045,330*p,.8,.045,'lowpass');nz(.02,2200,1,.012);}
+STEP[t===TL.GRASS||t===TL.DIRT?'s_grass':(t===TL.SHOWER||G.map==='laundry'&&t===TL.FLOOR&&foot)?'s_wet':(t===TL.MAT||t===TL.RUG)?'s_mat':METAL[env]?'s_metal':(t===TL.COURT||t===TL.PATH)?'s_court':'s_con'](p);
 if(ECHO[env]){nz(.05,300*p,.8,.018,'lowpass',.16);nz(.05,300*p,.8,.008,'lowpass',.32);}
 };
 const CR={src:null,gn:null,fl:null,hype:0,last:0};
 function crowdSet(v,f){
 const a=AC;if(!a)return;
 try{if(!CR.src){CR.src=a.createBufferSource();CR.src.buffer=nbuf(a);CR.src.loop=true;CR.fl=a.createBiquadFilter();CR.fl.type='bandpass';CR.fl.Q.value=.55;CR.gn=a.createGain();CR.gn.gain.value=0;CR.src.connect(CR.fl);CR.fl.connect(CR.gn);CR.gn.connect(a.destination);CR.src.start();}
-const t=a.currentTime;CR.gn.gain.setTargetAtTime(muted?0:v*SET.svol,t,.12);CR.fl.frequency.setTargetAtTime(f,t,.15);}catch(e){}
+const t=a.currentTime;CR.gn.gain.setTargetAtTime(muted?0:v*SET.svol*[0,.5,1,1.8][SET.cv===undefined?2:SET.cv],t,.12);CR.fl.frequency.setTargetAtTime(f,t,.15);}catch(e){}
 }
 onHook('battleDraw',function(){
 if(!B||!B.s3||!AC)return;CR.last=performance.now();CR.hype=Math.max(0,CR.hype-.012);
@@ -11387,6 +11405,7 @@ wet(){nz(.1,500,.7,.06,'lowpass');nz(.05,1800,1,.02);},
 slap(){nz(.05,1500,1,.06);nz(.04,400,.8,.03,'lowpass');},
 wood(){nz(.12,900,.8,.06);beep(140,.14,'triangle',.06,-50);},
 thump(){nz(.07,200,.7,.06,'lowpass');}};
+globalThis.sndTest=function(k){if(typeof ac==='function')ac();if(STEP[k])STEP[k](1);else if(SND[k])SND[k]();else if(k==='ooh')nz(.55,760,.8,.05,'bandpass',0,-260);else if(k==='roar'){nz(1.7,900,.6,.085,'bandpass',.05,500);nz(.9,2400,.8,.03,'bandpass',.15);}};
 const KSND={stab:'shink',slash:'shink',pipe:'clang',smash:'clang',knux:'crack',swing:'wood'};
 const bi=b3Impact;b3Impact=function(s,kind){
 const an=B.an&&B.an[s],blk=an&&an.blk,at=B.an&&B.an[s==='p'?'e':'p'];
@@ -11415,20 +11434,20 @@ const LEDGER=[
 {t:'THE WEIGHTS',who:'Deadlift Darnell',l:['Darnell: Them plates with the 74 on \'em? There used to be twice as many. Half went out the back in a van.','Darnell: I loaded the van. I got a honey bun. Here\'s what the van was worth.'],p:'Page 3. "Donated equipment, surplus." Sold to a gym in Parma. Cash.'},
 {t:'THE RENT',who:'The Landlord',l:['The Landlord: A bottom bunk is ten packs. A cell by the phone is thirty. I don\'t set prices. I collect.','The Landlord: You want to know who sets them, read the initials. I\'m not saying them out loud.'],p:'Page 4. Cell assignments with prices. Initials in the margin: the same two letters on every line.'},
 {t:'THE PLATE',who:'Brother Cain',l:['Brother Cain: Even the collection plate. Men give their last stamp to God and God gets forty percent.','Brother Cain: There\'s a man who kept the whole book. The Bookkeeper. Nobody\'s seen him in six years. Pray on that.'],p:'Page 5. Chapel collections. A note: "ask the Bookkeeper," crossed out.'},
-{t:'THE FRIDAY WALK',who:"The Warden's Dog",l:['The Dog: Every Friday I carry a laundry bag to the fourth floor office. I don\'t look in it. I\'m not paid to look.','The Dog: ...I looked once. That\'s the page. Now you know why they keep me on six.'],p:'Page 6. Friday totals, every floor added up. The handwriting changes here. It gets neater. It\'s an office hand.'},
+{t:'THE FRIDAY WALK',who:"The Warden's Dog",l:['The Dog: Every Friday I carry a laundry bag up to the tower office. I don\'t look in it. I\'m not paid to look.','The Dog: ...I looked once. That\'s the page. Now you know why they keep me on six.'],p:'Page 6. Friday totals, every floor added up. The handwriting changes here. It gets neater. It\'s an office hand.'},
 {t:'THE OPINION',who:'The Jailhouse Lawyer',l:['The Lawyer: Let me see those. ...Oh. Oh, this is beautiful. This is eleven felonies and a pension.','The Lawyer: A judge would care. A reporter would care more. The man it belongs to would pay the most. You need the rest of it first.'],p:'Page 7. The Lawyer\'s note, in pencil: "Theft in office. Halloran would read this. So would Channel 5."'},
-{t:'THE BOOKKEEPER',who:'The Ghost of Cell 9',l:['The Ghost: I kept the book. Nine years, every number. Then I asked for a raise.','The Ghost: That was six years ago. I\'ve been in this cell since. The book is in the boiler room. He has the Furnace burn a little of it every winter. Hurry.'],p:'Page 8. A list of where the money goes after the fourth floor office. A boat. A second boat.'},
+{t:'THE BOOKKEEPER',who:'The Ghost of Cell 9',l:['The Ghost: I kept the book. Nine years, every number. Then I asked for a raise.','The Ghost: That was six years ago. I\'ve been in this cell since. The book is in the boiler room. He has the Furnace burn a little of it every winter. Hurry.'],p:'Page 8. A list of where the money goes after the tower office. A boat. A second boat.'},
 {t:'THE BOOK',who:'The Furnace',l:['The Furnace: He told me burn it a page at a time so nobody notices the smoke. I\'m slow. I been slow on purpose.','The Furnace: Most of it\'s still here. Take it. I\'m tired of being the only one who knows.'],p:'The cover and everything left. With your nine pages, it\'s the whole ledger.'}];
 (function(){
 const pagesHave=()=>LADDER.filter(L=>G.flags['pg_'+L.boss]).length;
 globalThis.ledgerMenu=function(){const f=G.flags,n=pagesHave();
 if(!n){say('Nothing yet. Old Earl says every boss in this building is paying somebody. Beat one and ask.');return;}
-openMenu({x:8,y:16,w:224,title:'THE LEDGER  '+n+'/9',vis:9,items:LADDER.map((L,i)=>({l:f['pg_'+L.boss]?(i+1)+'  '+LEDGER[i].t:(i+1)+'  ? ? ?',r:f['pg_'+L.boss]?'':'FL '+flNum(L.id),f:()=>say(f['pg_'+L.boss]?LEDGER[i].p:`${L.bn} has this page. Floor ${flNum(L.id)}.`)})).concat(f.ledger?[{l:'WHAT YOU DID WITH IT',f:()=>say(f.ledger==='judge'?'You mailed it to Judge Halloran. The parole board has it.':f.ledger==='press'?'Lukey walked it into Channel 5. Their helicopter has been over the building ever since.':'You sold it back to the Warden. The C.O.s leave your cell alone now. Earl hasn\'t said much to you since.')}]:[])});};
+openMenu({x:8,y:16,w:224,title:'THE LEDGER  '+n+'/9',vis:9,items:LADDER.map((L,i)=>({l:f['pg_'+L.boss]?(i+1)+'  '+LEDGER[i].t:(i+1)+'  ? ? ?',r:f['pg_'+L.boss]?'':'FL '+flNum(L.id),f:()=>say(f['pg_'+L.boss]?LEDGER[i].p:`${L.bn} has this page. Floor ${flNum(L.id)}.`)})).concat(f.ledger?[{l:'WHAT YOU DID WITH IT',f:()=>say(f.ledger==='judge'?'You mailed it to Judge Halloran. The parole board has it.':f.ledger==='press'?'Lukey walked it into Channel 5. Their helicopter has been over the building ever since.':f.ledger==='burned'?'You sold it to the Warden, then crossed him. The deal is off. Earl is speaking to you again.':'You sold it back to the Warden. The C.O.s leave your cell alone now. Earl hasn\'t said much to you since.')}]:[])});};
 function* finale(){
 const f=G.flags,v=vv();
 yield* talk('That night. Cell 3. Nine pages and a burned cover on the bunk.',0);
 yield* talk('Old Earl: Thirty-one years I been hearing about that book. Never thought I\'d see it on my blanket.',0);
-yield* talk('Stockdale (at the bars): The fourth floor office light is on. He knows it\'s gone. You got till morning to decide what it is.',0);
+yield* talk('Stockdale (at the bars): The tower office light is on. He knows it\'s gone. You got till morning to decide what it is.',0);
 yield* talk('Old Earl: It\'s three things, young blood. It\'s a way home. It\'s a way out. Or it\'s money. It can\'t be all three.',0);
 const c=yield* chooseM('WHAT DO YOU DO WITH THE LEDGER?',[{l:'MAIL IT TO JUDGE HALLORAN'},{l:'GIVE IT TO LUKEY FOR CHANNEL 5'},{l:'SELL IT BACK TO THE WARDEN'}]);
 if(c===0){f.ledger='judge';f.paroleBoost=Math.max(f.paroleBoost||0,2);f.ledgerNote=1;v.heat=0;if(typeof celAdd==='function')celAdd(10);
@@ -11439,7 +11458,7 @@ yield* talk('You read it to Lukey over the phone, one page a call, in a code you
 yield* talk('By Thursday a news helicopter is circling the building. The guards stop looking up after a day. One more helicopter wouldn\'t stand out. Respect +10.',0);
 yield* talk('A C.O. who wants to be on TV leaves a radio where you can find it. Lukey says his pilot friend will do it for half now. "It\'s basically a public service."',0);}
 else{f.ledger='warden';G.items.cigs=(G.items.cigs||0)+60;v.heat=0;v.resp-=15;if(typeof celAdd==='function')celAdd(-20);
-yield* talk('The Dog walks you to the fourth floor. The Warden doesn\'t look up. He slides a laundry bag across the desk and you slide the book back.',0);
+yield* talk('The Dog walks you up to the tower. The Warden doesn\'t look up. He slides a laundry bag across the desk and you slide the book back.',0);
 yield* talk('+60 L&M. Your cell doesn\'t get tossed anymore. Word gets around about why. Respect -15.',0);
 yield* talk('Old Earl turns to face the wall. He doesn\'t say anything. That\'s worse.',0);}
 repAdd&&repAdd('ledger','');sfx.level&&sfx.level();
@@ -11462,12 +11481,139 @@ const ct=cellToss;cellToss=function*(){if(G.flags.ledger==='warden'){yield* talk
 const ep=epilogue;epilogue=function*(){const k=G.flags.ledger;
 if(k==='judge')yield* talk('The ledger: the Warden took early retirement. He did not get to keep either boat.',0);
 else if(k==='press')yield* talk('The ledger: Channel 5 ran it for nine nights. They called it "The Book." Lukey is credited as a producer.',0);
-else if(k==='warden')yield* talk('The ledger: back in a drawer on the fourth floor. A new Bookkeeper started Monday.',0);
+else if(k==='burned')yield* talk('The ledger: the Warden has it back, and no friends left on any floor.',0);
+else if(k==='warden')yield* talk('The ledger: back in a drawer in the tower. A new Bookkeeper started Monday.',0);
 else if(pagesHave()>0)yield* talk(`The ledger: you left with ${pagesHave()} of nine pages. The rest is still in the building.`,0);
 yield* ep();};
 onHook('pause',function(){const m=Menus[Menus.length-1];if(!m||!m.items||m.items.some(i=>i.l==='HANDBOOK'))return;
 if(m.items.length>12&&!m.vis)m.vis=13;m.items.splice(Math.max(0,m.items.length-1),0,{l:'HANDBOOK',f:()=>openMenu({x:12,y:14,w:216,title:'HANDBOOK',vis:9,items:[{l:'THE LEDGER',r:pagesHave()+'/9',f:ledgerMenu}].concat(HANDBOOK.map(h=>({l:h[0],f:()=>{h[1].forEach(t=>say(t));}})))})});
 if(!G.flags.hbSeen){G.flags.hbSeen=1;toast('NEW: HANDBOOK EXPLAINS EVERYTHING','#7dd3ff');}});
+})();
+(function(){
+const pagesHave=()=>LADDER.filter(L=>G.flags['pg_'+L.boss]).length,free=()=>G.mode==='world'&&!Cs.g&&!Say.on&&!Menus.length;
+const m=newMap('office',"WARDEN'S TOWER  -  FLOOR 10",22,16,TL.WALL,{song:'calm'});
+fill(m,1,1,20,14,TL.FLOOR);fill(m,6,3,10,7,TL.RUG);fill(m,8,4,6,1,TL.COUNTER);fill(m,2,1,5,1,TL.SHELF);fill(m,15,1,5,1,TL.SHELF);fill(m,1,5,1,5,TL.LOCKER);
+set(m,19,6,TL.CRATE);fill(m,4,12,4,1,TL.BENCH);set(m,16,11,TL.TABLE);set(m,11,15,TL.DOOR);WP(m,11,15,'elev',3,4,1,{elevFrom:'office',ax:11,ay:14});
+m.labels.push({x:11,y:1,t:"WARDEN'S OFFICE"},{x:11,y:14,t:'ELEVATOR'},{x:19,y:5,t:'SAFE'},{x:16,y:10,t:'P.A.'});
+m.glows=[{x:10.2,y:1.1,z:1.02,w:1.6,h:1.2,d:.04,c:[.5,.75,1]},{x:12.2,y:1.1,z:1.02,w:1.6,h:1.2,d:.04,c:[.5,.75,1]}];m.enc=null;
+N(m,'warden',11,3,'d','guard',{act:'warden',reach:1,big:1});
+N(m,'wsec',5,11,'r','trustee',{say:['Trustee: I answer his phone. It\'s the boat people, mostly.','Trustee: You\'re not on the list. Nobody\'s on the list. There isn\'t a list. Go on in.']});
+N(m,'towerco',17,13,'l','guard',{say:['C.O.: I didn\'t see you come up here. I don\'t see a lot of things. It\'s why I got this post.']});
+Object.assign(ZONE,{office:{d:0,tag:'THE TOWER',lv:[30,40],sp:['rookie'],safe:1}});if(typeof MENVMAP!=='undefined')MENVMAP.office='indoor';
+FLOORS.unshift({f:10,id:'office',x:11,y:13,n:"WARDEN'S TOWER",req:'towerKey',why:'Stockdale: The tower? That takes a key. One man carries it, and he walks it up every Friday.'});
+const el=LVACT.elevator;LVACT.elevator=function(n){el(n);const mm=Menus[Menus.length-1];if(mm&&mm.items){const it=mm.items.find(i=>/^10 /.test(i.l));if(it&&it.r==='BOSS')it.r=G.flags.d_warden?'CLEARED':'';}};
+onHook('world',function(){const f=G.flags;if(f&&f.pg_wdog&&!f.towerKey&&free()){f.towerKey=1;Cs.run((function*(){yield 10;yield* talk('Folded inside the Dog\'s page: a small brass elevator key, stamped "T".',0);sfx.pick();toast('TOWER KEY. ASK STOCKDALE FOR FLOOR 10.','#ffd23a');})());}});
+function* fightOne(sp,lv,nm,boss){let res=null;fadeTo(()=>startBattle({foes:[mkMon(sp,lv,nm)],boss:boss?nm:null,name:nm,done:r=>{res=r;G.mode='world';}}));yield()=>res!==null;playSong(cur().song);yield 10;return res==='win';}
+LVACT.warden=function(n){
+const f=G.flags,v=vv(),d=WS().day;
+if(f.ledger==='warden'){
+if((f.wJobs||0)>=3){say('The Warden: We\'re square, Popstar. Close the door on your way out.');return;}
+if(f.wJobD===d){say('The Warden: One envelope a day. Come back tomorrow.');return;}
+const L=LADDER[(d+(f.wJobs||0)*3)%LADDER.length];
+Cs.run((function*(){
+yield* talk(`The Warden: Floor ${flNum(L.id)} is light this week. A man down there thinks the rules changed because ${L.bn} went down. Explain it to him.`,0);
+const c=yield* chooseM('THE ENVELOPE',[{l:'COLLECT'},{l:'WARN HIM INSTEAD'},{l:'NOT TODAY'}]);
+if(c===2)return;f.wJobD=d;
+if(c===0){yield* talk('You ride down. He sees you coming and knows who sent you. He swings first.',0);
+const won=yield* fightOne(pick(['lifer','goon','rookie']),Math.max(8,maxLevel()-2),'DEBTOR');
+if(won){f.wJobs=(f.wJobs||0)+1;G.items.cigs=(G.items.cigs||0)+15;v.resp-=2;repAdd('collect','');yield* talk(`You bring the envelope up. The Warden counts it twice. +15 L&M. Respect -2. (${f.wJobs}/3)`,0);
+if(f.wJobs>=3){f.paroleBoost=Math.max(f.paroleBoost||0,2);G.items.cigs+=30;yield* talk('The Warden: Three for three. I\'m a man of my word, mostly. (He signs a good-conduct letter for your parole file and slides over one more bag. +30 L&M.)',0);}}
+else yield* talk('You come back with nothing. The Warden looks at you like a parking ticket.',0);}
+else{f.wWarn=(f.wWarn||0)+1;v.resp+=2;yield* talk('You tell the man to make himself scarce on Fridays. He nods. Word gets around that the Popstar isn\'t all the way bought. Respect +2.',0);
+if(f.wWarn>=2){f.ledger='burned';v.heat=6;celAdd(15);yield* talk('The Warden finds out by lunch. "Deal\'s off." Shakedowns are back. Heat 6. But Old Earl turns back around. "Knew you weren\'t built for that."',0);}}
+})());return;}
+if(f.d_warden){say(pick(['The Warden: ...I\'m retiring. Get out of my office.','The Warden: You can keep the nine iron.']));return;}
+Cs.run((function*(){
+yield* talk(f.ledger==='judge'?'The Warden: Halloran has my book. You have ruined a very comfortable arrangement.':f.ledger==='press'?'The Warden: Channel 5 is in my parking lot. They want to know about the boats. BOATS, plural. Thanks to you.':pagesHave()?`The Warden: You\'re the singer. I hear you\'ve been collecting paper. ${pagesHave()} pages. Paper burns.`:'The Warden: Inmates don\'t come up here. Whoever let you up is fired. Who let you up?',0);
+const c=yield* chooseM('THE WARDEN',[{l:'"I JUST WANTED TO SEE THE VIEW."'},{l:'"PUT THE GOLF CLUB DOWN."',d:!f.ledger||f.ledger==='warden'}]);
+if(c===0){yield* talk('The Warden: The view is the lake, and it\'s mine. Out.',0);return;}
+yield* talk('The Warden picks up a nine iron from behind the desk. He has clearly practiced this in the mirror.',0);
+const won=yield* fightOne('blake',Math.max(40,maxLevel()+3),'THE WARDEN',1);
+if(won){f.d_warden=1;v.resp+=30;repAdd('boss','THE WARDEN');addPart('lock',1);G.items.cigs=(G.items.cigs||0)+40;sfx.level();yield* talk('The Warden sits down on his own carpet. "Thirty years," he says, to nobody. Respect +30. You take 40 L&M off the desk on principle.',0);}
+else yield* talk('The Warden: Security. SECURITY. ...Somebody come get the singer.',0);
+})());
+};
+const it0=interact;interact=function(){
+if(G.map==='office'){const fx=G.x+DX[G.dir],fy=G.y+DY[G.dir],t=tileAt(cur(),fx,fy),f=G.flags,v=vv();
+if(t===TL.CRATE){if(f.safeOpen){say('The safe is empty. You left the boat brochure.');return;}
+if(!f.pg_ghost){say('A floor safe. Six numbers. You don\'t know any of them.');return;}
+f.safeOpen=1;G.items.cigs=(G.items.cigs||0)+40;addPart('wire',1);addPart('lighter',1);addPart('tape',1);sfx.level();
+say('The Bookkeeper\'s page has six numbers in the corner. You try them. The safe opens. 40 L&M, a roll of tape, a lighter, radio wire, and a brochure for a third boat.');return;}
+if(t===TL.SHELF){say(pick(['A framed photo: a boat named EARLY RELEASE. The Warden is at the wheel in a captain\'s hat.','A framed photo: a bigger boat named EARLY RELEASE II.','Golf trophies. All second place.','A shelf of binders labeled BUDGET. They are empty. They are all empty.']));return;}
+if(t===TL.LOCKER){say('Filing cabinets. Every drawer is grievance forms, unopened, sorted by year.');return;}
+if(t===TL.TABLE){if(f.paD===WS().day){say('You already made an announcement today. The C.O.s are watching the microphone now.');return;}
+Cs.run((function*(){yield* talk('The P.A. microphone. The red light is on. The whole jail is one button away.',0);
+const c=yield* chooseM('SAY WHAT?',[{l:'"COUNT IS CANCELLED TODAY."'},{l:'"FREE HONEY BUNS IN THE YARD."'},{l:'SING'},{l:'WALK AWAY'}]);if(c===3)return;f.paD=WS().day;sfx.blip();
+if(c===0){v.heat=Math.max(0,(v.heat||0)-2);yield* talk('Every C.O. in the building stops, looks at the ceiling, and goes to ask somebody. Nobody is watching anybody for an hour. Heat -2.',0);}
+else if(c===1){v.resp+=3;yield* talk('Four hundred men walk to the yard. There are no honey buns. They know who it was, and they respect the nerve. Respect +3.',0);}
+else{v.resp+=2;celAdd(5);yield* talk('You do sixteen bars over the P.A. Somewhere on floor 2 a man who hasn\'t spoken in a year says "that\'s actually hard." Respect +2.',0);}
+if(Math.random()<.3){v.heat=Math.min(8,(v.heat||0)+2);yield* talk('The tower C.O. finally turns around. "HEY." Heat +2.',0);}})());return;}}
+return it0();};
+const pg=paroleGen;paroleGen=function*(){const f=G.flags,v=vv();
+if(f.ledger==='judge'&&!f.wardenHeard){f.wardenHeard=1;
+yield* talk('The Warden is sitting in the gallery. First time he\'s ever come to one of these. He\'s brought a folder of your write-ups.',0);
+yield* talk('Judge Halloran: Before we start. Warden, I have a book here. Nine pages and a cover. Do you want to tell me about the boats, or should I read it out loud?',0);
+yield* talk('The Warden: ...I\'d like to withdraw my folder.',0);
+yield* talk('Judge Halloran: Every write-up signed by this office in the last year is struck. Bailiff, walk the Warden out. Not that door. The other one.',0);
+f.coWins=0;f.holeTrips=0;v.heat=0;f.paroleBoost=Math.max(f.paroleBoost||0,2);f.appealWon=1;sfx.level&&sfx.level();}
+yield* pg();};
+const sl=skyLaunch;skyLaunch=function*(){if(G.flags.ledger==='press'){
+yield* talk('A second set of rotors. Channel 5\'s helicopter swings wide of the roof and turns its camera on you.',0);
+yield* talk('Reporter (over a loudspeaker): WE ARE LIVE. Popstar, any comment for the people of Lake County?',0);
+const c=yield* chooseM('LIVE ON CHANNEL 5',[{l:'"READ THE BOOK."'},{l:'"FREE BOGGS."'},{l:'"STREAM THE ALBUM."'}]);G.flags.liveLine=c;
+yield* talk(c===0?'It becomes a T-shirt by morning.':c===1?'Boggs, watching in Pod C, stands up and salutes the television.':'Streams go up four thousand percent. Lukey takes credit.',0);}
+yield* sl();};
+const hd=heliDraw;heliDraw=function(){hd();if(G.flags&&G.flags.ledger==='press'&&G.mode==='end'){
+const t=performance.now()/1000;g.fillStyle='rgba(160,10,10,.92)';g.fillRect(0,H-46,W,13);g.fillStyle='rgba(10,10,20,.9)';g.fillRect(0,H-33,W,11);
+if((t*2|0)%2){g.fillStyle='#fff';g.beginPath();g.arc(8,H-39.5,2.5,0,6.3);g.fill();}tx('LIVE  CHANNEL 5',14,H-43,'#fff');
+const s='BREAKING: POPSTAR LEAVES LAKE COUNTY JAIL BY AIR   ·   WARDEN "UNAVAILABLE"   ·   TWO BOATS SEIZED   ·   ',w=s.length*6,x=-((t*40)%w);tx(s+s,x,H-31,'#ffd23a');}};
+const tn=talkNpc;talkNpc=function(n){
+const L=n&&n.tr&&defeated(n)&&!n.br?LADDER.find(L=>L.boss===n.id):null;if(!L)return tn(n);
+const f=G.flags,v=vv(),k=f['rm_'+n.id]||0,team0=n.tr.team,last=team0[team0.length-1],need=15+10*ladIx(L.id);
+openMenu({x:60,y:50,w:176,title:L.bn.slice(0,22),items:[{l:'TALK',f:()=>tn(n)},
+{l:'REMATCH',r:'+'+(6+4*k)+' LV',d:f['rmD_'+n.id]===WS().day,f:()=>{const tr0=n.tr,bump=6+4*k;
+n.tr=TR(tr0.name,team0.map(t=>[t[0],t[1]+bump,t[2]]),{sight:0,win:Math.round((tr0.win||20)*.6),pre:pick([`${L.bn}: Again? Good. I been thinking about you every night.`,`${L.bn}: I let you have that first one. Ask anybody.`,`${L.bn}: No elevator man to save you this time.`]),post:tr0.post,lose:tr0.lose});
+delete f['d_'+n.id];f['rmD_'+n.id]=WS().day;
+Cs.run((function*(){yield* challenge(n);const won=!!f['d_'+n.id];n.tr=tr0;f['d_'+n.id]=1;
+if(won){f['rm_'+n.id]=k+1;v.resp+=3;if(typeof earnMin==='function')earnMin(10,'REMATCH WON');repAdd('boss',L.bn);yield* talk(`${L.bn}: ...Twice. Alright. Twice is not luck. Respect +3.`,0);}
+else yield* talk(`${L.bn}: One and one. Come back when you\'re ready for the rubber match.`,0);})());}},
+{l:'ASK HIM TO JOIN',d:k<1,r:k<1?'BEAT HIM TWICE':'',f:()=>{
+if(!G.crew){say(`${L.bn}: Join what? You don\'t have a crew.`);return;}
+if(G.gang.length>=crewCap()){say(`${L.bn}: Your crew\'s full. Make room and ask me again.`);return;}
+if(v.resp<need){say(`${L.bn}: You beat me. That doesn\'t mean I work for you. (Needs respect ${need}. You have ${v.resp}.)`);return;}
+ask(`${L.bn} will leave floor ${flNum(L.id)} and run with ${G.crew.name}. Take him?`,()=>{const mon=mkMon(last[0],last[1]+2*k,(last[2]||L.bn.split(' ').pop()).slice(0,10));mon.hp=mon.mhp;G.gang.push(mon);f['gone_'+n.id]=1;sfx.caught&&sfx.caught();repAdd('call',L.bn);say(`${L.bn} joins ${G.crew.name}. His floor has no boss now. It has you.`);});}},
+{l:'LEAVE',f:()=>{}}]});};
+const visitDay=()=>WS().day>=4&&WS().day%4===0;
+onHook('newDay',function(){if(visitDay())toast('VISITING DAY. USE A POD PHONE.','#7dd3ff');});
+const VIS={
+baba:function*(){yield* talk('Baba is at the glass in her church coat. She has already made the C.O. taste a perogi. He let the rest through.',0);
+const c=yield* chooseM('BABA: "YOU EAT? YOU SLEEP? WHO HIT YOU?"',[{l:'TELL HER THE TRUTH'},{l:'"I\'M FINE, BABA."'}]);
+if(c===0){addTrust('baba',2);G.gang.forEach(m=>{m.hp=m.mhp;m.inj=null;});yield* talk('You tell her everything. She cries, then yells, then prays, in that order. You feel like a person again. Crew fully healed. Injuries gone.',0);}
+else{addTrust('baba',1);G.items.perogi=(G.items.perogi||0)+2;yield* talk('Baba: You lie like your grandfather. Here. Eat. (+2 perogi)',0);}},
+lukey:function*(){yield* talk('Lukey is at the glass wearing sunglasses indoors. He picks up the phone upside down.',0);const f=G.flags;
+const c=yield* chooseM('LUKEY: "COUSIN. YOU LOOK TERRIBLE. I MEAN GREAT."',[{l:'ASK ABOUT THE OUTSIDE'},{l:'ASK ABOUT A WAY OUT'},{l:'"GET A JOB, LUKEY."'}]);
+if(c===0){addTrust('lukey',1);if(typeof earnMin==='function')earnMin(10,'LUKEY PUT MONEY ON THE PHONE');yield* talk('Lukey: Everybody\'s asking about you. I been telling them you\'re writing an album. Are you? You should. I put minutes on your phone.',0);}
+else if(c===1){addTrust('lukey',1);if((f.sky||0)>=1){f.skyPrice=Math.max(30,(f.skyPrice||80)-10);yield* talk('Lukey (whispering, badly): My guy with the helicopter says he\'ll knock ten off. He says the roof has to have the lights. He says don\'t say helicopter on the phone. Oh no.',0);}
+else yield* talk('Lukey: A way out? Cousin, I don\'t know. ...What\'s on the roof of that place, though? I drove past. There\'s a big letter up there.',0);}
+else{addTrust('lukey',-1);vv().resp+=1;yield* talk('Lukey: Wow. From a man in a jumpsuit. (The inmates at the next booths laugh. Respect +1.)',0);}},
+hauncho:function*(){yield* talk('Hauncho has a briefcase. He opens it. It contains one legal pad and a sandwich.',0);const f=G.flags;
+const c=yield* chooseM('HAUNCHO: "I HAVE BEEN DOING LAW."',[{l:'GO OVER THE CASE'},{l:'"DID YOU BRING ANYTHING?"'}]);
+if(c===0){addTrust('hauncho',1);if((f.paroleBoost||0)<2){f.paroleBoost=(f.paroleBoost||0)+1;yield* talk('For once he did the reading. One of your write-ups has the wrong date on it. He gets it thrown out. That helps at parole.',0);}else yield* talk('Hauncho: There is nothing left to throw out. Your file is clean. I am a very good lawyer.',0);}
+else{addPart('tape',1);addPart('lighter',1);vv().heat=Math.min(8,(vv().heat||0)+1);yield* talk('He slides the sandwich through. There is a roll of tape and a lighter in the sandwich. A C.O. watches him do it. Heat +1.',0);}},
+fan:function*(){yield* talk('You don\'t know her. She has a homemade shirt with your face on it. It is not a good likeness.',0);
+const c=yield* chooseM('FAN: "IS IT REALLY YOU?"',[{l:'SIGN THE GLASS'},{l:'SING HER THE HOOK'}]);
+if(c===0){G.items.cigs=(G.items.cigs||0)+5;yield* talk('You sign the glass backwards so she can read it. She puts five on your books. +5 L&M.',0);}
+else{vv().resp+=2;celAdd(3);yield* talk('The whole visiting room goes quiet, then claps. A C.O. claps. He stops when the other C.O. looks at him. Respect +2.',0);}}};
+const ph=LVACT.phone;LVACT.phone=function(n){ph(n);if(!visitDay()||G.flags.visD===WS().day)return;const mm=Menus[Menus.length-1];if(!mm||!mm.items||mm.items.some(i=>/VISITING/.test(i.l)))return;
+mm.items.unshift({l:'VISITING ROOM',r:'TODAY',f:()=>{const who=[['baba','BABA'],['lukey','LUKEY'],['hauncho','HAUNCHO'],['fan','A FAN']];
+openMenu({x:20,y:30,w:200,title:'WHO CAME TO SEE YOU?',items:who.map(w=>({l:w[1],f:()=>{G.flags.visD=WS().day;G.flags.visits=(G.flags.visits||0)+1;Menus.length=0;Cs.run((function*(){yield 10;yield* VIS[w[0]]();})());}})).concat([{l:'NOT NOW',f:()=>{}}])});}});};
+onHook('newWorld',function(){if(!G.ng)return;try{const d=readSlot(latestSlot()),o=(d&&d.flags)||{};G.flags.ngp=(o.ngp||0)+1;if(o.rcp)G.flags.rcp=Object.assign({},o.rcp);if(o.rep)G.flags.rep=o.rep.slice(-5).map(r=>({k:r.k,w:r.w,d:1}));G.flags.hbSeen=1;}catch(e){G.flags.ngp=1;}});
+const sb=startBattle;startBattle=function(o){const k=(G.flags&&G.flags.ngp)||0;if(k&&o&&o.foes&&!o._ngp){o._ngp=1;o.foes.forEach(f=>{f.l=Math.min(99,f.l+(o.boss?5:3)*k);mstat(f);f.hp=f.mhp;});}return sb(o);};
+onHook('world',function(){const f=G.flags;if(f&&f.ngp&&!f.ngpSaid&&free()&&f.escorted){f.ngpSaid=1;toast(`NEW GAME+ ${f.ngp}: RECIPES KEPT. EVERYONE IS TOUGHER.`,'#c9a6ff');}});
+const sm=settingsMenu;settingsMenu=function(){sm();const mm=Menus[Menus.length-1];if(!mm||!mm.items||mm.items.some(i=>i.l==='SOUND TEST'))return;
+const re=()=>{saveSettings();Menus.length=Math.max(0,Menus.length-1);settingsMenu();};
+mm.items.splice(Math.max(0,mm.items.length-1),0,{l:'CROWD VOLUME',r:['OFF','LOW','NORMAL','LOUD'][SET.cv===undefined?2:SET.cv],f:()=>{SET.cv=((SET.cv===undefined?2:SET.cv)+1)%4;re();}},
+{l:'SOUND TEST',f:()=>openMenu({x:12,y:14,w:216,title:'SOUND TEST',vis:10,items:[['STEP: CONCRETE','s_con'],['STEP: GRASS','s_grass'],['STEP: STEEL','s_metal'],['STEP: WET','s_wet'],['STEP: MAT','s_mat'],['HIT: BLADE','shink'],['HIT: PIPE','clang'],['HIT: KNUCKLES','crack'],['HIT: SOAP','wet'],['HIT: WOOD','wood'],['HIT: BODY','thump'],['CROWD: OOH','ooh'],['CROWD: KNOCKOUT','roar']].map(s=>({l:s[0],f:()=>{if(typeof sndTest==='function')sndTest(s[1]);}})).concat([{l:'BACK',f:()=>{}}])})});};
 })();
 const Ic=Object.assign(Object.create(Co),{g:null,wait:0,cond:null});
 const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
